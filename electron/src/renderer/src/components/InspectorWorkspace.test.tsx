@@ -25,7 +25,8 @@ beforeEach(() => {
   hide = vi.fn()
   Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
     native: { openExternal: vi.fn() },
-    pins: { list: vi.fn().mockResolvedValue([]) }, files: { list: vi.fn().mockResolvedValue({ files: [], total: 0 }) }
+    pins: { list: vi.fn().mockResolvedValue([]) }, files: { list: vi.fn().mockResolvedValue({ files: [], total: 0 }) },
+    workspace: { entries: vi.fn().mockResolvedValue({ root: '/work', path: '', entries: [], total: 0, offset: 0, limit: 500, has_more: false }) }
   } })
   useAppStore.setState({ activeProfileId: scope.profileId, profileGeneration: scope.profileGeneration, switchingProfileId: null,
     connected: true, health: { ok: true },
@@ -37,9 +38,26 @@ beforeEach(() => {
 afterEach(() => { cleanup(); controller.reset(); vi.restoreAllMocks() })
 
 describe('Inspector workspace', () => {
+  it('loads the workspace only after choosing Files and keeps Details available', async () => {
+    const current = { ...session, cwd: '/work' }
+    useAppStore.setState({ sessions: [current], health: { ok: true, capabilities: { workspace_files: { available: true, version: 6, required: false, message: "", action: "" } } } })
+    function Tabs() {
+      const [tab, setTab] = useState<InspectorWorkspaceTab>('details')
+      return <InspectorWorkspace session={current} scope={scope} controller={controller} tab={tab} onTabChange={setTab} onHide={hide} />
+    }
+    await act(async () => render(<Tabs />))
+    expect(window.agentsDock.workspace.entries).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('tab', { name: 'Files' }))
+    expect(await screen.findByText('This folder is empty.')).toBeVisible()
+    expect(window.agentsDock.workspace.entries).toHaveBeenCalledExactlyOnceWith('chat-a', '', 0, 500)
+    await act(async () => fireEvent.keyDown(screen.getByRole('tab', { name: 'Files' }), { key: 'Home' }))
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('shows subagents and collapsible Media & files in one details inspector', async () => {
     const view = await act(async () => render(<Workspace />))
-    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Files' })).toHaveAttribute('aria-selected', 'false')
     expect(view.container.querySelectorAll('aside')).toHaveLength(1)
     const subagents = view.container.querySelector('.subagents-section')!
     const mediaToggle = screen.getByRole('button', { name: /Media & files/ })
@@ -85,6 +103,8 @@ describe('Inspector workspace', () => {
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Details' }), { key: 'End' })
     expect(screen.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true')
     await act(async () => fireEvent.keyDown(screen.getByRole('tab', { name: 'Review' }), { key: 'ArrowLeft' }))
+    expect(screen.getByRole('tab', { name: 'Files' })).toHaveAttribute('aria-selected', 'true')
+    await act(async () => fireEvent.keyDown(screen.getByRole('tab', { name: 'Files' }), { key: 'ArrowLeft' }))
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.queryByRole('tab', { name: 'Side chat' })).not.toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveFocus()

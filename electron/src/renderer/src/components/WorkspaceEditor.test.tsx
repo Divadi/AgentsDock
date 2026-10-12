@@ -15,6 +15,9 @@ import type {
 } from '@shared/types'
 import { EDITOR_APPEARANCE_STORAGE_KEY } from '../lib/editor-appearance'
 import { resetTransientCloseStackForTests } from '../lib/transient-close'
+import { useAppStore } from '../store/app-store'
+import { SideChatController } from '../lib/side-chat'
+import { InspectorWorkspace } from './InspectorWorkspace'
 import {
   absoluteWorkspacePath,
   languageLabel,
@@ -236,6 +239,26 @@ describe('WorkspaceEditor', () => {
     resetTransientCloseStackForTests()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+  })
+
+  it('opens a file selected in the chat Details Files tab in the existing editor', async () => {
+    const previousState = useAppStore.getState()
+    const scope = { profileId: 'profile-a', profileGeneration: 1, serverIdentity: 'server-a' }
+    useAppStore.setState({ activeProfileId: scope.profileId, profileGeneration: scope.profileGeneration,
+      switchingProfileId: null, connected: true, selectedSessionId: session.id, sessions: [session],
+      health: { ok: true, capabilities: { workspace_files: { available: true, version: 6, required: false, message: "", action: "" } } } })
+    renderEditor()
+    const controller = new SideChatController()
+    const panel = render(<InspectorWorkspace session={session} scope={scope} controller={controller}
+      tab="files" onTabChange={vi.fn()} onHide={vi.fn()} />)
+    try {
+      fireEvent.click(await within(panel.container).findByRole('button', { name: 'src' }))
+      fireEvent.click(await within(panel.container).findByRole('button', { name: 'Open src/App.tsx' }))
+      expect(await screen.findByRole('textbox', { name: 'Contents of src/App.tsx' })).toHaveValue('export const app = true\n')
+      expect(window.agentsDock.workspace.read).toHaveBeenCalledWith('chat-a', 'src/App.tsx')
+      expect(window.agentsDock.workspace.write).not.toHaveBeenCalled()
+      expect(within(panel.container).getByRole('tab', { name: 'Files' })).toHaveAttribute('aria-selected', 'true')
+    } finally { controller.reset(); act(() => useAppStore.setState(previousState)) }
   })
 
   it('switches editor chrome and confirmation copy live without translating filenames or unsaved contents', async () => {

@@ -1,5 +1,20 @@
 # Public development log
 
+## 2026-10-11 — Browse workspace files from chat details
+
+- Add Details / Files tabs to the chat inspector, retaining Review when present.
+  Files shows the server-side working directory, expandable folders, explicit
+  pagination and refresh, and opens selected files in the existing editor.
+- Load only the root and folders requested by the user. Clear directory state
+  when the chat, server generation or working directory changes; ignore stale
+  responses. Preserve existing authenticated workspace access and symlink rules.
+- Validation: 172 focused checks passed, including component fixtures for
+  browsing, errors/retry, paging, stale responses, English/Chinese labels and
+  the Files-to-editor handoff. TypeScript and production compilation passed.
+  Native desktop acceptance is pending because computer control is unavailable;
+  mocked IPC checks do not establish the real app/server journey. Availability:
+  source only. No server API change or restart is required.
+
 ## 2026-10-11 — Integrate connection pairing with matched npm releases
 
 - Include the pairing command, bundled QR renderer and third-party notices in
