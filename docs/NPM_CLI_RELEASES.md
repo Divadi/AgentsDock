@@ -69,14 +69,45 @@ The GitHub metadata check does not prove actual release-write permission. The
 probe does not establish a full Electron build, notarization submission, public
 publication, migration or reboot acceptance. A separately authorized hosted
 native build/private draft and exact-artifact verification remain required.
-On release branches supporting them, `artifacts_only=true` skips the hosted Mac
-signing build and a successful `verification_only=true` run checks existing
-signed packages, not the secrets that would build a new one. Those desktop
-workflow enhancements and build-reservation fixes are not imported by this
-paired-npm tooling change; review the selected branch's actual capabilities.
+`artifacts_only=true` skips the hosted Mac signing build and a successful
+`verification_only=true` run checks existing signed packages, not the secrets
+that would build a new one. The desktop workflows now retain the audited
+build-number epochs and the canonical draft's verification-only replay; see
+[the desktop release procedure](DIRECT_RELEASES.md#public-release-automation).
+This does not import all release-line product fixes or the draft unified
+product-release pipeline. Review the selected source's actual capabilities.
 Never rebuild an existing immutable release just to test credentials. The new
 preflight must first be registered on main through review before GitHub can
 dispatch it on a selected reviewed branch.
+
+### Completing permanent operator access
+
+A green credential preflight completes only the credential gate. To establish
+repeatable release capability from an operator's own computer:
+
+1. Reconcile the intended source and release helpers; choose a new, unused
+   version and its audited native build reservation. Do not rebuild a frozen
+   candidate or bypass a failed native lifecycle check.
+2. With explicit build/upload authorization, prepare and sign the immutable
+   runtime/CLI pair and desktop candidate using the existing protected hosted
+   workflows. Accept their native installation, lifecycle, update and rollback
+   journeys at their actual platform boundaries.
+3. With publication authorization, publish/verify the accepted runtime, then
+   have the npm account holder bootstrap the short CLI from its accepted exact
+   archive. Configure that package's separate Trusted Publisher as described
+   below. A successful `npm whoami` is not proof of package ownership.
+4. Validate the new trust with a subsequent accepted, authorized new-version CI
+   publication. Replaying an already-published version skips `npm publish`, so
+   it does not prove OIDC trust or activate a newly configured publisher.
+5. Verify desktop publication to both repositories, exact registry downloads,
+   public update feeds and a genuine installed update journey. Record source,
+   versions, checksums and actual workflow results; do not equate green source
+   tests with a completed public release.
+
+After bootstrap and successful trust validation, routine releases use GitHub
+dispatch plus the protected credentials. No personal mirror-write permission,
+local signing keys or repeated npm login is required. Renew expiring repository
+credentials and retain normal review, acceptance and publication approvals.
 
 ## Prepare the immutable pair
 
@@ -200,6 +231,13 @@ Configure the **agentsdock package's own** npm Trusted Publisher:
 - Workflow filename: `server-npm-publish.yml` (filename only)
 - Environment: `npm-release`
 - Allow direct `npm publish`, not only staging. Dist-tag editing is unnecessary.
+
+Create the configuration when its first accepted CI publication is ready:
+[npm requires its first successful publish within two days](https://docs.npmjs.com/trusted-publishers/#trusted-publisher-configuration-expiry).
+If that window expires, delete the expired configuration and recreate it when
+ready. Do not publish an unaccepted version to beat the deadline, or assume a
+no-op replay of the bootstrap version activates trust. The later successful CI
+publication must publish a new, accepted immutable version.
 
 Preserve the existing scoped publisher, server trust key and Apple identities.
 No new Apple credential or server key is required for this integration. See
