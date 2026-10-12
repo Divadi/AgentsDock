@@ -1,5 +1,128 @@
 # Public development log
 
+## 2026-10-11 — Make release operation independent of the operator computer
+
+- Reconcile paired npm release tooling with current main while preserving the
+  frozen release branches. Include the native harness implementation as well as
+  its registered workflow, stronger split-default removal/state checks and safe
+  bounded failure identifiers. Keep failed product boundaries failed.
+- Add a manual protected credential preflight for existing GitHub release
+  access, Developer ID probe signing and read-only Apple API authentication.
+  It does not publish, submit notarization, build a product, install a service,
+  upload private diagnostics or replace signing identities. Hosted execution
+  remains pending; structural tests are not credential validation.
+- Document operator versus administrator/npm-owner responsibilities, exact
+  source selection, package-specific trust and the limitations of artifact-only
+  or verification-only runs. The scoped beta.6 runtime is public; the short CLI
+  and matched desktop publication remain incomplete. Preserve stable defaults.
+- Focused pipeline/harness/packaging source checks pass. No new candidate was
+  built and no existing signed artifact, service, credential or public release
+  was changed by this tooling update. See [the operator checklist](NPM_CLI_RELEASES.md#operating-releases-from-another-computer).
+
+## 2026-10-11 — Inherit new-chat settings from the open conversation
+
+- Both quick creation and the new-chat chooser prefer the focused conversation's
+  agent, CLI/custom connection, model, reasoning and provider-specific permissions.
+  Saved defaults apply only without an eligible open conversation, remain scoped
+  to the server, and accept older records without permission fields. Instructions,
+  native session identity, credentials and jobs are not copied.
+- Unavailable inherited agents/connections require an explicit choice instead of
+  silently switching providers. Late preference reads cannot cross server scopes.
+- Verification: 729 focused desktop tests, typecheck and production compilation
+  passed. Isolated native offscreen Electron reproduced stale model inheritance
+  with the old renderer, then exercised the new renderer via actual mouse/keyboard
+  input and production IPC/HTTP against an authenticated test service. Codex,
+  Claude and Cursor creation preserved server-side settings; a new Codex chat
+  completed a live provider turn. Unavailable OpenCode opened the chooser;
+  cancel/reopen and explicit provider selection worked. The test used isolated
+  in-memory credential storage, not the user's desktop profile.
+- Pre-merge review also covered a Claude-only availability fixture: initialization
+  cannot silently replace an unavailable inherited provider, including after
+  cancel/reopen. The native offscreen app checked the chooser against a controlled
+  catalog and created the explicitly selected Claude chat through real IPC/HTTP.
+  User testing accepted the primary inheritance workflow.
+- OpenCode availability and custom-endpoint propagation are covered by regression
+  fixtures, not live authenticated OpenCode/custom-provider runs. This is a local
+  desktop change; no public release, mobile change or primary-server update.
+
+## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
+
+- Automatic reconnect/model discovery and Recheck CLIs no longer request an
+  opaque-login handoff. Genuine native login revisions are still detected;
+  custom endpoint managers and background-work ownership remain unchanged.
+- Add a native-admin-only sign-in reload POST and wire the existing Codex CLI
+  account action to it, with English/Chinese copy and truthful pending status.
+  Account reads and page mounts remain passive; unsupported older servers keep
+  a read-only Recheck. Profile-generation fencing applies to explicit reload.
+- Log handoff source, reason and coalesced waiting/release outcomes without
+  credentials, account identity, revision digests or command content.
+- Validation: 67 focused server HTTP/auth/lifecycle tests and 527 desktop
+  transport/service/component/preload tests passed; desktop typecheck and
+  production build passed. Production desktop transport against an isolated
+  installed service passed account read/reload, browser/bearer rejection,
+  repeated catalog refreshes and two real Codex turns on the same native thread.
+  User testing reported no issue with the refresh/reconnect workflow. Live
+  keychain/background-training and implementer App-click acceptance of the new
+  explicit reload action remain pending; computer control was unavailable.
+  No public release or upgrade of existing primary services is included.
+
+## 2026-10-11 — Clean unused chats on desktop startup and explicit refresh
+
+- Recognize unused `New chat` rows without a device-local creation marker,
+  including legacy placeholders and blanks whose model/settings changed.
+  Check again after the initial online refresh when startup used an old cache;
+  do not run cleanup on ordinary background refresh or when leaving a chat.
+- Persist conditional, desktop-scoped dismissals on the server. Keep the empty
+  record recoverable so a different/offline desktop's local draft remains usable.
+  Subsequent changes make the row visible again. Explicit Delete is unchanged.
+- Flush and protect local drafts/references/uploads before requesting cleanup;
+  the server repeats its history, provider, queue, job and terminal checks under
+  its lifecycle fence. New clients use a distinct endpoint, so an older server
+  cannot interpret recovery-safe cleanup as permanent deletion.
+- Verification: reproduced the old missing-marker behavior in an isolated
+  offscreen native Electron app, then exercised the compiled app against an
+  authenticated test server through the real IPC/HTTP boundary. Startup and
+  sidebar refresh removed legacy/model-edited blanks; typed drafts and uploaded
+  files survived. Two independent desktop profiles and server/app restarts
+  preserved offline drafts and per-client cleanup. No model inference was used;
+  chats/files were disposable API fixtures and typing/refresh used real UI input.
+- Verification build: desktop source metadata `0.2.0` / 85 and server source
+  `1.0.7-beta.11`, based on main `4de6e80b`. All 805 focused desktop and 28 server
+  regressions, TypeScript and production compilation pass. Test fixtures/services
+  are isolated; no primary installation changed.
+  Availability: local source and compiled test app only; not published or merged.
+
+## 2026-10-08 — Configure custom APIs before choosing a model
+
+- Remove Model ID from Claude/OpenCode connection forms. Initial connection
+  checks are read-only; saved draft model IDs cannot trigger hidden inference.
+  Choose the default afterward from the endpoint catalog and reload it on demand.
+- When a public or missing catalog cannot verify credentials, save a private
+  `model_required` configuration, not a successful connection. It remains absent
+  from available chat providers until an explicit model check succeeds. Selecting
+  the first model runs that bounded check with a visible possible-cost notice.
+  Already verified defaults remain metadata-only; no arbitrary model is selected.
+- Preserve native administrator checks, credential redaction, revision fencing,
+  Forget and existing chat bindings. Old servers that cannot retain pending
+  configuration show an update message, not a Model ID field the user cannot find.
+- Manual model entry and service-specific official catalog links are fallback
+  controls in the later model section, not initial configuration. Include English
+  and Simplified Chinese copy. Unknown gateways are not assigned another service's
+  model list merely because they use that agent or API protocol.
+- Verification: 62 focused component/native transport tests and 49 server tests pass;
+  TypeScript and production compilation pass. These cover
+  save/list/select/check, failure, refresh, profile switching and no early model
+  call. A real loopback HTTP gateway exercises the production server routes and
+  native authentication with synthetic credentials, not a live provider account.
+  Actual App interaction remains blocked by unavailable computer control; local
+  packaging and user acceptance do not imply release or merge approval.
+- Full desktop regression: 5,064 pass and five skipped; eight build/license
+  guards pass. Package commit `70af1129` as an audited, ad-hoc signed local App
+  (package metadata `0.2.0`, build 85) with the existing isolated test profile.
+  The designated local test server runs `1.0.10-beta.2.opencode.70af1129` with
+  authenticated health and installed module/source parity verified. The primary
+  server is unchanged. No artifacts are published and merge remains pending.
+
 ## 2026-10-07 — Prepare matched npm runtime and short CLI publication
 
 - Extend the manual npm release workflow to prepare both `@agentsdock/server`
@@ -25,6 +148,64 @@
 - Preparation only: no new beta build, npm upload, release publication, signing
   identity change or existing-service modification. The short command remains
   unpublished. See [the matched npm release procedure](NPM_CLI_RELEASES.md).
+
+## 2026-10-07 — Remember custom API drafts and clarify connection fields
+
+- Keep non-secret endpoint drafts on this device per server connection and
+  provider, even after failed checks, closing settings or restarting the app.
+  Codex retains its URL too. Keys stay out of drafts; embedded URL credentials,
+  query strings and fragments are not persisted. Typing does not send requests
+  and disk writes are debounced, with a flush on close/page exit.
+- Show protocol and authentication as separate, visible fields. Mark required
+  inputs, keep provider-fixed protocols read-only, and require a model for known
+  public Zen catalogs. Restored drafts never imply a verified connection.
+  Include English and Simplified Chinese copy.
+- Verification: 81 focused component, draft, style and native transport tests
+  pass; TypeScript, eight build/license guards and production compilation pass.
+  Full desktop regression: 5,039 pass, five skipped. Filesystem-sensitive tests
+  use a POSIX temporary directory and the CI-compatible file-creation mask;
+  security checks are unchanged.
+- Package source `3a25c492` as a local ad-hoc test App, audit/sign the bundle and
+  launch it with the existing isolated local-app profile. Packaged main,
+  preload and renderer bytes match the validated build. No release publication
+  or server restart is part of this desktop follow-up.
+- A separate live Zen model check succeeds, but the reported App authentication
+  rejection has not been reproduced. Computer interaction remains disabled,
+  so actual App acceptance is still pending; this change must not be merged
+  based on component or HTTP checks alone.
+
+## 2026-10-07 — Align OpenCode custom API checks and runtime routes
+
+- Resolve Anthropic API prefixes consistently for model discovery, connection
+  checks and OpenCode runtime configuration. Root URLs and explicit `/v1` URLs
+  work without dropping gateway prefixes or changing saved binding identities.
+  Claude's SDK root convention and OpenAI-compatible routing stay unchanged.
+- Stop unknown/invalid OpenCode completions instead of treating an empty step
+  as success and waiting while the CLI makes repeated requests. Preserve partial
+  timeline text and explicit provider HTTP status diagnostics; do not dump raw
+  gateway bodies or headers. No additional retry or inference probe is added.
+- Allow a bounded 256-token output budget for explicit Claude/OpenCode model
+  checks. Reasoning models can consume the former 32/64-token budget before
+  answering; empty or reasoning-only responses still cannot verify a connection.
+  Checks remain single-shot and do not alter runtime token limits.
+- Verification: 198 focused tests pass, including URL parity, credential
+  isolation/revocation, catalog discovery, stream errors, lifecycle and MCP.
+  Regression cases fail on the prior implementation. Lock validation and
+  compilation/package-source checks pass. Existing runner fixtures emit
+  recovered missing-mailbox-table warnings; these are not live-service errors.
+- Four opt-in tests exercise real OpenCode 1.18.29 through the production
+  process runner and a synthetic loopback gateway: root URL, explicit `/v1`,
+  HTML-200 streaming response and HTTP 401. Disposable home/state and synthetic
+  keys only; no real model inference in these four repeatable smoke tests.
+  Run `tests.test_opencode_custom_api_smoke` with `OPENCODE_TEST_EXECUTABLE` set.
+- Separate live OpenCode Zen checks pass for Chat Completions, Anthropic
+  Messages and Responses. Real CLI replies also pass for Anthropic root and
+  `/v1` URLs and Responses. These checks do not establish Go subscription or
+  free-tier compatibility; neither was accepted in this validation.
+- Desktop interaction is blocked by disabled computer access. Full app
+  acceptance remains pending and the PR is held for that check, not merged.
+  This is a local test candidate, not a published release. Per-model protocols
+  and runtime output limits are not included.
 
 ## 2026-10-03 — Preserve automatic naming across follow-up messages
 

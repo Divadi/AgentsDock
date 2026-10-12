@@ -6,20 +6,71 @@ committed source snapshot and one public version; the CLI dependency must be
 `"@agentsdock/server": "VERSION"`, never a range or floating tag. The desktop
 continues to pin the signed runtime descriptor, not a floating npm channel.
 
-This document describes release preparation, not a publication receipt. As of
-2026-10-07, runtime `latest` is `1.0.9`, runtime `beta` is `1.0.10-beta.4`, and
-`agentsdock` is not public. Leave those existing bytes and stable defaults alone.
-Choose the next unused `1.0.10-beta.N` only after reconciling the reviewed release
-source with main; main's development `server/VERSION` is not a release reservation.
-Do not overwrite beta.4 or silently drop fixes maintained on its release branch.
+This document describes release tooling, not full product acceptance. As of
+2026-10-11, runtime `latest` is `1.0.9`, runtime `beta` is `1.0.10-beta.6`, and
+`agentsdock` is not public. Runtime publication run `38062694130`, attempt 1,
+verified the exact beta.6 registry package, then stopped at the explicit
+first-CLI bootstrap gate. It did not complete a matched desktop/CLI release.
+Recheck these public states before acting; leave published bytes and stable
+defaults unchanged. Main's development `server/VERSION` is not a reservation.
+Do not rebuild the frozen beta.6 candidate or silently drop release-line fixes.
 
-At the reviewed preparation pins, main `3964cf80` is an ancestor of beta.4 source
-`941bc4cd`. Start the next release branch from that frozen release source, then
-apply the reviewed pipeline changes without rewriting the old tag. A version
-bump on main alone would omit already-shipped pending-update HTTP error handling,
-signed-update lock waiting, executable packaging permissions and native build
-reservation fixes, among other release-line changes. Review the resulting merge
-and run its full source checks before accepting any new package.
+At the earlier preparation pins, main `3964cf80` was an ancestor of beta.4 source
+`941bc4cd`. Later release-line changes include pending-update HTTP handling,
+signed-update lock waiting, executable packaging permissions, native build
+reservation corrections, persistent service PATH handling and instance lifecycle
+work. This tooling change does not import those product changes into main.
+Before cutting a new candidate, reconcile the current main and reviewed release
+line explicitly, choose an unused version/build, and run full source and native
+acceptance. Neither blindly bumping main nor reusing a prior accepted artifact
+establishes that the new candidate contains the required runtime fixes.
+
+## Operating releases from another computer
+
+The operator computer can be a controller, not the signing host. Use a canonical
+checkout and authenticated GitHub CLI (or the GitHub Actions UI). GitHub-hosted
+jobs consume protected environment secrets; the operator need not download the
+Developer ID private key, Apple API key, server signing key or npm OIDC token.
+Local source checks additionally need the repository's pinned Node/pnpm and
+Python tooling. Local native builds are a separate optional setup, not a
+prerequisite for dispatching hosted builds.
+
+Keep the identities and responsibilities separate:
+
+| Responsibility | Required access |
+| --- | --- |
+| Review/push release source, dispatch jobs, inspect results | Repository write access and any required environment/review approval |
+| Canonical desktop and mirror publication from CI | Dedicated `AGENTSDOCK_RELEASE_TOKEN` stored in `direct-production`, with Contents write on both repositories and Workflows write when the target differs in workflow files |
+| Configure environment secrets/protection or grant repository access | Repository administrator; do not give the release token secret-administration privileges |
+| First short CLI publication and package trust configuration | An authorized npm account, its browser/2FA approval and package settings access; GitHub login is not npm login |
+| Routine paired npm publication | Each package's own Trusted Publisher for `server-npm-publish.yml` / `npm-release`; no local npm session or long-lived npm token |
+
+An operator who dispatches the canonical CI workflow does not also need mirror
+write access on their personal GitHub login. A local mirror publish helper does.
+Keep the existing server trust key in AgentsServer and dispatch its signing
+workflow; a source export alone must never publish a second bridge.
+
+After credentials are provisioned, register and run
+`release-credentials-preflight.yml` from a reviewed `main` or `release/*` commit,
+with `source_sha` equal to the exact dispatched commit. This manual protected
+job reads release access metadata, signs/verifies a disposable native probe
+with the existing Developer ID, and authenticates a read-only notarization
+history request. It creates no release, submits no notarization, publishes no
+package, installs no service and uploads no private diagnostics. It reports
+missing checks as failures, not an overall readiness pass.
+
+The GitHub metadata check does not prove actual release-write permission. The
+probe does not establish a full Electron build, notarization submission, public
+publication, migration or reboot acceptance. A separately authorized hosted
+native build/private draft and exact-artifact verification remain required.
+On release branches supporting them, `artifacts_only=true` skips the hosted Mac
+signing build and a successful `verification_only=true` run checks existing
+signed packages, not the secrets that would build a new one. Those desktop
+workflow enhancements and build-reservation fixes are not imported by this
+paired-npm tooling change; review the selected branch's actual capabilities.
+Never rebuild an existing immutable release just to test credentials. The new
+preflight must first be registered on main through review before GitHub can
+dispatch it on a selected reviewed branch.
 
 ## Prepare the immutable pair
 
@@ -73,14 +124,32 @@ After these workflows are registered on the default branch, dispatch
 on disposable GitHub-hosted Apple silicon macOS and Linux. It has no npm publish
 or signing operation. Never spoof its runner guards on a developer account.
 
+Registration is not implementation: the selected workflow commit must contain
+the CLI verifier, staging helper, native harness and their tests. An older main
+with only the registered YAML is not a runnable paired-release source. Supply
+the exact reviewed branch and commit rather than relying on the UI default.
+
 The native job exercises actual npm global postinstall, authenticated default
 health, installed runtime bytes/modes, repeated-install process/identity/token
 retention, list/status/info/token, named creation and lifecycle, removal
 confirmation and synthetic state retention, default lifecycle and independence
-from the original npm prefix/cache after restart. Failure receipts retain partial
-observations and never assert full product acceptance. Record the actual run,
+from the original npm prefix/cache after restart. It also stops both default
+components, verifies canceled removal preserves their exact runtime/configuration
+and token, and verifies confirmed removal unregisters both while preserving
+synthetic state and the unrelated named instance's retained state. Failure
+receipts retain partial observations and never assert full product acceptance.
+Bounded `failedCheck` identifiers must not contain private exception output.
+Record the actual run,
 attempt, source and both hashes; validate the original artifact's API digest and
 contents rather than substituting another attempt.
+
+The beta.6 diagnostic run `38027600173`, attempt 1, passed Linux but failed
+macOS immediate named stop/start fresh-process and stable-health validation
+after both commands returned success. Normal named restart passed. This remains
+a known failed product boundary; importing stronger harness checks does not fix
+the runtime or turn that result into acceptance. Preserve every original run,
+attempt and failed/full-acceptance flag. Any product correction requires a new
+candidate; do not rebuild beta.6 or weaken the lifecycle checks.
 
 Remaining release checks:
 

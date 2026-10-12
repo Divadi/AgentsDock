@@ -288,7 +288,10 @@ const defaultModals: ModalState = { settings: false, appSettings: false, newChat
 export const NEW_CHAT_DEFAULTS_PREFERENCE_KEY = 'newChatDefaults:v1'
 const DIRECT_CHAT_PLACEHOLDER_PREFERENCE_PREFIX = 'directChatPlaceholder:v1:'
 
-export interface NewChatDefaults {
+type NewChatPermissionDefaults = Pick<CreateSessionInput, 'claude_permission_mode' | 'cursor_permission_mode' | 'opencode_permission_mode' | 'codex_approval_policy' | 'codex_sandbox_mode' | 'codex_permission_profile' | 'codex_approvals_reviewer'>
+type NewChatDefaultsInput = Pick<CreateSessionInput, 'folder' | 'cwd' | 'backend' | 'codex_provider' | 'provider_connection' | 'model' | 'effort'> & NewChatPermissionDefaults
+
+export interface NewChatDefaults extends NewChatPermissionDefaults {
   version: 1
   folder: string
   cwd: string
@@ -299,7 +302,21 @@ export interface NewChatDefaults {
   effort: string | null
 }
 
-function normalizedNewChatDefaults(input: Pick<CreateSessionInput, 'folder' | 'cwd' | 'backend' | 'codex_provider' | 'provider_connection' | 'model' | 'effort'>): NewChatDefaults {
+// Only copy the selected provider's permission fields, never instructions,
+// jobs, credentials, provider-session identity or another provider's policy.
+export function newChatPermissions(input: NewChatPermissionDefaults, backend: Backend): NewChatPermissionDefaults {
+  if (backend === 'claude') return { claude_permission_mode: input.claude_permission_mode ?? null }
+  if (backend === 'cursor') return { cursor_permission_mode: input.cursor_permission_mode ?? 'default' }
+  if (backend === 'opencode') return { opencode_permission_mode: input.opencode_permission_mode ?? 'default' }
+  return {
+    codex_approval_policy: input.codex_approval_policy ?? null,
+    codex_sandbox_mode: input.codex_sandbox_mode ?? null,
+    codex_permission_profile: input.codex_permission_profile ?? null,
+    codex_approvals_reviewer: input.codex_approvals_reviewer ?? null
+  }
+}
+
+function normalizedNewChatDefaults(input: NewChatDefaultsInput): NewChatDefaults {
   return {
     version: 1,
     folder: input.folder.trim() || 'General',
@@ -308,7 +325,8 @@ function normalizedNewChatDefaults(input: Pick<CreateSessionInput, 'folder' | 'c
     ...(input.backend === 'codex' && input.codex_provider === 'custom' ? { codex_provider: 'custom' as const } : {}),
     ...(input.provider_connection === 'custom' ? { provider_connection: 'custom' as const } : {}),
     model: input.model?.trim() || null,
-    effort: input.effort?.trim() || null
+    effort: input.effort?.trim() || null,
+    ...newChatPermissions(input, input.backend)
   }
 }
 
@@ -325,6 +343,20 @@ function parseNewChatDefaults(value: unknown): NewChatDefaults | null {
     || candidate.model !== null && typeof candidate.model !== 'string'
     || candidate.effort !== null && typeof candidate.effort !== 'string'
   ) return null
+  const permissions: Record<string, readonly string[]> = {
+    claude_permission_mode: ['default', 'acceptEdits', 'plan', 'bypassPermissions', 'dontAsk', 'auto'],
+    cursor_permission_mode: ['default', 'full_access', 'plan'],
+    opencode_permission_mode: ['default', 'full_access', 'plan'],
+    codex_approval_policy: ['never', 'on-request', 'untrusted'],
+    codex_sandbox_mode: ['read-only', 'workspace-write', 'danger-full-access'],
+    codex_approvals_reviewer: ['user', 'auto_review', 'guardian_subagent']
+  }
+  for (const [key, allowed] of Object.entries(permissions)) {
+    const field = (candidate as Record<string, unknown>)[key]
+    if (field != null && (typeof field !== 'string' || !allowed.includes(field))) return null
+  }
+  if (candidate.codex_permission_profile != null && (typeof candidate.codex_permission_profile !== 'string'
+    || !candidate.codex_permission_profile.trim() || candidate.codex_permission_profile.length > 240)) return null
   return normalizedNewChatDefaults(candidate as NewChatDefaults)
 }
 
@@ -341,6 +373,7 @@ function newestAvailableSession(sessions: Session[]): Session | null {
 
 function sessionNewChatDefaults(session: Session, defaultCwd: string): NewChatDefaults {
   return normalizedNewChatDefaults({
+    ...newChatPermissions(session, session.backend),
     folder: session.folder || 'General',
     cwd: session.cwd || defaultCwd,
     backend: session.backend,
@@ -351,7 +384,16 @@ function sessionNewChatDefaults(session: Session, defaultCwd: string): NewChatDe
   })
 }
 
-export function saveNewChatDefaults(scope: WorkspaceProfileScope | null, input: Pick<CreateSessionInput, 'folder' | 'cwd' | 'backend' | 'codex_provider' | 'provider_connection' | 'model' | 'effort'>): Promise<void> {
+export function preferredNewChatDefaults(sessions: Session[], selectedSessionId: string | null, defaultCwd: string, stored: unknown): NewChatDefaults | null {
+  const opened = sessions.find(session => session.id === selectedSessionId && !session.archived)
+  if (opened) return sessionNewChatDefaults(opened, defaultCwd)
+  const saved = parseNewChatDefaults(stored)
+  if (saved) return { ...saved, cwd: saved.cwd || defaultCwd }
+  const newest = newestAvailableSession(sessions)
+  return newest ? sessionNewChatDefaults(newest, defaultCwd) : null
+}
+
+export function saveNewChatDefaults(scope: WorkspaceProfileScope | null, input: NewChatDefaultsInput): Promise<void> {
   try {
     return setWorkspacePreference(scope, NEW_CHAT_DEFAULTS_PREFERENCE_KEY, normalizedNewChatDefaults(input))
   } catch (error) {
@@ -526,6 +568,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   modals: defaultModals,
 
   async initialize() {
+    const openedAt = Date.now()
     if (get().initialized || initializationInFlight) return
     pendingNamespaceAdoption = null
     if (!window.agentsDock) {
@@ -985,7 +1028,27 @@ export const useAppStore = create<AppState>((set, get) => ({
         handleServerConnection(bootstrapConnection)
       }
       updateBadge(payload.sessions)
-      if (payload.activeProfileId) workspaceTransition.follow(refreshProfileAfterBootstrap(payload.activeProfileId, payload.profileGeneration ?? 0, get, set))
+      if (payload.activeProfileId) {
+        const refreshedScope = captureProfileScope(get())
+        workspaceTransition.follow(refreshProfileAfterBootstrap(payload.activeProfileId, payload.profileGeneration ?? 0, get, set)
+          .then(async () => {
+            if (!profileScopeMatches(refreshedScope, get()) || get().creatingChat) return
+            // The first bootstrap can be cache-only (including pre-upgrade
+            // rows without the server capability). Recheck once after the
+            // startup refresh, never on background polling or navigation.
+            const current = get()
+            const snapshot = { activeProfileId: current.activeProfileId ?? undefined,
+              profileGeneration: current.profileGeneration, profiles: current.profiles,
+              sessions: current.sessions, jobs: current.jobs }
+            const cleanup = startupChatCleanupFromBootstrap(snapshot)
+            if (!cleanup) return
+            cleanup.sessionIds = new Set(snapshot.sessions.filter(session => cleanup.sessionIds.has(session.id)
+              && Date.parse(session.created_at ?? '') < Math.floor(openedAt / 1000) * 1000).map(session => session.id))
+            if (!cleanup.sessionIds.size) return
+            const cleaned = await removeUntouchedStartupChats(snapshot, cleanup, () => profileScopeMatches(refreshedScope, get()))
+            if (profileScopeMatches(refreshedScope, get())) set({ sessions: cleaned.sessions })
+          }))
+      }
       await hydrateVisibleChatPanes(get)
     } catch (error) {
       if (!profileScopeMatches(scope, get())) return
@@ -2084,7 +2147,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       return
     }
     const profileScope = captureProfileScope(initial)
-    const lastOpenedSessionId = initial.selectedSessionId
+    // Freeze the initiating pane/settings before the asynchronous preference read.
+    const openedDefaults = preferredNewChatDefaults(initial.sessions.filter(session => session.id === initial.selectedSessionId), initial.selectedSessionId, initial.health?.default_cwd?.trim() || '', null)
     set({ creatingChat: true })
     try {
       let stored: unknown = null
@@ -2095,22 +2159,11 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       if (!workspaceScopeMatches(preferenceScope, get()) || !profileScopeMatches(profileScope, get())) return
       const current = get()
-      const lastOpened = current.sessions.find(session => session.id === lastOpenedSessionId && !session.archived) ?? null
-      const seed = lastOpened ?? newestAvailableSession(current.sessions)
-      let defaults = parseNewChatDefaults(stored)
-        ?? (seed ? sessionNewChatDefaults(seed, current.health?.default_cwd?.trim() || '') : null)
+      const defaults = openedDefaults ?? preferredNewChatDefaults(current.sessions, null, current.health?.default_cwd?.trim() || '', stored)
       if (!defaults) {
         set({ creatingChat: false })
         current.setModal('newChat', true)
         return
-      }
-      const defaultCwd = current.health?.default_cwd?.trim() || ''
-      const lastOpenedFolder = lastOpened ? lastOpened.folder?.trim() || 'General' : null
-      const lastOpenedCwd = lastOpened ? lastOpened.cwd?.trim() || defaultCwd : null
-      defaults = {
-        ...defaults,
-        folder: lastOpenedFolder ?? defaults.folder,
-        cwd: lastOpenedCwd ?? (defaults.cwd || defaultCwd)
       }
       if (
         !selectableChatBackendChoices(current.health, current.runtimeCatalog).includes(chatBackendChoice(defaults))
@@ -2130,8 +2183,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         model: defaults.model,
         effort: defaults.effort,
         system_prompt: null,
-        cursor_permission_mode: defaults.backend === 'cursor' ? 'default' : null,
-        opencode_permission_mode: defaults.backend === 'opencode' ? 'default' : null
+        ...newChatPermissions(defaults, defaults.backend)
       }
       const session = await window.agentsDock.sessions.create(input)
       if (!workspaceScopeMatches(preferenceScope, get()) || !profileScopeMatches(profileScope, get())) return
@@ -3217,10 +3269,12 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
     serverIdentity
   }
   try {
-    const markers = new Map<string, DirectChatPlaceholderMarker>()
+    const markers = new Map<string, DirectChatPlaceholderMarker | null>()
     await Promise.all([...cleanup.sessionIds].map(async sessionId => {
       const marker = await getWorkspacePreference<unknown>(preferenceScope, directChatPlaceholderKey(sessionId), null)
-      if (isDirectChatPlaceholderMarker(marker)) markers.set(sessionId, marker)
+      const session = payload.sessions.find(candidate => candidate.id === sessionId)
+      if (session?.empty_chat_cleanup === 'client-v1') markers.set(sessionId, null)
+      else if (isDirectChatPlaceholderMarker(marker)) markers.set(sessionId, marker)
     }))
     if (!profileScopeIsCurrent() || !markers.size) return payload
 
@@ -3265,7 +3319,7 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
         ])
         if (!profileScopeIsCurrent()) return payload
         if (
-          !directChatPlaceholderMarkerMatches(marker, session)
+          !(session.empty_chat_cleanup === 'client-v1' || directChatPlaceholderMarkerMatches(marker, session))
           || typeof draft !== 'string'
           || draft.length > 0
           || !Array.isArray(chatReferences)
@@ -3291,7 +3345,7 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
         if (
           !confirmed
           || !isUntouchedNewChat(confirmed)
-          || !directChatPlaceholderMarkerMatches(marker, confirmed)
+          || !(confirmed.empty_chat_cleanup === 'client-v1' || directChatPlaceholderMarkerMatches(marker, confirmed))
           || liveJobs.some(job => job.session_id === sessionId)
           || livePorts.some(port => port.sessionId === sessionId)
         ) continue

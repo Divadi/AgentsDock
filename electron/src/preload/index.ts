@@ -242,6 +242,7 @@ const api: AgentsDockAPI = {
   codex: {
     serverGoals: () => ipcRenderer.invoke('codex:server-goals:get'),
     auth: scope => ipcRenderer.invoke('codex:auth:get', scope),
+    reloadAuth: scope => ipcRenderer.invoke('codex:auth:reload', scope),
     provider: scope => ipcRenderer.invoke('codex:provider:get', scope),
     providerModels: (scope, sessionId) => ipcRenderer.invoke('codex:provider:models', scope, sessionId),
     testProvider: (scope, input) => ipcRenderer.invoke('codex:provider:test', scope, input),

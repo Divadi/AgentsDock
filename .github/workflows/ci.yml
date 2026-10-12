@@ -26,9 +26,9 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Verify public CLI and existing signed-update entry point
-        run: node --test server/npm/cli.test.cjs server/npm/agentsdock/cli.test.cjs server/npm/agentsdock/postinstall.test.cjs
+        run: node --test server/npm/cli.test.cjs server/npm/agentsdock/*.test.cjs
       - name: Verify matched npm staging and publication guards
-        run: node --test scripts/tests/verify*publication.test.mjs scripts/tests/agentsdock_cli_candidate_release.test.mjs scripts/tests/server_npm_publish_workflow.test.mjs
+        run: node --test scripts/tests/verify*publication.test.mjs scripts/tests/agentsdock_cli_candidate_release.test.mjs scripts/tests/server_npm_publish_workflow.test.mjs scripts/tests/release_credentials_preflight.test.mjs
       - name: Verify disposable native CLI acceptance guards without creating services
         env:
           PYTHONDONTWRITEBYTECODE: "1"

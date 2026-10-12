@@ -980,7 +980,7 @@ describe('instant new chat defaults', () => {
     expect(useAppStore.getState().creatingChat).toBe(false)
   })
 
-  it('creates once from the last-opened chat location and saved runtime defaults', async () => {
+  it('creates once from the last-opened chat runtime and permissions instead of saved defaults', async () => {
     const stored = { version: 1, folder: 'Saved', cwd: '/work/saved', backend: 'claude', model: 'claude-sonnet', effort: 'high' }
     const created = deferred<Session>()
     const create = vi.fn(() => created.promise)
@@ -998,8 +998,8 @@ describe('instant new chat defaults', () => {
     useAppStore.setState({
       requestNewChat,
       profiles: [profile], activeProfileId: profile.id, profileGeneration: 1, switchingProfileId: null,
-      sessions: [{ id: 'older', title: 'Older chat', folder: 'Older', cwd: '/work/older', backend: 'codex', model: 'gpt-old' }],
-      selectedSessionId: 'older', folderOrder: ['Older', 'Fresh'], health: { ok: true }, runtimeCatalog: { backends: { claude: { native_credentials_present: true, models: [], efforts: [] } } },
+      sessions: [{ id: 'older', title: 'Older chat', folder: 'Older', cwd: '/work/older', backend: 'codex', model: 'gpt-old', effort: 'low', codex_approval_policy: 'on-request', codex_sandbox_mode: 'read-only', codex_permission_profile: 'safe', codex_approvals_reviewer: 'user' }],
+      selectedSessionId: 'older', folderOrder: ['Older', 'Fresh'], health: { ok: true }, runtimeCatalog: { backends: { codex: { native_credentials_present: true, models: [], efforts: [] }, claude: { native_credentials_present: true, models: [], efforts: [] } } },
       refreshSessions: refresh, selectSession: select, creatingChat: false, modals: closedModals
     })
 
@@ -1007,12 +1007,12 @@ describe('instant new chat defaults', () => {
     const duplicate = useAppStore.getState().requestNewChat()
     await vi.waitFor(() => expect(create).toHaveBeenCalledOnce())
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'New chat', folder: 'Older', cwd: '/work/older', backend: 'claude', model: 'claude-sonnet', effort: 'high'
+      title: 'New chat', folder: 'Older', cwd: '/work/older', backend: 'codex', model: 'gpt-old', effort: 'low', codex_approval_policy: 'on-request', codex_sandbox_mode: 'read-only', codex_permission_profile: 'safe', codex_approvals_reviewer: 'user'
     }))
-    created.resolve({ id: 'created', title: 'New chat', folder: 'Older', cwd: '/work/older', backend: 'claude', model: 'claude-sonnet', effort: 'high' })
+    created.resolve({ id: 'created', title: 'New chat', folder: 'Older', cwd: '/work/older', backend: 'codex', model: 'gpt-old', effort: 'low' })
     await Promise.all([first, duplicate])
 
-    expect(setScoped).toHaveBeenCalledWith(expect.objectContaining({ profileId: profile.id, serverIdentity: profile.serverIdentity }), 'newChatDefaults:v1', expect.objectContaining({ folder: 'Older', cwd: '/work/older', backend: 'claude', model: 'claude-sonnet' }))
+    expect(setScoped).toHaveBeenCalledWith(expect.objectContaining({ profileId: profile.id, serverIdentity: profile.serverIdentity }), 'newChatDefaults:v1', expect.objectContaining({ folder: 'Older', cwd: '/work/older', backend: 'codex', model: 'gpt-old', codex_approval_policy: 'on-request', codex_sandbox_mode: 'read-only' }))
     expect(setScoped).toHaveBeenCalledWith(
       expect.objectContaining({ profileId: profile.id, serverIdentity: profile.serverIdentity }),
       'directChatPlaceholder:v1:created',
@@ -1041,7 +1041,7 @@ describe('instant new chat defaults', () => {
       requestNewChat,
       profiles: [profile], activeProfileId: profile.id, profileGeneration: 1, switchingProfileId: null,
       sessions: [{ id: 'selected', title: 'Selected chat', folder: 'Research', cwd: '/work/research', backend: 'codex', model: 'gpt-current' }],
-      selectedSessionId: 'selected', folderOrder: ['Older', 'Research'], health: { ok: true }, runtimeCatalog: { backends: { claude: { native_credentials_present: true, models: [], efforts: [] } } },
+      selectedSessionId: 'selected', folderOrder: ['Older', 'Research'], health: { ok: true }, runtimeCatalog: { backends: { codex: { native_credentials_present: true, models: [], efforts: [] }, claude: { native_credentials_present: true, models: [], efforts: [] } } },
       refreshSessions: vi.fn().mockResolvedValue(undefined), selectSession: vi.fn().mockResolvedValue(undefined),
       creatingChat: false, modals: closedModals
     })
@@ -1049,12 +1049,12 @@ describe('instant new chat defaults', () => {
     await useAppStore.getState().requestNewChat()
 
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      folder: 'Research', cwd: '/work/research', backend: 'claude', model: 'claude-sonnet', effort: 'high'
+      folder: 'Research', cwd: '/work/research', backend: 'codex', model: 'gpt-current', effort: null
     }))
     expect(setScoped).toHaveBeenCalledWith(
       expect.objectContaining({ profileId: profile.id, serverIdentity: profile.serverIdentity }),
       'newChatDefaults:v1',
-      expect.objectContaining({ folder: 'Research', cwd: '/work/research', backend: 'claude', model: 'claude-sonnet', effort: 'high' })
+      expect.objectContaining({ folder: 'Research', cwd: '/work/research', backend: 'codex', model: 'gpt-current', effort: null })
     )
   })
 
@@ -1078,7 +1078,7 @@ describe('instant new chat defaults', () => {
         { id: 'first', title: 'First chat', folder: 'First', cwd: '/work/first', backend: 'codex' },
         { id: 'second', title: 'Second chat', folder: 'Second', cwd: '/work/second', backend: 'codex' }
       ],
-      selectedSessionId: 'first', folderOrder: ['First', 'Second'], health: { ok: true }, runtimeCatalog: { backends: { claude: { native_credentials_present: true, models: [], efforts: [] } } },
+      selectedSessionId: 'first', folderOrder: ['First', 'Second'], health: { ok: true }, runtimeCatalog: { backends: { codex: { native_credentials_present: true, models: [], efforts: [] }, claude: { native_credentials_present: true, models: [], efforts: [] } } },
       refreshSessions: vi.fn().mockResolvedValue(undefined), selectSession: vi.fn().mockResolvedValue(undefined),
       creatingChat: false, modals: closedModals
     })
@@ -1091,13 +1091,31 @@ describe('instant new chat defaults', () => {
     expect(create).toHaveBeenCalledWith(expect.objectContaining({ folder: 'First', cwd: '/work/first' }))
   })
 
-  it('falls back to the chooser when persisted runtime defaults are stale', async () => {
+  it('does not inherit another server settings after an in-flight preference read', async () => {
+    const stored = deferred<unknown>()
+    const create = vi.fn()
+    Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
+      native: { analyticsDisabled: true },
+      preferences: { getScoped: vi.fn(() => stored.promise) }, sessions: { create }
+    } as unknown as AgentsDockAPI })
+    useAppStore.setState({ requestNewChat, profiles: [profile], activeProfileId: profile.id,
+      profileGeneration: 1, switchingProfileId: null, sessions: [{ id: 'opened', title: 'Opened', backend: 'codex', codex_sandbox_mode: 'read-only' }],
+      selectedSessionId: 'opened', creatingChat: false, modals: closedModals })
+    const request = useAppStore.getState().requestNewChat()
+    useAppStore.setState({ activeProfileId: 'another-server', profileGeneration: 2, selectedSessionId: null, sessions: [] })
+    stored.resolve({ version: 1, folder: 'Saved', cwd: '/saved', backend: 'claude', model: null, effort: null })
+    await request
+    expect(create).not.toHaveBeenCalled()
+    expect(useAppStore.getState().modals.newChat).toBe(false)
+  })
+
+  it('requires a choice for an unavailable opened provider instead of reverting to available saved settings', async () => {
     const create = vi.fn()
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
       value: {
         native: { analyticsDisabled: true },
-        preferences: { getScoped: vi.fn().mockResolvedValue({ version: 1, folder: 'General', cwd: '/work', backend: 'cursor', model: 'auto', effort: null }) },
+        preferences: { getScoped: vi.fn().mockResolvedValue({ version: 1, folder: 'General', cwd: '/work', backend: 'claude', model: 'sonnet', effort: null }) },
         sessions: { create }
       } as unknown as AgentsDockAPI
     })
@@ -1105,7 +1123,7 @@ describe('instant new chat defaults', () => {
       requestNewChat,
       profiles: [profile], activeProfileId: profile.id, profileGeneration: 1, switchingProfileId: null,
       sessions: [{ id: 'chat', title: 'Existing', folder: 'General', backend: 'codex' }],
-      selectedSessionId: 'chat', folderOrder: ['General'], health: { ok: true, capabilities: {} }, runtimeCatalog: null,
+      selectedSessionId: 'chat', folderOrder: ['General'], health: { ok: true, capabilities: {} }, runtimeCatalog: { backends: { claude: { native_credentials_present: true, models: [], efforts: [] } } },
       creatingChat: false, modals: closedModals
     })
 
@@ -4559,6 +4577,38 @@ describe('untouched startup chat cleanup', () => {
     await refreshSessions(true)
     expect(harness.remove).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ profileId: profile.id }), empty.id, empty.updated_at)
     expect(useAppStore.getState().sessions.map(s => s.id)).toEqual([draft.id])
+  })
+
+  it('cleans legacy blanks without local markers, including changed model settings, and preserves drafts', async () => {
+    const empty = untouchedStartupChat('legacy-empty', { empty_chat_cleanup: 'client-v1', model: 'new-model' })
+    const draft = untouchedStartupChat('legacy-draft', { empty_chat_cleanup: 'client-v1' })
+    const harness = installStartupCleanupHarness(profile, [empty, draft])
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, key, fallback) =>
+      key === `draft:${draft.id}` ? 'Unsent on this desktop' as any : fallback)
+    await useAppStore.getState().initialize()
+    expect(harness.remove).toHaveBeenCalledExactlyOnceWith(expect.anything(), empty.id, empty.updated_at)
+    expect(useAppStore.getState().sessions.map(s => s.id)).toEqual([draft.id])
+  })
+
+  it('preserves unmarked blanks on an old server and skips background-refresh cleanup', async () => {
+    const empty = untouchedStartupChat('legacy-server')
+    const harness = installStartupCleanupHarness(profile, [empty])
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, _key, fallback) => fallback)
+    await useAppStore.getState().initialize()
+    expect(harness.remove).not.toHaveBeenCalled()
+    useAppStore.setState({ sessions: [{ ...empty, empty_chat_cleanup: 'client-v1' }] })
+    await refreshSessions()
+    expect(harness.remove).not.toHaveBeenCalled()
+  })
+
+  it('checks the first online startup result when the initial cache has no candidates', async () => {
+    const empty = untouchedStartupChat('fresh-online', { empty_chat_cleanup: 'client-v1' })
+    const harness = installStartupCleanupHarness(profile, [empty])
+    vi.mocked(window.agentsDock.bootstrap).mockResolvedValue(startupCleanupBootstrap(profile, []))
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, _key, fallback) => fallback)
+    await useAppStore.getState().initialize()
+    await vi.waitFor(() => expect(harness.remove).toHaveBeenCalledExactlyOnceWith(expect.anything(), empty.id, empty.updated_at))
+    expect(useAppStore.getState().sessions).toEqual([])
   })
 
   it('does not fall back to ordinary Delete when the server rejects conditional cleanup', async () => {

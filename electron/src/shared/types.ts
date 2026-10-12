@@ -278,6 +278,8 @@ export type CodexServerSettingsScope = Pick<WorkspaceProfileScope, 'profileId' |
 
 /** Native Codex account metadata only. Credentials never cross back to the renderer. */
 export interface CodexAuthStatus {
+  login_reload_available?: boolean
+  login_reload_pending?: boolean
   available: boolean
   auth_mode: 'apiKey' | 'chatgpt' | 'other' | 'none'
   email: string | null
@@ -427,6 +429,9 @@ export interface SessionSubagentLimitControl {
 }
 
 export interface Session {
+  /** Recoverable, desktop-scoped empty-row cleanup; absent on older servers. */
+  empty_chat_cleanup?: 'client-v1'
+
   id: string
   title: string
   folder?: string | null
