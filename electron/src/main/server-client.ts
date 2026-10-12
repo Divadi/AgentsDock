@@ -290,6 +290,8 @@ interface ClientConfiguration {
 }
 
 export interface AgentServerClientOptions {
+  placeholderClientId?: string
+
   /** Test seam; production derives a bounded deadline from the opened file size. */
   uploadTimeoutMs?: number
   /** Test seam which avoids wall-clock waits when exercising upload expiry. */
@@ -324,11 +326,13 @@ export class TeamHubBootstrapTransportError extends Error {
 }
 
 export class AgentServerClient {
+  private readonly placeholderClientId?: string
   private configuration: ClientConfiguration
   private readonly uploadTimeoutMs: number | null
   private readonly timeoutSignal: (timeoutMs: number) => AbortSignal
 
   constructor(baseURL: string, token: string, options: AgentServerClientOptions = {}) {
+    this.placeholderClientId = options.placeholderClientId
     this.configuration = createConfiguration(baseURL, token)
     this.uploadTimeoutMs = options.uploadTimeoutMs === undefined ? null : positiveTimeout(options.uploadTimeoutMs)
     this.timeoutSignal = options.timeoutSignal ?? (timeoutMs => AbortSignal.timeout(timeoutMs))
@@ -900,7 +904,11 @@ export class AgentServerClient {
       body: JSON.stringify({ enabled })
     })
   }
-  async sessions(): Promise<Session[]> { return (await this.get<{ sessions: Session[] }>('/api/sessions?summary=true')).sessions }
+  async sessions(): Promise<Session[]> {
+    const query = new URLSearchParams({ summary: 'true' })
+    if (this.placeholderClientId) query.set('placeholder_client_id', this.placeholderClientId)
+    return (await this.get<{ sessions: Session[] }>(`/api/sessions?${query}`)).sessions
+  }
   async jobs(): Promise<Job[]> { return (await this.get<{ jobs: Job[] }>('/api/jobs')).jobs }
 
   async pinnedItems(sessionId: string): Promise<PinnedItemsSnapshot> {
@@ -1058,9 +1066,10 @@ export class AgentServerClient {
   }
 
   async discardEmptySession(sessionId: string, updatedAt: string): Promise<boolean> {
-    const query = new URLSearchParams({ expected_updated_at: updatedAt })
-    const response = await this.post<{ deleted?: boolean }>(`/api/sessions/${encodeURIComponent(sessionId)}/discard-empty?${query}`, {})
-    return response.deleted === true
+    if (!this.placeholderClientId) return false
+    const query = new URLSearchParams({ expected_updated_at: updatedAt, placeholder_client_id: this.placeholderClientId })
+    const response = await this.post<{ dismissed?: boolean }>(`/api/sessions/${encodeURIComponent(sessionId)}/dismiss-empty?${query}`, {})
+    return response.dismissed === true
   }
 
   async forkSession(sessionId: string): Promise<{ session: Session; sessions?: Session[] }> {

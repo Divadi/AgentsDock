@@ -429,6 +429,9 @@ export interface SessionSubagentLimitControl {
 }
 
 export interface Session {
+  /** Recoverable, desktop-scoped empty-row cleanup; absent on older servers. */
+  empty_chat_cleanup?: 'client-v1'
+
   id: string
   title: string
   folder?: string | null
