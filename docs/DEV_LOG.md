@@ -13,9 +13,11 @@
   credentials, account identity, revision digests or command content.
 - Validation: 67 focused server HTTP/auth/lifecycle tests and 527 desktop
   transport/service/component/preload tests passed; desktop typecheck and
-  production build passed. Isolated live-service acceptance is in progress.
-  Actual App interaction is blocked by disabled computer control and remains
-  pending; no public release, push or merge is included in this change.
+  production build passed. Production desktop transport against an isolated
+  installed service passed account read/reload, browser/bearer rejection,
+  repeated catalog refreshes and two real Codex turns on the same native thread.
+  Live keychain/background-training and actual App clicking remain pending;
+  computer control was unavailable. No public release, push or merge is included.
 
 ## 2026-10-08 — Configure custom APIs before choosing a model
 

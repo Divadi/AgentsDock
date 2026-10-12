@@ -85,8 +85,9 @@ def native_login_revision(env: dict[str, str], *, cwd: str) -> LoginRevision | N
 
     Ignore rotating access/refresh tokens and last_refresh. OIDC auth_time is
     stable across refresh but changes on an interactive authentication. Without
-    it we can detect an account switch, not prove a same-account re-login;
-    Recheck CLIs provides an explicit handoff for that case and keyring stores.
+    it we can detect an account switch, not prove a same-account re-login.
+    Explicit native-admin reload can hand off opaque/keyring logins; an
+    unchanged known revision remains observational even on explicit reload.
     Missing/malformed files are not evidence of a new login. No secret survives
     this bounded read except a process-keyed comparison digest.
     """

@@ -98,7 +98,7 @@ leases, start-lock races, idle/queued/busy chats, goals, side chats, subagents,
 background terminals, unsubscribe proof, cancellation and failed replacement.
 Existing native lifecycle, authentication and client contracts are checked too.
 
-Final local validation: 621 focused server tests and 43 existing desktop
+Original handoff validation: 621 focused server tests and 43 existing desktop
 runtime-catalog/health tests passed, with production-module compilation and
 diff checks. An earlier broader run hit the existing force-send test's
 one-second startup timeout; the final complete focused run passed that case.
@@ -114,4 +114,21 @@ remember a phrase, re-login with the same native account, recheck if needed,
 and continue the same thread while a second chat remains active. Separately
 exercise account switching and a keychain-backed login. Verify no duplicate
 turn, unchanged provider ID/history, and truthful pending/failure states.
-These live OAuth/model/client checks remain unverified in this local change.
+These live OAuth/account-switch/client checks remain unverified.
+
+### Catalog-refresh separation validation
+
+The follow-up fix passed 67 focused server tests and 527 desktop tests, plus
+desktop typecheck and production build. HTTP regressions cover repeated forced
+catalog refreshes with an opaque login and owned background terminals, explicit
+reload, continued ownership protection, native-only authorization, and redacted
+source/waiting logs.
+
+An isolated installed service was exercised using the production desktop
+transport (only the Electron log-directory lookup was substituted for headless
+execution). Account GET, explicit reload POST, browser/bearer rejection, five
+forced catalog refreshes and two real native Codex model turns passed. The
+follow-up retained the same provider thread. No native credentials were changed;
+no running training jobs were used. The opaque-login/background-work combination
+is covered by isolated regressions, not live keychain/long-training acceptance.
+Actual App clicking remains pending because computer control was unavailable.
