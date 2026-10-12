@@ -11,9 +11,16 @@
 - Validation: 172 focused checks passed, including component fixtures for
   browsing, errors/retry, paging, stale responses, English/Chinese labels and
   the Files-to-editor handoff. TypeScript and production compilation passed.
+  The full desktop run had 5,125 passes and five skips; its only failure was an
+  existing clipboard-permission fixture under umask 077, which passed with its
+  expected umask 022; all 421 service checks passed on that rerun. All eight
+  compilation-output/license checks passed.
   Native desktop acceptance is pending because computer control is unavailable;
   mocked IPC checks do not establish the real app/server journey. Availability:
-  source only. No server API change or restart is required.
+  local desktop package, version 0.2.0/build 85, packaged source `61265aca`.
+  Bundle audit, strict ad-hoc signature verification and packaged-renderer byte
+  comparison passed. The package uses isolated app data with automatic updates
+  disabled. No server API change or restart is required.
 
 ## 2026-10-11 — Integrate connection pairing with matched npm releases
 
