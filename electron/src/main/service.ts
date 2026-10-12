@@ -492,7 +492,15 @@ export class AppService {
     this.clipboardTempRoot = options.clipboardTempRoot ?? app.getPath('temp')
     this.portTunnels.setChangeListener?.(ports => this.emitForwardedPorts(ports))
     appLog('startup', 'local cache ready')
-    this.clientFactory = options.clientFactory ?? ((serverUrl, accessToken) => new AgentServerClient(serverUrl, accessToken))
+    this.clientFactory = options.clientFactory ?? ((serverUrl, accessToken) => {
+      // One durable identity per desktop data directory, shared by server aliases.
+      let id = this.cache.preference<string>('desktop', 'emptyChatClientId:v1', '')
+      if (!id) {
+        id = randomUUID()
+        this.cache.putPreference('desktop', 'emptyChatClientId:v1', id)
+      }
+      return new AgentServerClient(serverUrl, accessToken, { placeholderClientId: id })
+    })
     this.onServerReachable = options.onServerReachable
     this.onServerUnavailable = options.onServerUnavailable
     this.serverRestartReconnectTimeoutMs = options.serverRestartReconnectTimeoutMs ?? SERVER_RESTART_RECONNECT_TIMEOUT_MS

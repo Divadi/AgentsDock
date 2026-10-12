@@ -1,5 +1,31 @@
 # Public development log
 
+## 2026-10-11 — Clean unused chats on desktop startup and explicit refresh
+
+- Recognize unused `New chat` rows without a device-local creation marker,
+  including legacy placeholders and blanks whose model/settings changed.
+  Check again after the initial online refresh when startup used an old cache;
+  do not run cleanup on ordinary background refresh or when leaving a chat.
+- Persist conditional, desktop-scoped dismissals on the server. Keep the empty
+  record recoverable so a different/offline desktop's local draft remains usable.
+  Subsequent changes make the row visible again. Explicit Delete is unchanged.
+- Flush and protect local drafts/references/uploads before requesting cleanup;
+  the server repeats its history, provider, queue, job and terminal checks under
+  its lifecycle fence. New clients use a distinct endpoint, so an older server
+  cannot interpret recovery-safe cleanup as permanent deletion.
+- Verification: reproduced the old missing-marker behavior in an isolated
+  offscreen native Electron app, then exercised the compiled app against an
+  authenticated test server through the real IPC/HTTP boundary. Startup and
+  sidebar refresh removed legacy/model-edited blanks; typed drafts and uploaded
+  files survived. Two independent desktop profiles and server/app restarts
+  preserved offline drafts and per-client cleanup. No model inference was used;
+  chats/files were disposable API fixtures and typing/refresh used real UI input.
+- Verification build: desktop source metadata `0.2.0` / 85 and server source
+  `1.0.7-beta.11`, based on main `4de6e80b`. All 805 focused desktop and 28 server
+  regressions, TypeScript and production compilation pass. Test fixtures/services
+  are isolated; no primary installation changed.
+  Availability: local source and compiled test app only; not published or merged.
+
 ## 2026-10-08 — Configure custom APIs before choosing a model
 
 - Remove Model ID from Claude/OpenCode connection forms. Initial connection

@@ -526,6 +526,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   modals: defaultModals,
 
   async initialize() {
+    const openedAt = Date.now()
     if (get().initialized || initializationInFlight) return
     pendingNamespaceAdoption = null
     if (!window.agentsDock) {
@@ -985,7 +986,27 @@ export const useAppStore = create<AppState>((set, get) => ({
         handleServerConnection(bootstrapConnection)
       }
       updateBadge(payload.sessions)
-      if (payload.activeProfileId) workspaceTransition.follow(refreshProfileAfterBootstrap(payload.activeProfileId, payload.profileGeneration ?? 0, get, set))
+      if (payload.activeProfileId) {
+        const refreshedScope = captureProfileScope(get())
+        workspaceTransition.follow(refreshProfileAfterBootstrap(payload.activeProfileId, payload.profileGeneration ?? 0, get, set)
+          .then(async () => {
+            if (!profileScopeMatches(refreshedScope, get()) || get().creatingChat) return
+            // The first bootstrap can be cache-only (including pre-upgrade
+            // rows without the server capability). Recheck once after the
+            // startup refresh, never on background polling or navigation.
+            const current = get()
+            const snapshot = { activeProfileId: current.activeProfileId ?? undefined,
+              profileGeneration: current.profileGeneration, profiles: current.profiles,
+              sessions: current.sessions, jobs: current.jobs }
+            const cleanup = startupChatCleanupFromBootstrap(snapshot)
+            if (!cleanup) return
+            cleanup.sessionIds = new Set(snapshot.sessions.filter(session => cleanup.sessionIds.has(session.id)
+              && Date.parse(session.created_at ?? '') < Math.floor(openedAt / 1000) * 1000).map(session => session.id))
+            if (!cleanup.sessionIds.size) return
+            const cleaned = await removeUntouchedStartupChats(snapshot, cleanup, () => profileScopeMatches(refreshedScope, get()))
+            if (profileScopeMatches(refreshedScope, get())) set({ sessions: cleaned.sessions })
+          }))
+      }
       await hydrateVisibleChatPanes(get)
     } catch (error) {
       if (!profileScopeMatches(scope, get())) return
@@ -3217,10 +3238,12 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
     serverIdentity
   }
   try {
-    const markers = new Map<string, DirectChatPlaceholderMarker>()
+    const markers = new Map<string, DirectChatPlaceholderMarker | null>()
     await Promise.all([...cleanup.sessionIds].map(async sessionId => {
       const marker = await getWorkspacePreference<unknown>(preferenceScope, directChatPlaceholderKey(sessionId), null)
-      if (isDirectChatPlaceholderMarker(marker)) markers.set(sessionId, marker)
+      const session = payload.sessions.find(candidate => candidate.id === sessionId)
+      if (session?.empty_chat_cleanup === 'client-v1') markers.set(sessionId, null)
+      else if (isDirectChatPlaceholderMarker(marker)) markers.set(sessionId, marker)
     }))
     if (!profileScopeIsCurrent() || !markers.size) return payload
 
@@ -3265,7 +3288,7 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
         ])
         if (!profileScopeIsCurrent()) return payload
         if (
-          !directChatPlaceholderMarkerMatches(marker, session)
+          !(session.empty_chat_cleanup === 'client-v1' || directChatPlaceholderMarkerMatches(marker, session))
           || typeof draft !== 'string'
           || draft.length > 0
           || !Array.isArray(chatReferences)
@@ -3291,7 +3314,7 @@ async function removeUntouchedStartupChats<T extends CleanupSnapshot>(
         if (
           !confirmed
           || !isUntouchedNewChat(confirmed)
-          || !directChatPlaceholderMarkerMatches(marker, confirmed)
+          || !(confirmed.empty_chat_cleanup === 'client-v1' || directChatPlaceholderMarkerMatches(marker, confirmed))
           || liveJobs.some(job => job.session_id === sessionId)
           || livePorts.some(port => port.sessionId === sessionId)
         ) continue
