@@ -73,8 +73,11 @@ Server identity scopes sessions, preferences, timeline rows, read state, jobs,
 files, and pins so aliases for one server share data without contaminating a
 different server.
 
-Settings → Server has per-profile actions to copy the saved access token and
-generate/save a connection QR image, without switching the active server.
+Settings → Server starts with collapsed cards showing each saved server's name
+and connection status. Add server is above the cards. Expand a card to view its
+details and edit/remove/use the profile. Token copying and QR generation/saving
+do not switch the active server. The active card also contains its health/restart
+controls.
 Persistent goals have no server-wide Settings toggle. Updated servers keep the
 capability available by default; each chat retains its own goal controls.
 Connection QR import still needs a matching mobile implementation; the image

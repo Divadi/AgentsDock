@@ -1,5 +1,22 @@
 # Public development log
 
+## 2026-10-11 — Collapsible server settings cards
+
+- Match the My Agents settings layout with server cards collapsed by default.
+  Keep each name, connection status and active selection visible; place address,
+  identity/version, edit/remove/use, token copy and QR actions inside the card.
+  The active server's health/restart controls also live inside its card.
+- Put Add server above the cards. Keep new-connection editing at the top and
+  existing-connection editing inside its owning card. Folding preserves drafts,
+  dismisses credential-bearing QR panels and resets removal confirmation.
+  A newly saved server expands so a failed activation remains actionable.
+- Validation: 118 related component/localization tests, final focused settings
+  checks, TypeScript, production compilation, local bundle audit and strict
+  ad-hoc signature checks passed. Component IPC is mocked;
+  the actual-app visual/client-server workflow remains pending because computer
+  control is blocked. This is a local desktop change with no service restart or
+  public publication.
+
 ## 2026-10-11 — Remove subagent concurrency from Server settings
 
 - Remove the Codex subagent-limit form from desktop Server settings. Opening

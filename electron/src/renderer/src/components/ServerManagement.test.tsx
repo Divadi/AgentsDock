@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentsDockAPI } from '@shared/ipc'
@@ -37,6 +37,12 @@ const gamma: PublicServerProfile = {
   name: 'Gamma',
   serverUrl: 'https://gamma.example:7850',
   serverIdentity: 'server-gamma'
+}
+
+function renderExpanded(element: Parameters<typeof render>[0]) {
+  const view = render(element)
+  for (const button of screen.getAllByRole('button', { name: /^Server details for / })) fireEvent.click(button)
+  return view
 }
 
 describe('ServerManagement', () => {
@@ -82,10 +88,57 @@ describe('ServerManagement', () => {
     vi.restoreAllMocks()
   })
 
-  it('copies an inactive server token without switching, testing, or changing its profile', async () => {
+  it('starts folded, exposes status, and reveals actions without any requests', async () => {
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    render(<ServerManagement activeServerControls={<button>Restart server</button>} />)
+    expect(screen.getByRole('button', { name: 'Add server' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Server details for Alpha' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('Connected')).toBeVisible()
+    expect(screen.getAllByText('Active')).toHaveLength(1)
+    expect(screen.queryByText(alpha.serverUrl)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Edit Alpha' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Restart server' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Server details for Alpha' }))
+    expect(screen.getByText(alpha.serverUrl)).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Edit Alpha' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Copy access token for Alpha' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Restart server' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Edit Beta' })).not.toBeInTheDocument()
+    expect(list).not.toHaveBeenCalled()
+    expect(testConnection).not.toHaveBeenCalled()
+    expect(copyToken).not.toHaveBeenCalled()
+    expect(connectionQr).not.toHaveBeenCalled()
+    expect(switchServer).not.toHaveBeenCalled()
+  })
+
+  it('preserves an unfinished edit when folded and clears QR and removal confirmation', async () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
     render(<ServerManagement />)
+    const header = screen.getByRole('button', { name: 'Server details for Beta' })
+    await user.click(header)
+    await user.click(screen.getByRole('button', { name: 'Edit Beta' }))
+    await user.clear(screen.getByLabelText('Name on this Mac'))
+    await user.type(screen.getByLabelText('Name on this Mac'), 'Work in progress')
+    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
+    expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Remove Beta' }))
+    await user.click(header)
+    expect(screen.queryByRole('img', { name: 'Connection QR code for Beta' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Name on this Mac')).not.toBeInTheDocument()
+    await user.click(header)
+    expect(screen.getByLabelText('Name on this Mac')).toHaveValue('Work in progress')
+    expect(screen.queryByText('Confirm removal')).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Connection QR code for Beta' })).not.toBeInTheDocument()
+    expect(remove).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
+  })
+
+  it('copies an inactive server token without switching, testing, or changing its profile', async () => {
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    renderExpanded(<ServerManagement />)
     expect(copyToken).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Copy access token for Beta' }))
     expect(await screen.findByRole('status')).toHaveTextContent('Access token copied')
@@ -101,7 +154,7 @@ describe('ServerManagement', () => {
   it('generates a QR only on request, explains local-only addresses, and saves the selected revision', async () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
     expect(connectionQr).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
     expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toBeInTheDocument()
@@ -120,7 +173,7 @@ describe('ServerManagement', () => {
     connectionQr.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
     await user.click(screen.getByRole('button', { name: 'Connection QR code for Alpha' }))
     await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
     expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toHaveAttribute('src', 'data:image/png;base64,fixture')
@@ -133,7 +186,7 @@ describe('ServerManagement', () => {
     useAppStore.setState({ profiles: [alpha, { ...beta, hasAccessToken: false }] })
     copyToken.mockRejectedValueOnce(new Error('Sensitive keychain diagnostics'))
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
     expect(screen.getByRole('button', { name: 'Copy access token for Beta' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Copy access token for Alpha' }))
     expect(await screen.findByRole('status')).toHaveTextContent('Could not copy the saved token')
@@ -145,7 +198,7 @@ describe('ServerManagement', () => {
 
   it('tests a new connection, saves the profile, and switches without reloading', async () => {
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Name on this Mac'), 'Beta')
     await user.type(screen.getByLabelText('Server URL'), 'https://beta.example:7850')
@@ -174,13 +227,13 @@ describe('ServerManagement', () => {
   it('shows an unavailable health response as a failed connection test', async () => {
     testConnection.mockResolvedValueOnce({ ok: false })
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://offline.example:7850')
     await user.click(screen.getByRole('button', { name: 'Test connection' }))
 
     expect(await screen.findByText('Server health check reported unavailable.')).toBeInTheDocument()
-    expect(screen.queryByText('Connected')).not.toBeInTheDocument()
+    expect(screen.getByRole('status')).not.toHaveTextContent('Connected')
     expect(screen.getByRole('button', { name: 'Add & switch' })).toBeDisabled()
   })
 
@@ -191,7 +244,7 @@ describe('ServerManagement', () => {
       value: scrollIntoView
     })
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Add server' }))
 
@@ -202,7 +255,7 @@ describe('ServerManagement', () => {
   it('reuses the saved profile when a URL alias resolves to its canonical identity', async () => {
     testConnection.mockResolvedValueOnce({ ok: true, server_identity: alpha.serverIdentity })
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Name on this Mac'), 'Alpha alias')
     await user.type(screen.getByLabelText('Server URL'), 'https://alpha-alias.example:7850')
@@ -219,7 +272,7 @@ describe('ServerManagement', () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     list.mockResolvedValue([alpha])
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     expect(screen.getByRole('button', { name: 'Cannot remove active server Alpha' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'Remove Beta' }))
@@ -234,7 +287,7 @@ describe('ServerManagement', () => {
   it('gives every server activation action a target-specific accessible name', () => {
     useAppStore.setState({ profiles: [alpha, beta, gamma] })
 
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     expect(screen.getByRole('button', { name: 'Use Beta' })).toHaveTextContent('Use')
     expect(screen.getByRole('button', { name: 'Use Gamma' })).toHaveTextContent('Use')
@@ -254,7 +307,7 @@ describe('ServerManagement', () => {
       modals: { ...state.modals, settings: true }
     }))
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Use Beta' }))
     expect(screen.getByRole('button', { name: 'Switching to Beta' })).toHaveTextContent('Switching…')
@@ -272,7 +325,7 @@ describe('ServerManagement', () => {
       modals: { ...state.modals, settings: true }
     }))
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Use Beta' }))
 
@@ -287,7 +340,7 @@ describe('ServerManagement', () => {
       activeProfileId: alpha.id
     })
 
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     expect(screen.getAllByRole('img', { name: 'Online' })).toHaveLength(2)
     expect(screen.getAllByText('Active')).toHaveLength(1)
@@ -297,21 +350,22 @@ describe('ServerManagement', () => {
   it('shows an inactive degraded server and its tmux warning in amber', () => {
     const message = 'tmux is missing; terminal sessions and detached updates are unavailable.'
     useAppStore.setState({
-      profiles: [alpha, { ...beta, connectionState: 'degraded', lastConnectionError: message }],
+      profiles: [alpha, { ...beta, serverVersion: '1.4.2', connectionState: 'degraded', lastConnectionError: message }],
       activeProfileId: alpha.id
     })
 
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     expect(screen.getByRole('img', { name: `Degraded: ${message}` })).toHaveClass('degraded')
     expect(screen.getByText(message)).toHaveClass('server-management-warning')
+    expect(screen.getByText('Identity: server-beta · AgentsServer 1.4.2')).toBeVisible()
     expect(screen.getAllByText('Active')).toHaveLength(1)
   })
 
   it('shows the last known server version with the canonical identity', () => {
     useAppStore.setState({ profiles: [{ ...alpha, serverVersion: '1.4.2' }] })
 
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     expect(screen.getByText('Identity: server-alpha · AgentsServer 1.4.2')).toBeInTheDocument()
   })
@@ -319,7 +373,7 @@ describe('ServerManagement', () => {
   it('does not reconnect the active server for a name-only edit', async () => {
     list.mockResolvedValue([{ ...alpha, name: 'Renamed Alpha' }])
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Edit Alpha' }))
     await user.clear(screen.getByLabelText('Name on this Mac'))
@@ -333,7 +387,7 @@ describe('ServerManagement', () => {
   it('reopens an active profile through the guarded store switch after a connection edit', async () => {
     list.mockResolvedValue([{ ...alpha, serverUrl: 'https://new-alpha.example:7850' }])
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Edit Alpha' }))
     await user.clear(screen.getByLabelText('Server URL'))
@@ -354,7 +408,7 @@ describe('ServerManagement', () => {
       }
     }))
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Edit Alpha' }))
     await user.clear(screen.getByLabelText('Server URL'))
@@ -372,7 +426,7 @@ describe('ServerManagement', () => {
     let resolveTest!: (value: { ok: true; server_identity: string }) => void
     testConnection.mockImplementation(() => new Promise(resolve => { resolveTest = resolve }))
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://first.example:7850')
     await user.click(screen.getByRole('button', { name: 'Test connection' }))
@@ -390,7 +444,7 @@ describe('ServerManagement', () => {
     useAppStore.setState({ profiles: [changed] })
     list.mockResolvedValue([{ ...changed, serverIdentity: null, lastConnectionError: null }])
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Edit Alpha' }))
     const confirmation = screen.getByLabelText(/I confirm this URL may establish a new server identity/)
@@ -404,7 +458,7 @@ describe('ServerManagement', () => {
 
   it('tracks a successful connection test and a successful server add', async () => {
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://beta.example:7850')
     await user.type(screen.getByLabelText('Access token'), 'private-token')
@@ -419,7 +473,7 @@ describe('ServerManagement', () => {
   it('keeps a persisted server add successful when the later activation fails', async () => {
     switchServer.mockResolvedValueOnce(false)
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://beta.example:7850')
     await user.click(screen.getByRole('button', { name: 'Test connection' }))
@@ -433,7 +487,7 @@ describe('ServerManagement', () => {
   it('tracks a failed server add only when persistence fails', async () => {
     add.mockRejectedValueOnce(new Error('Could not save server.'))
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://beta.example:7850')
     await user.click(screen.getByRole('button', { name: 'Test connection' }))
@@ -447,7 +501,7 @@ describe('ServerManagement', () => {
   it('tracks a failed connection test without recording a server add', async () => {
     testConnection.mockResolvedValueOnce({ ok: false })
     const user = userEvent.setup()
-    render(<ServerManagement addRequest={1} />)
+    renderExpanded(<ServerManagement addRequest={1} />)
 
     await user.type(screen.getByLabelText('Server URL'), 'https://offline.example:7850')
     await user.click(screen.getByRole('button', { name: 'Test connection' }))
@@ -459,7 +513,7 @@ describe('ServerManagement', () => {
   it('tracks a successful server switch from the Use button', async () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Use Beta' }))
 
@@ -470,7 +524,7 @@ describe('ServerManagement', () => {
     switchServer.mockResolvedValueOnce(false)
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
-    render(<ServerManagement />)
+    renderExpanded(<ServerManagement />)
 
     await user.click(screen.getByRole('button', { name: 'Use Beta' }))
 
