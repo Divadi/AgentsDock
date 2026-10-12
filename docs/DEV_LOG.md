@@ -1,5 +1,18 @@
 # Public development log
 
+## 2026-10-12 — Verify the consolidated Files inspector for merge
+
+- Integrate current main and preserve its release-tooling changes. Update the
+  old Explorer-column style regression to require the editor's full-width layout.
+- Validation: 230 of 231 focused checks passed initially; the sole failure was
+  the obsolete layout expectation, and all 13 style checks passed after updating
+  it. Both previously timing-sensitive directory checks passed this time.
+  TypeScript, production compilation and eight package/license checks passed.
+- The user reported the local app looks good and authorized the PR and merge.
+  Agent-operated native acceptance remains pending because computer control is
+  disabled. The local app remains the previously verified package; no runtime
+  behavior changed during this merge preparation. No server update is required.
+
 ## 2026-10-11 — Show Files when opening a file
 
 - Opening or selecting a workspace, attachment or image/PDF file tab now opens
