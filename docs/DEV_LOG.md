@@ -8,6 +8,11 @@
   the obsolete layout expectation, and all 13 style checks passed after updating
   it. Both previously timing-sensitive directory checks passed this time.
   TypeScript, production compilation and eight package/license checks passed.
+- The first hosted desktop run passed 5,138 checks but hit the second-page
+  reveal fixture's one-second DOM polling limit. Await its mocked page responses
+  and React commits before checking the rendered target; retain the selected-row
+  and exact paging-offset assertions without changing production deadlines.
+  All three focused pagination/reveal checks passed after that fixture change.
 - The user reported the local app looks good and authorized the PR and merge.
   Agent-operated native acceptance remains pending because computer control is
   disabled. The local app remains the previously verified package; no runtime

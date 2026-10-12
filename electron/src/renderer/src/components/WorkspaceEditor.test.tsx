@@ -786,13 +786,16 @@ describe('WorkspaceEditor', () => {
     }))
     renderEditor()
 
-    act(() => {
+    // Flush the mocked page responses and React commits before traversing 500
+    // accessible rows; findByRole's one-second polling budget measures host
+    // scheduling here rather than whether automatic pagination completes.
+    await act(async () => {
       window.dispatchEvent(new CustomEvent('agentsdock:open-workspace-path', {
         detail: { sessionId: 'chat-a', path: 'target.ts' }
       }))
     })
 
-    expect(await screen.findByRole('button', { name: 'Open target.ts' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: 'Open target.ts' })).toHaveAttribute('aria-current', 'page')
     expect(window.agentsDock.workspace.entries).toHaveBeenCalledWith('chat-a', '', 500, 500)
   })
 
