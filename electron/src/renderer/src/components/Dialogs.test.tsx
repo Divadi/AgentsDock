@@ -887,6 +887,44 @@ describe('SessionDialog runtime selection', () => {
     }
   }
 
+  it('prefills the open native chat rather than saved custom defaults and carries its permissions', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'new', title: 'New chat', backend: 'codex' })
+    Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
+      sessions: { create }, preferences: { get: vi.fn().mockResolvedValue({ version: 1, folder: 'Saved', cwd: '/old', backend: 'codex', codex_provider: 'custom', model: 'old-model', effort: 'high' }), set: vi.fn().mockResolvedValue(undefined) }
+    } as unknown as AgentsDockAPI })
+    useAppStore.setState({ profiles: [], activeProfileId: null, profileGeneration: 0, selectedSessionId: 'opened',
+      sessions: [{ id: 'opened', title: 'Opened', backend: 'codex', cwd: '/current', folder: 'Current', model: 'gpt-5.6-sol', effort: 'ultra', codex_approval_policy: 'on-request', codex_sandbox_mode: 'read-only', codex_permission_profile: 'restricted', codex_approvals_reviewer: 'user' }],
+      health: { ok: true, default_cwd: '/server' }, runtimeCatalog,
+      refreshSessions: vi.fn().mockResolvedValue(undefined), selectSession: vi.fn().mockResolvedValue(undefined),
+      modals: { ...useAppStore.getState().modals, newChat: true, resume: false }
+    })
+    render(<SessionDialog mode="newChat" />)
+    await waitFor(() => expect(screen.getByLabelText('Model')).toHaveValue('gpt-5.6-sol'))
+    expect(screen.getByLabelText('Reasoning')).toHaveValue('ultra')
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Create chat' }))
+    await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({ backend: 'codex', model: 'gpt-5.6-sol', effort: 'ultra', cwd: '/current', codex_approval_policy: 'on-request', codex_sandbox_mode: 'read-only', codex_permission_profile: 'restricted', codex_approvals_reviewer: 'user' })))
+    expect(create.mock.calls[0][0].codex_provider).not.toBe('custom')
+  })
+
+  it('requires an explicit provider choice if the inherited custom API was forgotten', async () => {
+    const create = vi.fn().mockResolvedValue({ id: 'new', title: 'New chat', backend: 'codex' })
+    Object.defineProperty(window, 'agentsDock', { configurable: true, value: { sessions: { create }, preferences: { get: vi.fn().mockResolvedValue(null), set: vi.fn().mockResolvedValue(undefined) } } as unknown as AgentsDockAPI })
+    useAppStore.setState({ profiles: [], activeProfileId: null, profileGeneration: 0, selectedSessionId: 'opened',
+      sessions: [{ id: 'opened', title: 'Old API', backend: 'claude', provider_connection: 'custom', model: 'old-model', claude_permission_mode: 'bypassPermissions' }],
+      health: { ok: true }, runtimeCatalog,
+      refreshSessions: vi.fn().mockResolvedValue(undefined), selectSession: vi.fn().mockResolvedValue(undefined),
+      modals: { ...useAppStore.getState().modals, newChat: true, resume: false }
+    })
+    render(<SessionDialog mode="newChat" />)
+    await waitFor(() => expect(screen.getByLabelText('Model')).toHaveValue('old-model'))
+    expect(screen.getByRole('button', { name: 'Create chat' })).toBeDisabled()
+    expect(create).not.toHaveBeenCalled()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Codex' }))
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Create chat' }))
+    await waitFor(() => expect(create).toHaveBeenCalledOnce())
+    expect(create.mock.calls[0][0]).not.toHaveProperty('claude_permission_mode')
+  })
+
   it('creates a custom Codex chat without replacing normal Codex choices', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'custom-chat' })
     Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
