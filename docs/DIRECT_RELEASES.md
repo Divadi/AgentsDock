@@ -97,9 +97,31 @@ reviewed release branch. Registering the workflows does not replace application
 source on a diverged default branch.
 
 The public workflow has a separate run counter from the former private workflow.
-Reserve its native build number explicitly; the first public run starts above
-the last accepted local build, 1185, and every later run increments the number.
-Never reuse the old private counter formula or a previously accepted build.
+Reserve its native build number explicitly using the audited epochs in
+`scripts/validate_desktop_build_number.mjs`:
+
+| Preparation workflow run | Exact reserved native build |
+| --- | --- |
+| 1–20 | `1185 + run` |
+| 21–22 | `1232 + (run - 20)` |
+| 23 onward | `1239 + (run - 22)` |
+
+These epochs retain historical allocations while advancing past intervening
+local builds. Failed runs consume their reservation; reruns retain it. For
+example, run 33 reserved 1250 and run 34 reserves 1251. Check the current run
+counter before dispatch; this example does not reserve the next available run.
+Never restore the old flat formula, reuse a build, or remap an existing epoch.
+
+For a sealed coordinated desktop draft, `direct-desktop-release-publish.yml`
+also supports `verification_only=true`. Supply the exact `version`, `track`,
+`expected_source_sha` and `expected_manifest_sha256` (the SHA-256 of its
+`SHA256SUMS` file), and the appropriate `allow_unsigned_windows` policy. Dispatch
+on the draft's reviewed source branch. The helper allows only canonical draft
+GET/download operations and reuses the same four native verification jobs.
+It records a receipt only when all platform seals match; publication and public
+migration jobs are skipped. This mode uploads replay/verification artifacts,
+so it still requires explicit authorization to run. It does not create a draft,
+prove hosted signing credentials, or establish product/update acceptance.
 
 When macOS signing is performed locally, dispatch the same preparation workflow
 with `artifacts_only=true`. It retains the source ancestry, release version,
