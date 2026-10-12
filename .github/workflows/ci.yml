@@ -29,6 +29,8 @@ jobs:
         run: node --test server/npm/cli.test.cjs server/npm/agentsdock/*.test.cjs
       - name: Verify matched npm staging and publication guards
         run: node --test scripts/tests/verify*publication.test.mjs scripts/tests/agentsdock_cli_candidate_release.test.mjs scripts/tests/server_npm_publish_workflow.test.mjs scripts/tests/release_credentials_preflight.test.mjs
+      - name: Verify desktop build reservations and non-publishing replay guards
+        run: node --test scripts/tests/validate_desktop_build_number.test.mjs scripts/tests/direct-release-verification.test.mjs scripts/tests/direct-release-mirror.test.mjs scripts/tests/coordinated-release.test.mjs scripts/tests/published-server-paths.test.mjs
       - name: Verify disposable native CLI acceptance guards without creating services
         env:
           PYTHONDONTWRITEBYTECODE: "1"

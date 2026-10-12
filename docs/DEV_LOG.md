@@ -64,6 +64,27 @@
   comparison passed. The package uses isolated app data with automatic updates
   disabled. No server API change or restart is required.
 
+## 2026-10-11 — Reconcile hosted desktop release readiness
+
+- Bring the release line's audited native build-number epochs into the maintained
+  workflow, retaining every historical run/rerun reservation and avoiding stale
+  build-number reuse after local builds.
+- Add pinned canonical-draft verification without publication. The read-only
+  helper reuses all four native verification jobs, rejects changed source or
+  checksum seals, and emits a receipt only for matching successful results.
+  Normal publication keeps its existing protected credential and mirror guards.
+- Include the desktop release regressions in source CI and document permanent
+  operator setup, one-time short-CLI bootstrap and npm's initial trust-validation
+  deadline. Credential checks remain separate from candidate acceptance.
+- Validation: 72 focused checks passed on Node 24; all 17 release-script JavaScript
+  test files also passed on the local Node runtime. Workflow YAML and changed
+  script syntax passed. A real read-only check verified the frozen beta.6 draft's
+  metadata, checksum seal and signed server descriptor; no native assets were
+  rebuilt and this does not establish full native or update acceptance.
+- Availability: source tooling only. Hosted candidate builds, real native
+  acceptance, first CLI publication and OIDC publication remain separate gates.
+  No release, registry package, running server or signing identity changed.
+
 ## 2026-10-11 — Integrate connection pairing with matched npm releases
 
 - Include the pairing command, bundled QR renderer and third-party notices in
