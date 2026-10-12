@@ -110,12 +110,53 @@ test('signing checkpoints are fixed public labels, never private command output'
     'validate-private-directory', 'decode-existing-certificate', 'snapshot-keychain-state',
     'create-disposable-keychain', 'restore-keychain-search-list', 'verify-keychain-state',
     'configure-disposable-keychain', 'import-existing-certificate', 'configure-signing-key-access',
-    'find-valid-developer-id', 'compile-disposable-probe', 'sign-disposable-probe',
-    'verify-disposable-signature', 'verify-final-keychain-state',
+    'find-valid-developer-id', 'compile-disposable-probe', 'enable-disposable-keychain-for-signing',
+    'sign-disposable-probe', 'verify-disposable-signature', 'restore-signing-search-list',
+    'verify-final-keychain-state',
   ])
   assert.equal((signing.match(/checkpoint\(/g) || []).length, labels.length + 1)
   assert.match(signing, /print\("Developer ID probe checkpoint: " \+ name, flush=True\)/)
   assert.match(signing, /Private command output is intentionally suppressed/)
+})
+
+test('signing search-list scope restores exact state on success, sign failure and verify failure', () => {
+  const python = signing.match(/python3 - <<'PY'\n([^]*?)\nPY(?:\n|$)/)[1]
+  const result = spawnSync('python3', ['-c', `
+import ast, pathlib, sys
+tree = ast.parse(sys.stdin.read())
+blocks = [node for node in ast.walk(tree) if isinstance(node, ast.Try)
+          and isinstance(node.body[0], ast.Expr) and isinstance(node.body[0].value, ast.Call)
+          and isinstance(node.body[0].value.func, ast.Name) and node.body[0].value.func.id == "checkpoint"
+          and node.body[0].value.args[0].value == "enable-disposable-keychain-for-signing"]
+assert len(blocks) == 1
+code = compile(ast.fix_missing_locations(ast.Module(body=blocks, type_ignores=[])), "signing-scope", "exec")
+for failure in (None, "--sign", "--verify"):
+    baseline = {"search": ["/fixture/login.keychain-db"], "default": ["/fixture/login.keychain-db"]}
+    keychain = "/fixture/probe.keychain-db"
+    search, calls = list(baseline["search"]), []
+    def command(arguments):
+        calls.append(arguments)
+        if arguments[:2] == ["security", "list-keychains"]:
+            search[:] = arguments[5:]
+        elif arguments[0] == "codesign":
+            assert search == [keychain, *baseline["search"]]
+            if failure and failure in arguments:
+                raise RuntimeError("synthetic signing failure")
+        else:
+            raise AssertionError("unexpected command")
+    scope = dict(command=command, checkpoint=lambda name: None, keychain=keychain,
+                 baseline=baseline, matches=["f" * 40], probe=pathlib.Path("/fixture/probe"),
+                 keychain_state=lambda: {"search": list(search), "default": baseline["default"]})
+    try:
+        exec(code, scope)
+    except RuntimeError:
+        assert failure is not None
+    else:
+        assert failure is None
+    assert search == baseline["search"]
+    assert calls[-1] == ["security", "list-keychains", "-d", "user", "-s", *baseline["search"]]
+`], { input: python, encoding: 'utf8' })
+  assert.equal(result.status, 0, result.stderr)
 })
 
 test('notarization checks only read-only history, emits counts, and never persists private history', () => {
