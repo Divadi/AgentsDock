@@ -1,5 +1,9 @@
 # Server connection sharing
 
+The desktop Show QR code button and its section heading are temporarily hidden
+by a source comment. The QR component, IPC and CLI pairing implementation remain
+in place; the QR behavior below describes the retained implementation.
+
 Settings → Server provides explicit actions on each saved server, including
 inactive or offline profiles:
 

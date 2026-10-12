@@ -6,6 +6,7 @@ import type { PublicServerProfile } from '@shared/types'
 import { useAppStore } from '../store/app-store'
 import { trackEvent } from '../lib/analytics'
 import { ServerManagement } from './ServerManagement'
+import { ServerConnectionQr } from './ServerConnectionQr'
 
 vi.mock('../lib/analytics', () => ({ trackEvent: vi.fn() }))
 
@@ -108,6 +109,8 @@ describe('ServerManagement', () => {
     expect(screen.getByText(alpha.serverUrl)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Edit Alpha' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Copy access token for Alpha' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Connection QR code for Alpha' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Connect another device')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Restart server' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Edit Beta' })).not.toBeInTheDocument()
     expect(list).not.toHaveBeenCalled()
@@ -160,7 +163,7 @@ describe('ServerManagement', () => {
     expect(update).toHaveBeenCalledWith('beta', { accessToken: 'replaced-token-fixture' })
   })
 
-  it('preserves an unfinished edit when folded and clears QR and removal confirmation', async () => {
+  it('preserves an unfinished edit when folded and clears removal confirmation', async () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
     render(<ServerManagement />)
@@ -169,8 +172,6 @@ describe('ServerManagement', () => {
     await user.click(screen.getByRole('button', { name: 'Edit Beta' }))
     await user.clear(screen.getByLabelText('Name on this Mac'))
     await user.type(screen.getByLabelText('Name on this Mac'), 'Work in progress')
-    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
-    expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Remove Beta' }))
     await user.click(header)
     expect(screen.queryByRole('img', { name: 'Connection QR code for Beta' })).not.toBeInTheDocument()
@@ -205,12 +206,12 @@ describe('ServerManagement', () => {
     expect(useAppStore.getState().activeProfileId).toBe('alpha')
   })
 
-  it('generates a QR only on request, explains local-only addresses, and saves the selected revision', async () => {
-    useAppStore.setState({ profiles: [alpha, beta] })
+  // Exercise the retained QR component directly while its settings entry is hidden.
+  it('generates a QR when mounted, explains local-only addresses, and saves the selected revision', async () => {
     const user = userEvent.setup()
-    renderExpanded(<ServerManagement />)
+    const onClose = vi.fn()
     expect(connectionQr).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
+    render(<ServerConnectionQr profile={beta} onClose={onClose} />)
     expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toBeInTheDocument()
     expect(connectionQr).toHaveBeenCalledExactlyOnceWith('beta')
     expect(screen.getByRole('note')).toHaveTextContent('only on this computer')
@@ -218,18 +219,15 @@ describe('ServerManagement', () => {
     expect(saveConnectionQr).toHaveBeenCalledExactlyOnceWith('beta', 7)
     expect(await screen.findByText('QR image saved')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Close connection QR code' }))
-    expect(screen.queryByRole('img', { name: 'Connection QR code for Beta' })).not.toBeInTheDocument()
+    expect(onClose).toHaveBeenCalledOnce()
     expect(switchServer).not.toHaveBeenCalled()
   })
 
   it('does not show a late QR from a previously selected server', async () => {
     let finish!: (value: unknown) => void
     connectionQr.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
-    useAppStore.setState({ profiles: [alpha, beta] })
-    const user = userEvent.setup()
-    renderExpanded(<ServerManagement />)
-    await user.click(screen.getByRole('button', { name: 'Connection QR code for Alpha' }))
-    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
+    const view = render(<ServerConnectionQr key={alpha.id} profile={alpha} onClose={() => {}} />)
+    view.rerender(<ServerConnectionQr key={beta.id} profile={beta} onClose={() => {}} />)
     expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toHaveAttribute('src', 'data:image/png;base64,fixture')
     finish({ dataUrl: 'data:image/png;base64,stale', revision: 0 })
     await waitFor(() => expect(screen.queryByRole('img', { name: 'Connection QR code for Alpha' })).not.toBeInTheDocument())

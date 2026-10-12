@@ -77,8 +77,9 @@ Settings → Server starts with collapsed cards showing each saved server's name
 URL and connection status. Add server is above the cards. Expand a card for
 separate version and identity rows. A token field shows its first four characters
 with the remainder masked, and Copy at the end copies the complete credential.
-Short tokens stay fully masked. The token field and Show QR code are grouped
-separately from Use/Edit and the red Remove action. Sharing
+Short tokens stay fully masked. The token field is grouped separately from
+Use/Edit and the red Remove action. The Show QR code entry is temporarily
+commented out; its implementation is retained. Sharing
 does not switch the active server. The active card also contains restart controls.
 Persistent goals have no server-wide Settings toggle. Updated servers keep the
 capability available by default; each chat retains its own goal controls.

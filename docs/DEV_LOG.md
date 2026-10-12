@@ -1,5 +1,17 @@
 # Public development log
 
+## 2026-10-11 — Temporarily hide desktop QR sharing
+
+- Comment out the Show QR code button and its section heading in Server settings.
+  Keep the QR component and underlying sharing implementation for re-enabling
+  later. Token preview/copy and other server controls remain available.
+- Validation: 31 focused settings/component checks, TypeScript, production
+  compilation, local bundle audits and strict ad-hoc signature checks passed.
+  Retained QR tests exercise its component directly while the entry is hidden.
+  Actual-app visual acceptance remains pending because computer control is blocked.
+  Availability: local desktop package (0.2.0, build 85), automatic updates disabled.
+  No server update is needed.
+
 ## 2026-10-11 — Inline token-copy confirmation
 
 - Confirm a successful token copy by replacing the button's copy icon with a
