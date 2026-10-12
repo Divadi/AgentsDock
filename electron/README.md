@@ -149,7 +149,9 @@ when revealing the active file; large folders have an explicit Load more button.
 Changing chat, server or working directory clears the old tree. Symlinks retain
 the server's existing access restriction. The last Details/Files selection is
 remembered across panel and app reopening; temporary Review views do not change
-that preference. In split chat, Files follows the focused chat and browsing
+that preference. Opening or selecting a file tab (including attachment and
+image/PDF previews) automatically opens the right panel on Files. Cancelling
+the file picker does not change the panel. In split chat, Files follows the focused chat and browsing
 does not cover the conversations until a file editor or dialog is needed.
 
 Chat remains the pinned default tab. Use `Cmd+O` to search

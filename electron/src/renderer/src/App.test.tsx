@@ -9,6 +9,7 @@ import { App } from './App'
 
 const workspaceEditorHarness = vi.hoisted(() => ({
   autoReady: true,
+  onFileOpen: null as (() => void) | null,
   onReady: null as (() => void) | null
 }))
 const appRenderHarness = vi.hoisted(() => ({ sidebarRenders: 0 }))
@@ -90,7 +91,8 @@ vi.mock('./components/WorkspaceEditor', () => ({
     chatContent,
     onReady,
     filesOnly,
-    onActivate
+    onActivate,
+    onFileOpen
   }: {
     session: Session
     available: boolean | null
@@ -100,7 +102,9 @@ vi.mock('./components/WorkspaceEditor', () => ({
     onReady?: () => void
     filesOnly?: boolean
     onActivate?: () => void
+    onFileOpen?: () => void
   }) => {
+    workspaceEditorHarness.onFileOpen = onFileOpen ?? null
     useEffect(() => {
       workspaceEditorHarness.onReady = onReady ?? null
       if (workspaceEditorHarness.autoReady) onReady?.()
@@ -116,7 +120,7 @@ vi.mock('./components/WorkspaceEditor', () => ({
       data-available={String(available)}
       data-workspace-key={workspaceKey}
       data-max-text-file-bytes={maxTextFileBytes}
-    >{onActivate && <button onClick={onActivate}>Activate file editor</button>}<div data-testid="code-editor" role="textbox" contentEditable suppressContentEditableWarning>code</div>{chatContent}</div>
+    >{onFileOpen && <button onClick={onFileOpen}>View file</button>}{onActivate && <button onClick={onActivate}>Activate file editor</button>}<div data-testid="code-editor" role="textbox" contentEditable suppressContentEditableWarning>code</div>{chatContent}</div>
   }
 }))
 vi.mock('./components/WorkspaceResizeHandles', () => ({
@@ -255,6 +259,39 @@ describe('App chat workspace identity', () => {
     reopened.unmount()
     render(<App />)
     expect(inspectorHarness.props.tab).toBe('details')
+  })
+
+  it('opens the Files tab from a closed panel when a file is viewed, and remembers it', () => {
+    render(<App />)
+    expect(useAppStore.getState().inspectorVisible).toBe(false)
+    expect(inspectorHarness.props.tab).toBe('details')
+    fireEvent.click(screen.getByRole('button', { name: 'View file' }))
+    expect(useAppStore.getState().inspectorVisible).toBe(true)
+    expect(inspectorHarness.props.tab).toBe('files')
+    expect(localStorage.getItem('agentsdock:inspector-tab')).toBe('files')
+    act(() => inspectorHarness.props.onHide())
+    fireEvent.click(screen.getByRole('button', { name: 'View file' }))
+    expect(useAppStore.getState().inspectorVisible).toBe(true)
+    expect(inspectorHarness.props.tab).toBe('files')
+  })
+
+  it('ignores late file-open notifications from a previous connection', () => {
+    render(<App />)
+    const staleOpen = workspaceEditorHarness.onFileOpen!
+    act(() => useAppStore.setState({ profileGeneration: 5 }))
+    act(() => staleOpen())
+    expect(useAppStore.getState().inspectorVisible).toBe(false)
+    expect(inspectorHarness.props.tab).toBe('details')
+  })
+
+  it('opens Files when a split-chat file is viewed from a closed panel', () => {
+    useAppStore.setState({ chatPanes: { primary: 'chat-a', secondary: 'chat-b' } })
+    render(<App />)
+    act(() => window.dispatchEvent(new CustomEvent('agentsdock:open-workspace-path', { detail: { sessionId: 'chat-b', path: 'README.md' } })))
+    fireEvent.click(screen.getByRole('button', { name: 'View file' }))
+    expect(useAppStore.getState().selectedSessionId).toBe('chat-b')
+    expect(useAppStore.getState().inspectorVisible).toBe(true)
+    expect(inspectorHarness.props.tab).toBe('files')
   })
 
   it('browses the focused split chat in Files without covering chats, then activates the same editor', () => {

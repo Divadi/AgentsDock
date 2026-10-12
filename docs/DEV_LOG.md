@@ -1,5 +1,21 @@
 # Public development log
 
+## 2026-10-11 — Show Files when opening a file
+
+- Opening or selecting a workspace, attachment or image/PDF file tab now opens
+  the right panel and selects Files, including when the panel was closed or
+  showing Details/Review. The choice is remembered for subsequent reopening.
+- Apply the same behavior in split chats. Reject stale notifications from a
+  previous chat, working directory or server connection. Cancelling the picker
+  or rejecting a file before opening a tab leaves the panel unchanged.
+- Validation: all 56 focused app/file-opening checks passed. The broader
+  194-case run passed 191; a separate rerun passed its large-file timeout case.
+  Two remaining large-directory timing failures also reproduced against the
+  preceding source, so broader editor acceptance retains that limitation.
+  TypeScript and production compilation passed.
+- Native desktop acceptance is pending because computer control is disabled;
+  component fixtures use mocked IPC. No server changes are required.
+
 ## 2026-10-11 — Consolidate workspace browsing in Files
 
 - Move the editor Explorer into the right-hand Files tab. Reuse its new

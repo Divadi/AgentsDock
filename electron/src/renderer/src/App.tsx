@@ -144,13 +144,25 @@ function AppWorkspace() {
   const [sideChatController] = useState(() => new SideChatController())
   const [inspectorTab, setInspectorTab] = useState<InspectorWorkspaceTab>(readInspectorTab)
   const preferredInspectorTab = useRef(readInspectorTab())
-  const chooseInspectorTab = (tab: InspectorWorkspaceTab) => {
+  const chooseInspectorTab = useCallback((tab: InspectorWorkspaceTab) => {
     if (tab !== 'review') {
       preferredInspectorTab.current = tab
       saveInspectorTab(tab)
     }
     setInspectorTab(tab)
-  }
+  }, [])
+  const showFilesForOpenedFile = useCallback(() => {
+    const state = useAppStore.getState()
+    const ownerSession = state.sessions.find(session => session.id === selectedSessionId)
+    // A delayed file load must not reopen the panel for a different chat/server.
+    if (!ownerSession || !selectedSessionId || state.switchingProfileId
+      || state.activeProfileId !== activeProfileId || state.profileGeneration !== profileGeneration
+      || state.selectedSessionId !== selectedSessionId
+      || (state.profiles.find(profile => profile.id === state.activeProfileId)?.serverIdentity ?? null) !== activeServerIdentity
+      || ownerSession.cwd !== selectedSession?.cwd) return
+    chooseInspectorTab('files')
+    if (!state.inspectorVisible) state.setInspectorVisible(true)
+  }, [activeProfileId, activeServerIdentity, profileGeneration, selectedSessionId, selectedSession?.cwd, chooseInspectorTab])
   const [sideChatFocusVersion, setSideChatFocusVersion] = useState(0)
   const [sideChatOpenTarget, setSideChatOpenTarget] = useState<string | null>(null)
   const previousSideChatTarget = useRef<string | null>(null)
@@ -857,6 +869,7 @@ function AppWorkspace() {
         capabilityVersion={workspaceFilesVersion}
         maxTextFileBytes={workspaceFilesMaxTextFileBytes}
         unavailableMessage={workspaceFilesUnavailableMessage}
+        onFileOpen={showFilesForOpenedFile}
         chatContent={chatWorkspace}
       />
       : chatWorkspace}
@@ -958,6 +971,7 @@ function AppWorkspace() {
                 onReturnToChat={dismissSplitWorkspace}
                 filesOnly={!splitWorkspaceTarget}
                 onActivate={activateSplitFiles}
+                onFileOpen={showFilesForOpenedFile}
                 chatContent={<div className="split-workspace-return">
                   <strong>{t("ui.App.App.your_split_chats_are_still_open_4a8601f")}</strong>
                   <span>{t("ui.App.App.choose_chat_to_return_to_both_panes_3c6aab3")}</span>

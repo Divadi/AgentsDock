@@ -119,7 +119,8 @@ function renderEditor(
   capabilityVersion = 5,
   maxTextFileBytes?: number,
   onReady?: () => void,
-  onReturnToChat?: () => void
+  onReturnToChat?: () => void,
+  onFileOpen?: () => void
 ) {
   return render(<WorkspaceEditor
     workspaceKey={workspaceKey}
@@ -130,6 +131,7 @@ function renderEditor(
     maxTextFileBytes={maxTextFileBytes}
     onReady={onReady}
     onReturnToChat={onReturnToChat}
+    onFileOpen={onFileOpen}
     chatContent={<p>Chat timeline</p>}
   />)
 }
@@ -281,6 +283,43 @@ describe('WorkspaceEditor', () => {
     view.rerender(<WorkspaceFilesProvider><RealWorkspaceEditor {...props} /><WorkspaceFilesHost owner={workspaceFilesKey(props.profileScope, session.id, session.cwd!)} /></WorkspaceFilesProvider>)
     expect(await screen.findByRole('button', { name: 'Open README.md' })).toBeVisible()
     expect(window.agentsDock.workspace.entries).toHaveBeenCalledExactlyOnceWith(session.id, '', 0, 500)
+  })
+
+  it('announces viewed files after picker selection and when revisiting an open tab, but not on cancel', async () => {
+    const user = userEvent.setup()
+    const opened = vi.fn()
+    renderEditor('server-a:chat-a', 6, undefined, undefined, undefined, opened)
+    await user.click(screen.getByRole('button', { name: 'Open file' }))
+    expect(opened).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Close file picker' }))
+    expect(opened).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Open file' }))
+    await user.click(await screen.findByRole('option', { name: /README.md/i }))
+    expect(await screen.findByRole('textbox', { name: 'Contents of README.md' })).toBeVisible()
+    expect(opened).toHaveBeenCalledOnce()
+    await user.click(screen.getByRole('button', { name: 'Chat (pinned)' }))
+    await user.click(screen.getByRole('tab', { name: 'README.md' }))
+    expect(opened).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['image/png', 'application/pdf', 'text/markdown'])('announces attached %s previews when their file tab opens', async contentType => {
+    const opened = vi.fn()
+    renderEditor('server-a:chat-a', 6, undefined, undefined, undefined, opened)
+    const file: AgentFile = { id: 'preview-test', session_id: session.id, filename: contentType === 'image/png' ? 'diagram.png' : contentType === 'application/pdf' ? 'notes.pdf' : 'notes.md', content_type: contentType }
+    act(() => window.dispatchEvent(new CustomEvent('agentsdock:open-agent-file', { detail: { sessionId: session.id, file } })))
+    expect(await screen.findByRole('tab', { name: file.filename })).toHaveAttribute('aria-selected', 'true')
+    expect(opened).toHaveBeenCalledOnce()
+  })
+
+  it('does not announce a failed or wrong-chat file open', async () => {
+    const opened = vi.fn()
+    vi.mocked(window.agentsDock.workspace.read).mockRejectedValueOnce(new Error('File missing'))
+    renderEditor('server-a:chat-a', 6, undefined, undefined, undefined, opened)
+    act(() => window.dispatchEvent(new CustomEvent('agentsdock:open-workspace-path', { detail: { sessionId: 'other-chat', path: 'missing.ts' } })))
+    expect(window.agentsDock.workspace.read).not.toHaveBeenCalled()
+    act(() => window.dispatchEvent(new CustomEvent('agentsdock:open-workspace-path', { detail: { sessionId: session.id, path: 'missing.ts' } })))
+    expect(await screen.findByRole('alert')).toHaveTextContent('File missing')
+    expect(opened).not.toHaveBeenCalled()
   })
 
   it('keeps keyboard quick-open usable from the right-hand Files tree', async () => {

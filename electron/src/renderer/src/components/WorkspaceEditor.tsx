@@ -291,6 +291,7 @@ export interface WorkspaceEditorProps {
   onReturnToChat?: () => void
   filesOnly?: boolean
   onActivate?: () => void
+  onFileOpen?: () => void
 }
 
 export function WorkspaceEditor({
@@ -305,9 +306,12 @@ export function WorkspaceEditor({
   onReady,
   onReturnToChat,
   filesOnly = false,
-  onActivate
+  onActivate,
+  onFileOpen
 }: WorkspaceEditorProps) {
   useLocale()
+  const onFileOpenRef = useRef(onFileOpen)
+  onFileOpenRef.current = onFileOpen
   const gitLabels = useWorkspaceGitLabels()
   const [changesOpen, setChangesOpen] = useState(false)
   const [changesVisited, setChangesVisited] = useState(false)
@@ -850,6 +854,7 @@ export function WorkspaceEditor({
 
   const activateFilePath = (path: string, group: EditorGroupId = activeGroupRef.current): void => {
     onActivate?.()
+    onFileOpenRef.current?.()
     setChangesOpen(false)
     if (group === 'secondary') {
       secondaryPathRef.current = path
