@@ -15,6 +15,10 @@
   TypeScript and production compilation passed.
 - Native desktop acceptance is pending because computer control is disabled;
   component fixtures use mocked IPC. No server changes are required.
+  Local package: version 0.2.0/build 85, source `b771f38f`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
 
 ## 2026-10-11 — Consolidate workspace browsing in Files
 
