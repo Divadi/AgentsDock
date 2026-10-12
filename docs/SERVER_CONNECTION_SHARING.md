@@ -1,4 +1,4 @@
-# Desktop connection sharing
+# Server connection sharing
 
 Settings → Server provides explicit actions on each saved server, including
 inactive or offline profiles:
@@ -21,7 +21,7 @@ that listens on that address; generating a QR does not change network binding,
 firewall rules or Tailscale membership. This grants the access of the existing
 operator token, rather than read-only access to an individual chat.
 
-## Mobile contract (not yet wired into the mobile app)
+## Shared mobile connection contract
 
 The payload is `agentsdock://connect#` followed by URL-encoded fragment fields:
 
@@ -39,18 +39,58 @@ must round-trip through URL encoding. Reject unsupported versions, duplicate or
 unknown fields, empty tokens and oversized payloads. The size limit is 1,800
 UTF-8 bytes for the complete link. Treat the whole link and QR image as secrets.
 
-A separately scoped mobile integration must:
+The mobile integration now:
 
-1. Accept scanned/imported images and/or the registered connection deep link.
-2. Parse the payload and show the server address/name for confirmation.
-3. Test authenticated health at that address and compare the expected identity
+1. Accepts camera scans, selected QR images, and the registered connection deep link.
+2. Parses the payload and shows the server address/name for confirmation.
+3. Tests authenticated health at that address and compares the expected identity
    before saving. Never silently overwrite an existing server or bypass TLS.
-4. Store the token in the existing mobile secure store, preserving profile
+4. Stores the token in the existing mobile secure store, preserving profile
    identity isolation and deduplication.
-5. Explain unreachable/local-only addresses and expired/rotated credentials.
+5. Explains unreachable/local-only addresses and failed authentication.
 
-Current mobile code does not handle this connection route. A desktop-generated
-QR is not evidence that mobile scanning and connection saving already work.
+In mobile, open Servers → Scan connection QR. Tap **Connect and save** after
+reviewing the address. There is no manual token/URL paste. Authentication and
+identity checks run before secure profile creation/update. Existing matching
+identities are reused; a different identity at an existing URL is rejected.
+The legacy app URL scheme is retained alongside `agentsdock`. No new token is
+issued or rotated. Live camera scanning still requires a physical device.
+
+The CLI, desktop and mobile serializers share a versioned contract test. Mobile
+and desktop keep independent source modules so the server npm package and native
+clients do not need each other installed.
+
+## CLI
+
+```sh
+agentsdock pair                 # default instance, prefer Tailscale then LAN
+agentsdock pair work
+agentsdock pair work --network lan
+agentsdock pair work --output connection.png
+agentsdock pair work --link      # explicitly print the secret connection URL
+agentsdock qrcode work           # alias
+```
+
+The command reads only the selected OS user's managed instance configuration,
+reuses the instance manager's binding-aware address discovery, and authenticates
+health at the selected address before encoding its identity and token. It prints
+an address, sharing guidance and a terminal QR; `--output` instead saves a PNG
+with owner-only permissions and refuses to overwrite an existing file. The QR
+renderer is bundled with its third-party notices, preserving offline npm installs
+and the exact single runtime dependency. Regenerate it with
+`node scripts/build_cli_qr.mjs` after installing the locked desktop dependencies.
+
+If several LAN addresses exist, the command asks you to select a listed address
+with `--url http://192.168.1.20:7851`; it never guesses between a Wi-Fi interface
+and a virtual-machine bridge. Arbitrary URLs are rejected.
+
+`--network auto` is the default. `tailscale`, `lan`, and `local` choose a specific
+network. Auto never falls back to localhost. `--network local` explicitly enables
+same-computer/iOS-simulator testing and warns that a physical phone cannot use it.
+A phone must share a reachable LAN or private Tailscale network; pairing does not
+change the server bind, firewall, or Tailscale policy and does not start/restart a
+service. This feature is available only in a package containing these changes;
+it is not added to already-published npm versions.
 
 ## Acceptance
 
@@ -72,3 +112,22 @@ Manual desktop check: copy tokens from two different profiles without switching
 servers, confirm the matching credentials, open/close the QR, save/cancel the PNG
 picker, reopen the app, and repeat. Use disposable connection profiles and keep
 token-bearing screenshots and PNGs out of public reports.
+
+
+CLI/mobile follow-up verification:
+
+- Packaged runtime + short CLI installed offline with lifecycle scripts disabled.
+  The installed CLI rejected automatic localhost pairing; explicit local pairing
+  generated a PNG whose independent Vision decode authenticated to the intended
+  test server with the exact expected identity. No service restart was needed.
+- CLI/package/instance tests cover address choice, omitted/invalid selectors,
+  private output, failed authentication, symlink rejection, immutable PNG output,
+  offline packaging and unchanged installation/lifecycle behavior.
+- Mobile contract and component fixtures cover all three encoders, confirmation
+  before network access, duplicate taps, QR image import, authentication failure,
+  identity mismatch, cancellation and reuse of saved identities. Existing profile
+  and setup checks also pass. Component native modules are mocked in these tests.
+- Simulator UI operation is blocked by the computer-control policy. Actual app
+  scanning/import, native SecureStore persistence across reopen, theme/layout,
+  cold/warm deep-link presentation, and a physical phone over LAN/Tailscale remain
+  manual acceptance requirements. Build success alone does not close those gaps.

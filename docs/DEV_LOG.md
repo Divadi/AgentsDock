@@ -1,5 +1,26 @@
 # Public development log
 
+## 2026-10-11 — CLI and mobile QR connection pairing
+
+- Add `agentsdock pair [NAME]` / `qrcode` with binding-aware Tailscale/LAN
+  selection, authenticated health and identity checks, terminal QR output, private
+  PNG export and an explicit link-output option. Local-only and ambiguous network
+  selections require explicit choices. Existing services are never restarted.
+- Bundle the QR renderer with its licenses so short-CLI installation remains
+  offline-capable and keeps the exact same-version server dependency.
+- Add mobile camera/image scanning and connection deep links. Users review the
+  address, then connect and save through existing identity validation and secure
+  token storage. Matching server identities are reused; failed authentication or
+  an identity mismatch cannot replace a saved server. Preserve the legacy scheme.
+- Validation: CLI, offline packaging, 97 instance tests, cross-client payload
+  tests, mobile component/profile/setup checks and TypeScript; generated native
+  permission/deep-link configuration; a packaged CLI QR independently decoded and
+  authenticated against the selected live test server. Component native modules
+  are mocked. Simulator UI control is blocked by computer policy; actual native
+  scan/import, persistence/reopen, deep-link presentation, and physical-phone
+  LAN/Tailscale acceptance remain pending. This is local development, not a public
+  npm/mobile release.
+
 ## 2026-10-11 — Desktop saved-server token copy and connection QR
 
 - Add per-server Settings actions for native clipboard token copying and locally

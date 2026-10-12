@@ -3,7 +3,10 @@
     "name": "AgentsDock",
     "slug": "agentsdock-react",
     "version": "0.1.1",
-    "scheme": "com.zhengyiluo.ZenithDock",
+    "scheme": [
+      "com.zhengyiluo.ZenithDock",
+      "agentsdock"
+    ],
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -59,7 +62,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow AgentsDock to access photos and videos you choose to attach to agent messages.",
-          "cameraPermission": false,
+          "cameraPermission": "Allow AgentsDock to scan a server connection QR code.",
           "microphonePermission": false
         }
       ],
@@ -71,7 +74,16 @@
           "defaultChannel": "default"
         }
       ],
-      "expo-document-picker"
+      "expo-document-picker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow AgentsDock to scan a server connection QR code.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ]
     ]
   }
 }
