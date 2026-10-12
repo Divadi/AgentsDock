@@ -792,8 +792,10 @@ export class AgentServerClient {
   codexServerGoals(): Promise<CodexGoalsConfiguration> {
     return this.privilegedNativeRequest('/api/admin/codex/goals')
   }
-  codexAuth(): Promise<CodexAuthStatus> {
-    return this.codexAuthRequest('/api/admin/codex/auth')
+  codexAuth(reloadLogin = false): Promise<CodexAuthStatus> {
+    return reloadLogin
+      ? this.codexAuthRequest('/api/admin/codex/auth/reload', { method: 'POST', body: '{}' })
+      : this.codexAuthRequest('/api/admin/codex/auth')
   }
   private async codexAuthRequest(path: string, init: RequestInit = {}): Promise<CodexAuthStatus> {
     try {
@@ -3211,6 +3213,7 @@ function isPrivilegedNativeControlTarget(
   if (/^\/api\/admin\/provider-accounts\/(claude|cursor|opencode)$/.test(path)) return !target.search && method === 'GET'
   if (/^\/api\/admin\/provider-models\/(codex|claude|opencode|cursor)$/.test(path)) return method === 'PUT' ? !target.search : method === 'GET' && [...target.searchParams.keys()].every(key => key === 'session_id') && target.searchParams.getAll('session_id').length <= 1
   if (path === '/api/admin/codex/auth') return !target.search && method === 'GET'
+  if (path === '/api/admin/codex/auth/reload') return !target.search && method === 'POST'
   if (path === '/api/admin/codex/provider') return !target.search && ['GET', 'PUT', 'DELETE'].includes(method)
   if (path === '/api/admin/codex/provider/test') return !target.search && method === 'POST'
   if (path === '/api/admin/codex/provider/models') return method === 'GET' && (!target.search

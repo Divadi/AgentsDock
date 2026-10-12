@@ -289,6 +289,7 @@ export function registerIpc(
   handle('custom-models:read', (scope, backend, sessionId) => service.customModels(scope, backend, undefined, sessionId))
   handle('custom-models:save', (scope, backend, input) => service.customModels(scope, backend, input))
   handle('codex:auth:get', scope => service.codexAuth(scope))
+  handle('codex:auth:reload', scope => service.codexAuth(scope, true))
   handle('codex:provider:get', scope => service.codexProvider(scope))
   handle('codex:provider:models', (scope, sessionId) => service.codexProviderModels(scope, sessionId))
   handle('codex:provider:test', (scope, input) => service.testCodexProvider(scope, input))
