@@ -1,5 +1,31 @@
 # Public development log
 
+## 2026-10-11 — Inherit new-chat settings from the open conversation
+
+- Both quick creation and the new-chat chooser prefer the focused conversation's
+  agent, CLI/custom connection, model, reasoning and provider-specific permissions.
+  Saved defaults apply only without an eligible open conversation, remain scoped
+  to the server, and accept older records without permission fields. Instructions,
+  native session identity, credentials and jobs are not copied.
+- Unavailable inherited agents/connections require an explicit choice instead of
+  silently switching providers. Late preference reads cannot cross server scopes.
+- Verification: 729 focused desktop tests, typecheck and production compilation
+  passed. Isolated native offscreen Electron reproduced stale model inheritance
+  with the old renderer, then exercised the new renderer via actual mouse/keyboard
+  input and production IPC/HTTP against an authenticated test service. Codex,
+  Claude and Cursor creation preserved server-side settings; a new Codex chat
+  completed a live provider turn. Unavailable OpenCode opened the chooser;
+  cancel/reopen and explicit provider selection worked. The test used isolated
+  in-memory credential storage, not the user's desktop profile.
+- Pre-merge review also covered a Claude-only availability fixture: initialization
+  cannot silently replace an unavailable inherited provider, including after
+  cancel/reopen. The native offscreen app checked the chooser against a controlled
+  catalog and created the explicitly selected Claude chat through real IPC/HTTP.
+  User testing accepted the primary inheritance workflow.
+- OpenCode availability and custom-endpoint propagation are covered by regression
+  fixtures, not live authenticated OpenCode/custom-provider runs. This is a local
+  desktop change; no public release, mobile change or primary-server update.
+
 ## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
 
 - Automatic reconnect/model discovery and Recheck CLIs no longer request an
