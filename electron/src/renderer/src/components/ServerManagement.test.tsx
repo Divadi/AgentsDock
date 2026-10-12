@@ -44,7 +44,6 @@ describe('ServerManagement', () => {
   const add = vi.fn()
   const update = vi.fn()
   const remove = vi.fn()
-  const reorder = vi.fn()
   const testConnection = vi.fn()
   const copyToken = vi.fn()
   const connectionQr = vi.fn()
@@ -57,7 +56,6 @@ describe('ServerManagement', () => {
     add.mockReset().mockResolvedValue(beta)
     update.mockReset().mockResolvedValue(alpha)
     remove.mockReset().mockResolvedValue(true)
-    reorder.mockReset().mockResolvedValue([beta, alpha])
     testConnection.mockReset().mockResolvedValue({ ok: true, server_identity: 'server-beta' })
     copyToken.mockReset().mockResolvedValue(undefined)
     connectionQr.mockReset().mockResolvedValue({ dataUrl: 'data:image/png;base64,fixture', serverUrl: 'http://127.0.0.1:7851', localOnly: true, revision: 7 })
@@ -68,7 +66,7 @@ describe('ServerManagement', () => {
     })
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
-      value: { servers: { list, add, update, remove, reorder, testConnection, copyToken, connectionQr, saveConnectionQr } } as unknown as AgentsDockAPI
+      value: { servers: { list, add, update, remove, testConnection, copyToken, connectionQr, saveConnectionQr } } as unknown as AgentsDockAPI
     })
     useAppStore.setState({
       profiles: [alpha],
@@ -316,17 +314,6 @@ describe('ServerManagement', () => {
     render(<ServerManagement />)
 
     expect(screen.getByText('Identity: server-alpha · AgentsServer 1.4.2')).toBeInTheDocument()
-  })
-
-  it('persists profile order returned by the main process', async () => {
-    useAppStore.setState({ profiles: [alpha, beta] })
-    const user = userEvent.setup()
-    render(<ServerManagement />)
-
-    await user.click(screen.getByRole('button', { name: 'Move Beta up' }))
-
-    await waitFor(() => expect(reorder).toHaveBeenCalledWith(['beta', 'alpha']))
-    expect(useAppStore.getState().profiles.map(profile => profile.id)).toEqual(['beta', 'alpha'])
   })
 
   it('does not reconnect the active server for a name-only edit', async () => {

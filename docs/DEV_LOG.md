@@ -1,5 +1,15 @@
 # Public development log
 
+## 2026-10-11 — Simplify saved-server actions
+
+- Remove the up/down ordering buttons from desktop Settings → Server and
+  their unused component handler. Keep the saved list order and the remaining
+  connection-management actions.
+- Validation: all 26 existing server-settings component tests, TypeScript,
+  production compilation, local bundle audit and strict ad-hoc signature checks
+  passed. Actual-app visual acceptance remains pending because computer-control
+  policy blocks the desktop app. Availability: local test package only.
+
 ## 2026-10-11 — CLI and mobile QR connection pairing
 
 - Add `agentsdock pair [NAME]` / `qrcode` with binding-aware Tailscale/LAN

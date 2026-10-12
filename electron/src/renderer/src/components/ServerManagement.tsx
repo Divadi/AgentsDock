@@ -2,7 +2,7 @@
 import { t, getLocale } from '@shared/i18n'
 import { useLocale } from '../lib/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Check, Copy, LoaderCircle, Pencil, Plus, QrCode, Server, Trash2, Wifi } from 'lucide-react'
+import { Check, Copy, LoaderCircle, Pencil, Plus, QrCode, Server, Trash2, Wifi } from 'lucide-react'
 import type { Health, PublicServerProfile } from '@shared/types'
 import { normalizeServerURL } from '@shared/server-url'
 import { trackEvent } from '../lib/analytics'
@@ -234,23 +234,6 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
     }
   }
 
-  const move = async (profileId: string, direction: -1 | 1) => {
-    const index = profiles.findIndex(profile => profile.id === profileId)
-    const target = index + direction
-    if (index < 0 || target < 0 || target >= profiles.length) return
-    const order = profiles.map(profile => profile.id)
-    ;[order[index], order[target]] = [order[target], order[index]]
-    setBusy(`move:${profileId}`)
-    try {
-      const next = await window.agentsDock.servers.reorder(order)
-      useAppStore.setState({ profiles: next })
-    } catch (error) {
-      useAppStore.getState().setError(errorMessage(error))
-    } finally {
-      setBusy(null)
-    }
-  }
-
   const activate = async (profileId: string) => {
     if (profileId === activeProfileId || switchingProfileId) return
     setActivationError(null)
@@ -296,7 +279,7 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
       <button type="button" className="quiet-button" disabled={Boolean(busy)} onClick={() => { invalidateTest(); openEditor(emptyDraft()) }}><Plus size={13} />{" "}{t("ui.ServerManagement.ServerManagement.add_server_1099b2a")}</button>
     </div>
     <div className="server-management-list">
-      {profiles.map((profile, index) => {
+      {profiles.map(profile => {
         const current = profile.id === activeProfileId
         const working = busy === `switch:${profile.id}` || switchingProfileId === profile.id
         const rowActivationError = activationError?.profileId === profile.id ? activationError.message : null
@@ -324,8 +307,6 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
               title={t('serverConnection.showQr')} disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => setQrProfileId(profile.id)}>
               <QrCode size={13} />
             </button>
-            <button type="button" className="icon-button" aria-label={t("ui.ServerManagement.move_up_0bca820", { "server": String(profile.name) })} disabled={index === 0 || Boolean(busy)} onClick={() => void move(profile.id, -1)}><ArrowUp size={13} /></button>
-            <button type="button" className="icon-button" aria-label={t("ui.ServerManagement.move_down_c5ebfeb", { "server": String(profile.name) })} disabled={index === profiles.length - 1 || Boolean(busy)} onClick={() => void move(profile.id, 1)}><ArrowDown size={13} /></button>
             {!current && <button type="button" className="quiet-button" aria-label={working ? t("ui.ServerManagement.switching_to_e7437c0", { "server": String(profile.name) }) : t("ui.ServerManagement.use_367b9be", { "server": String(profile.name) })} disabled={Boolean(busy) || Boolean(switchingProfileId)} onClick={() => void activate(profile.id)}>{working && <LoaderCircle className="spin" size={12} />} {working ? t("ui.ServerManagement.switching_b7b9fbf") : t("ui.ServerManagement.use_c36d819")}</button>}
             <button type="button" className="icon-button" aria-label={t("ui.ServerManagement.edit_966e044", { "server": String(profile.name) })} disabled={Boolean(busy)} onClick={() => beginEdit(profile)}><Pencil size={13} /></button>
             <button
