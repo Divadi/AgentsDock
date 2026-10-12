@@ -1,5 +1,15 @@
 # Public development log
 
+## 2026-10-11 — Integrate connection pairing with matched npm releases
+
+- Include the pairing command, bundled QR renderer and third-party notices in
+  the publication verifier's exact file allowlist. Preserve source-byte binding,
+  file-mode checks and rejection of extra files; include all three new files in
+  tamper-rejection fixtures.
+- Preserve the latest main release-pipeline checks when integrating this branch.
+  Desktop QR sharing stays commented out. No package publication or deployment
+  is part of this source integration.
+
 ## 2026-10-11 — Temporarily hide desktop QR sharing
 
 - Comment out the Show QR code button and its section heading in Server settings.
