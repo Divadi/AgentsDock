@@ -1,5 +1,13 @@
 # Public development log
 
+## 2026-10-11 — Preserve certificate-chain lookup in the hosted signing probe
+
+- Include the disposable keychain in the hosted search list only while signing
+  and verifying the probe, matching macOS certificate-chain lookup requirements.
+- Restore the exact original list on success and failure without replacing the
+  default keychain. Add executable isolated regression checks for that boundary;
+  no credential values or private signing output are exposed.
+
 ## 2026-10-11 — Identify hosted signing-preflight failure stages safely
 
 - Add fixed public checkpoint labels to the non-publishing Developer ID probe

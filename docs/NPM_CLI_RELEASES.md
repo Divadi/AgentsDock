@@ -59,6 +59,12 @@ history request. It creates no release, submits no notarization, publishes no
 package, installs no service and uploads no private diagnostics. It reports
 missing checks as failures, not an overall readiness pass.
 
+The disposable signing keychain is on the hosted user's search list only while
+signing and verifying the probe: `codesign --keychain` selects an identity but
+still needs the search list to resolve its certificate chain. The original list
+is restored in a `finally` block on success or failure; cleanup verifies it again.
+The user's default keychain is never replaced.
+
 The GitHub metadata check does not prove actual release-write permission. The
 probe does not establish a full Electron build, notarization submission, public
 publication, migration or reboot acceptance. A separately authorized hosted
