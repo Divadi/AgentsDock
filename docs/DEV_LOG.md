@@ -17,6 +17,10 @@
 - Native desktop acceptance remains pending because computer control is
   disabled. Component tests use mocked IPC and cannot establish live server
   authorization or actual desktop appearance. No server API change is required.
+  Local package: version 0.2.0/build 85, source `ec572e80`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
 
 ## 2026-10-11 — Browse workspace files from chat details
 
