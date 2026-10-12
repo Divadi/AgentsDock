@@ -145,6 +145,66 @@
   Native save-picker interaction was blocked by computer-control policy. Picker,
   theme/layout and mobile end-to-end acceptance remain pending. No server source
   change, service restart or public publication is included.
+## 2026-10-11 — Preserve certificate-chain lookup in the hosted signing probe
+
+- Include the disposable keychain in the hosted search list only while signing
+  and verifying the probe, matching macOS certificate-chain lookup requirements.
+- Restore the exact original list on success and failure without replacing the
+  default keychain. Add executable isolated regression checks for that boundary;
+  no credential values or private signing output are exposed.
+
+## 2026-10-11 — Identify hosted signing-preflight failure stages safely
+
+- Add fixed public checkpoint labels to the non-publishing Developer ID probe
+  so operators can distinguish certificate import, identity discovery, signing
+  and verification failures without exposing credentials or raw command output.
+- Preserve the protected hosted-runner guards, disposable-keychain cleanup and
+  all release acceptance requirements. A failed probe remains a failed check.
+
+## 2026-10-11 — Make release operation independent of the operator computer
+
+- Reconcile paired npm release tooling with current main while preserving the
+  frozen release branches. Include the native harness implementation as well as
+  its registered workflow, stronger split-default removal/state checks and safe
+  bounded failure identifiers. Keep failed product boundaries failed.
+- Add a manual protected credential preflight for existing GitHub release
+  access, Developer ID probe signing and read-only Apple API authentication.
+  It does not publish, submit notarization, build a product, install a service,
+  upload private diagnostics or replace signing identities. Hosted execution
+  remains pending; structural tests are not credential validation.
+- Document operator versus administrator/npm-owner responsibilities, exact
+  source selection, package-specific trust and the limitations of artifact-only
+  or verification-only runs. The scoped beta.6 runtime is public; the short CLI
+  and matched desktop publication remain incomplete. Preserve stable defaults.
+- Focused pipeline/harness/packaging source checks pass. No new candidate was
+  built and no existing signed artifact, service, credential or public release
+  was changed by this tooling update. See [the operator checklist](NPM_CLI_RELEASES.md#operating-releases-from-another-computer).
+
+## 2026-10-11 — Inherit new-chat settings from the open conversation
+
+- Both quick creation and the new-chat chooser prefer the focused conversation's
+  agent, CLI/custom connection, model, reasoning and provider-specific permissions.
+  Saved defaults apply only without an eligible open conversation, remain scoped
+  to the server, and accept older records without permission fields. Instructions,
+  native session identity, credentials and jobs are not copied.
+- Unavailable inherited agents/connections require an explicit choice instead of
+  silently switching providers. Late preference reads cannot cross server scopes.
+- Verification: 729 focused desktop tests, typecheck and production compilation
+  passed. Isolated native offscreen Electron reproduced stale model inheritance
+  with the old renderer, then exercised the new renderer via actual mouse/keyboard
+  input and production IPC/HTTP against an authenticated test service. Codex,
+  Claude and Cursor creation preserved server-side settings; a new Codex chat
+  completed a live provider turn. Unavailable OpenCode opened the chooser;
+  cancel/reopen and explicit provider selection worked. The test used isolated
+  in-memory credential storage, not the user's desktop profile.
+- Pre-merge review also covered a Claude-only availability fixture: initialization
+  cannot silently replace an unavailable inherited provider, including after
+  cancel/reopen. The native offscreen app checked the chooser against a controlled
+  catalog and created the explicitly selected Claude chat through real IPC/HTTP.
+  User testing accepted the primary inheritance workflow.
+- OpenCode availability and custom-endpoint propagation are covered by regression
+  fixtures, not live authenticated OpenCode/custom-provider runs. This is a local
+  desktop change; no public release, mobile change or primary-server update.
 
 ## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
 
@@ -223,6 +283,32 @@
   The designated local test server runs `1.0.10-beta.2.opencode.70af1129` with
   authenticated health and installed module/source parity verified. The primary
   server is unchanged. No artifacts are published and merge remains pending.
+
+## 2026-10-07 — Prepare matched npm runtime and short CLI publication
+
+- Extend the manual npm release workflow to prepare both `@agentsdock/server`
+  and `agentsdock` from one committed source/version. Validate the accepted CLI
+  receipt and all packaged files against Git, the exact scoped dependency and
+  the existing signed runtime descriptor before publication. Stage CLI bytes in
+  their own immutable two-asset private draft; do not modify runtime/app bundles.
+- Publish and verify the runtime before the CLI; verify public resolution
+  metadata and downloaded bytes for both. Preserve explicit stable baselines
+  during beta publication. Matching retries skip existing uploads, while
+  conflicting bytes/tags fail closed. Missing first-package ownership/trust is
+  reported as incomplete publication, not a matched-release success.
+- Add a manually dispatched disposable macOS/Linux native CLI acceptance
+  workflow and bounded reports. It exercises genuine first-global postinstall,
+  repeat-install preservation, commands, service lifecycle and cache retirement.
+  Known split-default service binding refusals remain failed checks, not bypasses.
+- Validation: 190 JavaScript and 142 Python checks pass, including actual offline
+  npm packaging/install tests, CLI/postinstall behavior, publication guards,
+  instance-manager fixtures and native harness safeguards. Changed workflows
+  pass actionlint. Real fresh native-service, split-default lifecycle/removal,
+  interactive setup and logout/reboot acceptance remain pending; mocked lifecycle
+  checks and safe existing-state no-op installs do not establish those results.
+- Preparation only: no new beta build, npm upload, release publication, signing
+  identity change or existing-service modification. The short command remains
+  unpublished. See [the matched npm release procedure](NPM_CLI_RELEASES.md).
 
 ## 2026-10-07 — Remember custom API drafts and clarify connection fields
 

@@ -82,6 +82,12 @@ and its legacy mirror. Coordinated releases also require the exact npm archive
 and matching signed legacy server bridge to be available, with identical runtime
 contents and executable permissions.
 
+New releases containing the short `agentsdock` command also prepare and verify
+both npm packages before desktop publication. Follow the
+[matched npm CLI release procedure](NPM_CLI_RELEASES.md), including first-package
+ownership/bootstrap and native CLI acceptance. Runtime-only publication does not
+mean the short CLI is public. Existing frozen releases are not rebuilt.
+
 Both workflows are manual, restricted to the canonical repository and reviewed
 `main` or `release/*` branches. Jobs using signing credentials or the release
 token use the `direct-production` environment with matching branch restrictions.
@@ -125,6 +131,15 @@ must be supplied again. Do not put them in source, chat, release assets or logs.
 | `APPLE_API_KEY_ID` | ID of that API key |
 | `APPLE_API_ISSUER` | App Store Connect issuer ID |
 | `AGENTSDOCK_RELEASE_TOKEN` | Fine-grained token with Contents write access to AgentsDock and AgentsDock-Releases |
+
+The dedicated token also needs Workflows write when a release target changes
+workflow files relative to the default branch. Its owner must already have the
+required repository access; a token cannot elevate that owner's permissions.
+Operators may dispatch hosted release jobs without copying these secrets to
+their own computers. Use the non-publishing credential preflight and operator
+checklist in [the npm release procedure](NPM_CLI_RELEASES.md#operating-releases-from-another-computer).
+Secret-name presence, artifact-only preparation and verification-only success
+do not establish that hosted Mac signing or public publishing is configured.
 
 For file-backed values, the CLI can send encoded bytes directly without printing
 them or placing the value in command history:
