@@ -1,5 +1,168 @@
 # Public development log
 
+## 2026-10-11 — Integrate connection pairing with matched npm releases
+
+- Include the pairing command, bundled QR renderer and third-party notices in
+  the publication verifier's exact file allowlist. Preserve source-byte binding,
+  file-mode checks and rejection of extra files; include all three new files in
+  tamper-rejection fixtures.
+- Preserve the latest main release-pipeline checks when integrating this branch.
+  Desktop QR sharing stays commented out. No package publication or deployment
+  is part of this source integration.
+- Update restart regression journeys to expand the active server card before
+  exercising its controls; preserve safe/force confirmation and recovery checks.
+  Keep the server-settings light background explicitly transparent. All 116
+  related restart and light-theme checks pass.
+- Allow two asynchronous test fixtures to reach their intended cancellation and
+  private-revision audit checkpoints despite full-suite scheduling pauses.
+  Retain the real SQLite/threaded-probe paths, all assertions and production
+  deadlines; no tests are skipped.
+
+## 2026-10-11 — Temporarily hide desktop QR sharing
+
+- Comment out the Show QR code button and its section heading in Server settings.
+  Keep the QR component and underlying sharing implementation for re-enabling
+  later. Token preview/copy and other server controls remain available.
+- Validation: 31 focused settings/component checks, TypeScript, production
+  compilation, local bundle audits and strict ad-hoc signature checks passed.
+  Retained QR tests exercise its component directly while the entry is hidden.
+  Actual-app visual acceptance remains pending because computer control is blocked.
+  Availability: local desktop package (0.2.0, build 85), automatic updates disabled.
+  No server update is needed.
+
+## 2026-10-11 — Inline token-copy confirmation
+
+- Confirm a successful token copy by replacing the button's copy icon with a
+  checkmark, keeping its Copy label and the card height unchanged. Remove the
+  separate success line; failed copies still show a retryable error. Editing or
+  folding the card clears the prior confirmation.
+- Validation: 31 focused server-settings tests, TypeScript, production compilation,
+  bundle audits and strict ad-hoc signature checks passed. Actual-app visual
+  acceptance remains pending because computer control is blocked. Availability:
+  local desktop package (0.2.0, build 85), automatic updates disabled. No server
+  update is needed.
+
+## 2026-10-11 — Masked token row in server settings
+
+- Show the first four token characters followed by masking dots in each expanded
+  server card, with a Copy button at the end that copies the complete credential.
+  Short tokens remain fully masked; missing tokens disable copying.
+- Mask the preview in the main process before IPC. Read only on expansion or
+  after a token edit, discard stale results, and keep profile listing free of
+  credentials. Preview errors never display credential-store error details.
+- Validation: 215 targeted component, IPC, preload, credential-lifecycle and
+  localization checks passed, together with TypeScript and production compilation.
+  Fixtures cover stale credential reads, short-token masking, inactive profiles,
+  edits, reopening and missing credentials. Actual-app visual/clipboard acceptance
+  remains pending because computer control is blocked. Local bundle audits and
+  strict ad-hoc signature verification passed (0.2.0, build 85; automatic updates
+  disabled). This desktop-only local package requires no server update.
+
+## 2026-10-11 — Give server settings a clearer layout
+
+- Keep the server name and URL together in the collapsed header, with connection
+  status alongside them. Expanded cards show version and identity on separate
+  labeled rows, with wrapping for long addresses and identifiers.
+- Group Copy token and Show QR code under Connect another device. Separate
+  Use/Edit from the red Remove action, with more spacing and wrapping. Remove
+  the duplicate status/identity block beside the active server's restart control.
+- Validation: 118 targeted component/localization tests, TypeScript, production
+  compilation, bundle audits and strict ad-hoc signature checks passed. Tests
+  use mocked IPC; actual-app visual acceptance is pending because computer
+  control is blocked. Availability: local desktop test package (0.2.0, build 85),
+  automatic updates disabled; no server update is needed for this layout change.
+
+## 2026-10-11 — Collapsible server settings cards
+
+- Match the My Agents settings layout with server cards collapsed by default.
+  Keep each name, connection status and active selection visible; place address,
+  identity/version, edit/remove/use, token copy and QR actions inside the card.
+  The active server's health/restart controls also live inside its card.
+- Put Add server above the cards. Keep new-connection editing at the top and
+  existing-connection editing inside its owning card. Folding preserves drafts,
+  dismisses credential-bearing QR panels and resets removal confirmation.
+  A newly saved server expands so a failed activation remains actionable.
+- Validation: 118 related component/localization tests, final focused settings
+  checks, TypeScript, production compilation, local bundle audit and strict
+  ad-hoc signature checks passed. Component IPC is mocked;
+  the actual-app visual/client-server workflow remains pending because computer
+  control is blocked. This is a local desktop change with no service restart or
+  public publication.
+
+## 2026-10-11 — Remove subagent concurrency from Server settings
+
+- Remove the Codex subagent-limit form from desktop Server settings. Opening
+  the page no longer reads or offers to change this per-chat default through
+  the server administration API.
+- Validation: all 163 related settings/goal/server-management component tests,
+  TypeScript, production compilation, local bundle audit and strict ad-hoc
+  signature checks passed. Native visual acceptance remains pending because
+  computer-control policy blocks the desktop app. Availability: local test
+  package only; no server update is required for this UI removal.
+
+## 2026-10-11 — Make persistent goals available without a global toggle
+
+- Remove the persistent-goals switch from desktop Server settings. Goal creation,
+  pause, resume and limits remain per-chat controls.
+- Updated servers ignore the retired environment/config opt-out. Preserve the
+  authenticated legacy status route as non-configurable; enabling is read-only
+  and disabling returns 409 without restarting providers or changing goal state.
+  Existing paused goals stay paused and unrelated shared settings are preserved.
+- Validation: 151 desktop component tests, TypeScript, production compilation,
+  local bundle audit and strict ad-hoc signature checks passed. Fifty isolated
+  server tests passed, including actual ASGI routes with synthetic credentials,
+  stale disabled settings, rejected legacy writes and unchanged goal/subagent
+  state. Native App visual/goal acceptance remains pending because computer
+  control is blocked. Availability: local desktop package and server source;
+  existing services were not restarted or deployed.
+
+## 2026-10-11 — Simplify saved-server actions
+
+- Remove the up/down ordering buttons from desktop Settings → Server and
+  their unused component handler. Keep the saved list order and the remaining
+  connection-management actions.
+- Validation: all 26 existing server-settings component tests, TypeScript,
+  production compilation, local bundle audit and strict ad-hoc signature checks
+  passed. Actual-app visual acceptance remains pending because computer-control
+  policy blocks the desktop app. Availability: local test package only.
+
+## 2026-10-11 — CLI and mobile QR connection pairing
+
+- Add `agentsdock pair [NAME]` / `qrcode` with binding-aware Tailscale/LAN
+  selection, authenticated health and identity checks, terminal QR output, private
+  PNG export and an explicit link-output option. Local-only and ambiguous network
+  selections require explicit choices. Existing services are never restarted.
+- Bundle the QR renderer with its licenses so short-CLI installation remains
+  offline-capable and keeps the exact same-version server dependency.
+- Add mobile camera/image scanning and connection deep links. Users review the
+  address, then connect and save through existing identity validation and secure
+  token storage. Matching server identities are reused; failed authentication or
+  an identity mismatch cannot replace a saved server. Preserve the legacy scheme.
+- Validation: CLI, offline packaging, 97 instance tests, cross-client payload
+  tests, mobile component/profile/setup checks and TypeScript; generated native
+  permission/deep-link configuration; a packaged CLI QR independently decoded and
+  authenticated against the selected live test server. Component native modules
+  are mocked. Simulator UI control is blocked by computer policy; actual native
+  scan/import, persistence/reopen, deep-link presentation, and physical-phone
+  LAN/Tailscale acceptance remain pending. This is local development, not a public
+  npm/mobile release. The iOS simulator Release build and isolated simulator
+  installation passed; the QR fixture was imported for manual image-scan testing.
+
+## 2026-10-11 — Desktop saved-server token copy and connection QR
+
+- Add per-server Settings actions for native clipboard token copying and locally
+  generated, saveable QR images, including inactive/offline saved profiles.
+  Copying never returns the token through IPC. Generation/saving checks the
+  selected credential revision; profile metadata stays credential-free.
+- Define a versioned connection-link contract and document the separate mobile
+  import work. Show local-only address and credential-sharing explanations;
+  generating a QR does not change network binding or grant restricted chat access.
+- Validation: focused service/IPC/preload/component/format checks, TypeScript
+  and production compilation; native offscreen copy and QR display; real macOS
+  clipboard and local-server authenticated health; independent Vision QR decode.
+  Native save-picker interaction was blocked by computer-control policy. Picker,
+  theme/layout and mobile end-to-end acceptance remain pending. No server source
+  change, service restart or public publication is included.
 ## 2026-10-11 — Preserve certificate-chain lookup in the hosted signing probe
 
 - Include the disposable keychain in the hosted search list only while signing

@@ -22,6 +22,7 @@ function fixture(t, version = '1.0.10-beta.5') {
   writeFileSync(join(sourceRoot, 'server/VERSION'), version + '\n')
   writeFileSync(join(sourceRoot, 'server/release-public-key.pem'), publicKey.export({ type: 'spki', format: 'pem' }))
   const files = { 'cli.cjs': '#!/usr/bin/env node\n// synthetic CLI\n', 'postinstall.cjs': '// synthetic hook\n',
+    'pair.cjs': '// synthetic pairing command\n', 'qr-renderer.cjs': '// synthetic bundled renderer\n', 'QR-NOTICES.txt': 'Synthetic QR attribution\n',
     'README.md': 'Fixture\n', LICENSE: 'Fixture license\n', NOTICE: 'Fixture notice\n' }
   for (const [name, bytes] of Object.entries(files)) writeFileSync(join(['LICENSE', 'NOTICE'].includes(name) ? sourceRoot : source, name), bytes)
   const git = args => execFileSync('git', ['-C', sourceRoot, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })

@@ -28,8 +28,6 @@ import { openAIProviderSettings } from '../lib/provider-settings'
 import { CodexModelDiscovery } from './CodexModelDiscovery'
 import { ReasoningDisplaySettings } from './ReasoningDisplaySettings'
 import { CoordinatedServerUpdateRow } from './CoordinatedServerUpdateRow'
-import { CodexServerSettings } from './CodexServerSettings'
-import { CodexSubagentSettings } from './CodexSubagentSettings'
 import { ServerManagement } from './ServerManagement'
 import { KeyboardShortcutsSettings } from './KeyboardShortcutsSettings'
 import { ShortcutKey } from './ShortcutTooltip'
@@ -2833,14 +2831,12 @@ export function SettingsDialog() {
     store.setModal('appSettings', false)
   }
   const serverSettingsContent = <div className="dialog-form settings-dialog-body app-settings-server-page">
-    <ServerManagement addRequest={addServerRequest} manageRequest={manageServersRequest} />
-    <div className={`server-health ${connected ? degraded ? 'degraded' : 'online' : 'offline'}`}><span /><div className="server-health-copy"><strong>{connected ? degraded ? t("ui.Dialogs.SettingsDialog.connected_limited_a6733ca") : t("ui.Dialogs.SettingsDialog.connected_2296556") : t("ui.Dialogs.SettingsDialog.offline_a179478")}</strong><small>{health?.server_identity || t("ui.Dialogs.SettingsDialog.connection_settings_are_stored_on_this_mac_7348bfb")}</small>{restartNotice && <small className={`server-restart-notice ${restartNotice.kind}`} role={restartNotice.kind === 'error' ? 'alert' : 'status'} aria-live="polite">{restartNotice.message}</small>}</div>{restartServerButton()}</div>
-    <CodexServerSettings
-      connected={connected}
-      profileId={activeProfileId}
-      profileGeneration={profileGeneration}
-    />
-    <CodexSubagentSettings connected={connected} profileId={activeProfileId} profileGeneration={profileGeneration} />
+    <ServerManagement addRequest={addServerRequest} manageRequest={manageServersRequest} activeServerControls={
+      <div className="server-management-runtime-actions">
+        {restartServerButton()}
+        {restartNotice && <small className={`server-restart-notice ${restartNotice.kind}`} role={restartNotice.kind === 'error' ? 'alert' : 'status'} aria-live="polite">{restartNotice.message}</small>}
+      </div>
+    } />
     <footer><button type="button" className="primary-button" onClick={closeSettings}>{t("ui.Dialogs.SettingsDialog.done_11a6767")}</button></footer>
   </div>
   return <>

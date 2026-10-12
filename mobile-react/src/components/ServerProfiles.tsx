@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -12,7 +12,8 @@ import {
 } from 'react-native'
 import { MenuView, type MenuAction } from '@expo/ui/community/menu'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { Check, ChevronDown, MoreHorizontal, Pencil, Plus, Server, Wifi, X } from 'lucide-react-native'
+import { Check, ChevronDown, MoreHorizontal, Pencil, Plus, QrCode, Server, Wifi, X } from 'lucide-react-native'
+import { ServerPairing } from './ServerPairing'
 import {
   buildCreateServerProfileInput,
   buildUpdateServerProfileInput,
@@ -67,6 +68,9 @@ export interface ServerProfileSelectorProps extends CommonServerProfileProps {
 }
 
 export interface ServerProfilesManagerProps extends CommonServerProfileProps {
+  pairingLink?: string | null
+  onPairingConsumed?: () => void
+  onPairingActiveChange?: (active: boolean) => void
   initialMode?: ServerProfileEditorInitialMode
   onSwitchProfile: (profileId: string) => Awaitable<ActionResult>
   onTestConnection: (input: ServerProfileTestInput) => Awaitable<ServerConnectionTestResult>
@@ -179,6 +183,9 @@ export function ServerProfilesManager({
   activeProfileId,
   switchingProfileId = null,
   initialMode = 'manage',
+  pairingLink,
+  onPairingConsumed,
+  onPairingActiveChange,
   onSwitchProfile,
   onTestConnection,
   onCreateProfile,
@@ -187,8 +194,14 @@ export function ServerProfilesManager({
   onRemoveProfile,
 }: ServerProfilesManagerProps) {
   const colors = usePalette()
+  const [pairing, setPairing] = useState(Boolean(pairingLink))
+  useEffect(() => {
+    onPairingActiveChange?.(pairing)
+    return () => onPairingActiveChange?.(false)
+  }, [pairing, onPairingActiveChange])
   const [draft, setDraft] = useState<ServerProfileDraftValues | null>(() => initialServerProfileDraft(initialMode, profiles, activeProfileId))
   const [busy, setBusy] = useState<string | null>(null)
+  useEffect(() => { if (pairingLink && !busy) setPairing(true) }, [pairingLink, busy])
   const [tested, setTested] = useState<ServerConnectionTestResult | null>(null)
   const [feedback, setFeedback] = useState<{ tone: 'error' | 'success' | 'neutral'; message: string } | null>(null)
   const testLease = useRef(0)
@@ -386,6 +399,11 @@ export function ServerProfilesManager({
     )
   }
 
+  if (pairing) return <ServerPairing initialLink={pairingLink} profiles={profiles}
+    onTestConnection={onTestConnection} onCreateProfile={onCreateProfile} onUpdateProfile={onUpdateProfile}
+    onSwitchProfile={onSwitchProfile} onClose={() => { setPairing(false); onPairingConsumed?.() }}
+    onConnected={() => { setPairing(false); onPairingConsumed?.(); setDraft(null) }} />
+
   return <ScrollView
     style={styles.manager}
     contentContainerStyle={styles.managerContent}
@@ -400,6 +418,7 @@ export function ServerProfilesManager({
       </View>
       <SecondaryButton icon={Plus} label="Add server" disabled={Boolean(busy)} onPress={openAdd} />
     </View>
+    <SecondaryButton icon={QrCode} label="Scan connection QR" disabled={Boolean(busy) || Boolean(switchingProfileId)} onPress={() => setPairing(true)} />
 
     <View style={[styles.profileList, { borderColor: colors.border }]}>
       {profiles.length ? profiles.map((profile, index) => {

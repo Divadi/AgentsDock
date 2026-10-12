@@ -90,6 +90,11 @@ jobs:
         working-directory: mobile-react
       - run: pnpm test:server-setup
         working-directory: mobile-react
+      - name: Verify QR pairing contract and confirmation flow
+        run: |
+          node scripts/run-history-tests.mjs src/lib/server-pairing.test.ts
+          node --test tests/server-pairing-ui.test.mjs tests/server-profiles.test.mjs
+        working-directory: mobile-react
       - run: node scripts/run-history-tests.mjs src/lib/team-references.test.ts
         working-directory: mobile-react
       - name: Verify cross-chat protocol, projection, and store races

@@ -35,6 +35,7 @@ import type {
 } from '../shared/types'
 
 const electronHarness = vi.hoisted(() => ({
+  copyText: vi.fn(),
   notificationSupported: false,
   showOpenDialog: vi.fn(),
   showSaveDialog: vi.fn(),
@@ -48,6 +49,7 @@ const electronHarness = vi.hoisted(() => ({
 }))
 
 vi.mock('electron', () => ({
+  clipboard: { writeText: (...args: unknown[]) => electronHarness.copyText(...args) },
   app: { getPath: () => '/tmp' },
   BrowserWindow: class {},
   dialog: {
@@ -7823,6 +7825,123 @@ describe('credential-free profile metadata and asynchronous authentication', () 
     clientFactory.mockClear()
     return { settings, service, read, readAsync, clientFactory }
   }
+
+  it('copies only the requested inactive profile token without connecting or returning credentials', async () => {
+    const { service, read, readAsync, clientFactory } = prepare(2)
+    electronHarness.copyText.mockClear()
+    expect(await service.copyServerToken('b')).toBeUndefined()
+    expect(electronHarness.copyText).toHaveBeenCalledExactlyOnceWith('fake-b')
+    expect(read).not.toHaveBeenCalled()
+    expect(readAsync).toHaveBeenCalledTimes(1)
+    expect(clientFactory).not.toHaveBeenCalled()
+    expect(service.getActiveServer().id).toBe('a')
+    expect(JSON.stringify(service.listServers())).not.toContain('fake-b')
+  })
+
+  it('masks the selected token before returning a preview without connecting or copying it', async () => {
+    const { service, settings, read, readAsync, clientFactory } = prepare(2)
+    settings.updateProfile('b', { accessToken: 'abcd-private-token-fixture' })
+    electronHarness.copyText.mockClear()
+    read.mockClear()
+    expect(await service.serverTokenPreview('b')).toBe('abcd••••••••')
+    expect(read).not.toHaveBeenCalled()
+    expect(readAsync).toHaveBeenCalledExactlyOnceWith('agent-access-token:b')
+    expect(clientFactory).not.toHaveBeenCalled()
+    expect(electronHarness.copyText).not.toHaveBeenCalled()
+    expect(service.getActiveServer().id).toBe('a')
+    expect(JSON.stringify(service.listServers())).not.toContain('abcd')
+  })
+
+  it.each(['a', 'abcd', '12345678'])('fully masks short tokens such as %s', async token => {
+    const { service, settings } = prepare(2)
+    settings.updateProfile('b', { accessToken: token })
+    expect(await service.serverTokenPreview('b')).toBe('••••••••')
+  })
+
+  it.each(['changed', 'removed', 'stopped'] as const)('rejects a preview when the profile is %s during the credential read', async action => {
+    const { service, readAsync } = prepare(2)
+    const token = deferred<string>()
+    readAsync.mockReturnValueOnce(token.promise)
+    const preview = service.serverTokenPreview('b')
+    const rejected = expect(preview).rejects.toThrow()
+    if (action === 'changed') await service.updateServer('b', { accessToken: 'replacement' })
+    else if (action === 'removed') await service.removeServer('b')
+    else service.stop()
+    token.resolve('abcd-private-token-fixture')
+    await rejected
+  })
+
+  it('rejects previews for missing credentials and inaccessible credential storage', async () => {
+    const { service, settings, readAsync } = prepare(2)
+    await expect(service.serverTokenPreview('unknown')).rejects.toThrow()
+    readAsync.mockRejectedValueOnce(new Error('Keychain unavailable'))
+    await expect(service.serverTokenPreview('b')).rejects.toThrow('Keychain unavailable')
+    settings.updateProfile('b', { accessToken: null })
+    await expect(service.serverTokenPreview('b')).rejects.toThrow('no saved access token')
+  })
+
+  it('generates and saves a PNG for the selected profile without contacting any server', async () => {
+    const { service, clientFactory } = prepare(2)
+    const qr = await service.serverConnectionQr('b')
+    expect(qr.serverUrl).toBe('https://b.test')
+    expect(qr.localOnly).toBe(false)
+    expect(qr.dataUrl).toMatch(/^data:image\/png;base64,/)
+    expect(JSON.stringify(qr)).not.toContain('fake-b')
+    const directory = mkdtempSync(join(tmpdir(), 'agentsdock-qr-'))
+    cleanup.push(() => rmSync(directory, { recursive: true, force: true }))
+    const filePath = join(directory, 'qr.png')
+    electronHarness.showSaveDialog.mockResolvedValueOnce({ canceled: false, filePath })
+    expect(await service.saveServerConnectionQr('b', qr.revision)).toBe(true)
+    expect(readFileSync(filePath)).toEqual(Buffer.from(qr.dataUrl.split(',')[1], 'base64'))
+    expect(clientFactory).not.toHaveBeenCalled()
+    expect(service.getActiveServer().id).toBe('a')
+  })
+
+  it('does not save a stale QR after credentials change while the save dialog is open', async () => {
+    const { service } = prepare(2)
+    const qr = await service.serverConnectionQr('b')
+    const destination = deferred<{ canceled: boolean; filePath: string }>()
+    electronHarness.showSaveDialog.mockReset().mockReturnValueOnce(destination.promise)
+    const saving = service.saveServerConnectionQr('b', qr.revision)
+    const rejected = expect(saving).rejects.toThrow()
+    await vi.waitFor(() => expect(electronHarness.showSaveDialog).toHaveBeenCalledOnce())
+    await service.updateServer('b', { accessToken: 'replacement' })
+    destination.resolve({ canceled: false, filePath: '/must-not-write-stale-qr.png' })
+    await rejected
+  })
+
+  it('allows canceling QR image saving without writing a file', async () => {
+    const { service } = prepare(2)
+    const qr = await service.serverConnectionQr('b')
+    electronHarness.showSaveDialog.mockResolvedValueOnce({ canceled: true })
+    expect(await service.saveServerConnectionQr('b', qr.revision)).toBe(false)
+  })
+
+  it.each(['changed', 'removed', 'stopped'] as const)('does not copy a token when the profile is %s during the credential read', async action => {
+    const { service, readAsync } = prepare(2)
+    electronHarness.copyText.mockClear()
+    const token = deferred<string>()
+    readAsync.mockReturnValueOnce(token.promise)
+    const copying = service.copyServerToken('b')
+    const rejected = expect(copying).rejects.toThrow()
+    if (action === 'changed') await service.updateServer('b', { accessToken: 'replacement' })
+    else if (action === 'removed') await service.removeServer('b')
+    else service.stop()
+    token.resolve('fake-b')
+    await rejected
+    expect(electronHarness.copyText).not.toHaveBeenCalled()
+  })
+
+  it('leaves the clipboard alone when no saved token can be read', async () => {
+    const { service, settings, readAsync } = prepare(2)
+    electronHarness.copyText.mockClear()
+    await expect(service.copyServerToken('unknown')).rejects.toThrow()
+    readAsync.mockRejectedValueOnce(new Error('Keychain unavailable'))
+    await expect(service.copyServerToken('b')).rejects.toThrow('Keychain unavailable')
+    settings.updateProfile('b', { accessToken: null })
+    await expect(service.copyServerToken('b')).rejects.toThrow('no saved access token')
+    expect(electronHarness.copyText).not.toHaveBeenCalled()
+  })
 
   it.each([2, 3])('uses zero credential reads for display and one asynchronous read for an ordinary %i-profile switch', async count => {
     const { service, settings, read, readAsync, clientFactory } = prepare(count)
