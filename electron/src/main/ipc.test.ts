@@ -43,6 +43,7 @@ describe('Team Hub IPC registration', () => {
 
   it.each([
     ['servers:copy-token', 'copyServerToken'],
+    ['servers:token-preview', 'serverTokenPreview'],
     ['servers:connection-qr', 'serverConnectionQr'],
     ['servers:save-connection-qr', 'saveServerConnectionQr']
   ])('restricts %s to a trusted desktop caller', async (channel, method) => {

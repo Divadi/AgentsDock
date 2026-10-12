@@ -3,12 +3,17 @@
 Settings → Server provides explicit actions on each saved server, including
 inactive or offline profiles:
 
-- Copy the saved access token into the native clipboard.
+- Preview the first four characters of a saved token with a masked suffix, then
+  copy the full token with the button at the end of its row. Short tokens stay
+  fully masked.
 - Display a locally generated connection QR code and save it as a PNG.
 
 No server upgrade or new HTTP endpoint is required. Token copying reads the
 selected profile's credential in the desktop main process and returns no token
-to the renderer. Normal profile listing still exposes only credential presence.
+to the renderer. Expanding a card separately requests an asynchronous preview,
+masked in the main process before IPC; collapsed cards do not read credentials.
+The preview is discarded on collapse and refreshed after token edits. It is not
+persisted or logged. Normal profile listing still exposes only credential presence.
 QR pixels themselves contain the credential, remain in the open component's
 memory, and are not written to settings, analytics or logs. Saving is an explicit
 native file-picker action. Credential changes invalidate pending reads and

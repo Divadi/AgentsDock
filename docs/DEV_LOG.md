@@ -1,5 +1,21 @@
 # Public development log
 
+## 2026-10-11 — Masked token row in server settings
+
+- Show the first four token characters followed by masking dots in each expanded
+  server card, with a Copy button at the end that copies the complete credential.
+  Short tokens remain fully masked; missing tokens disable copying.
+- Mask the preview in the main process before IPC. Read only on expansion or
+  after a token edit, discard stale results, and keep profile listing free of
+  credentials. Preview errors never display credential-store error details.
+- Validation: 215 targeted component, IPC, preload, credential-lifecycle and
+  localization checks passed, together with TypeScript and production compilation.
+  Fixtures cover stale credential reads, short-token masking, inactive profiles,
+  edits, reopening and missing credentials. Actual-app visual/clipboard acceptance
+  remains pending because computer control is blocked. Local bundle audits and
+  strict ad-hoc signature verification passed (0.2.0, build 85; automatic updates
+  disabled). This desktop-only local package requires no server update.
+
 ## 2026-10-11 — Give server settings a clearer layout
 
 - Keep the server name and URL together in the collapsed header, with connection

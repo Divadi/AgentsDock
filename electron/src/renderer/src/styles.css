@@ -2132,6 +2132,11 @@ button.tool-event-toggle:hover { background: #242424; }
 .server-management-copy .server-management-warning { color: var(--amber); }
 .server-management-sharing { display: flex; flex-direction: column; gap: 10px; }
 .server-management-section-label { color: var(--muted); font-size: var(--text-size-meta); }
+.server-management-token { display: flex; flex-direction: column; gap: var(--space-4); }
+.server-management-token-field { display: flex; align-items: center; gap: var(--space-6); min-width: 0; padding: var(--space-2) var(--space-2) var(--space-2) var(--space-6); border: 1px solid var(--border); border-radius: var(--radius-control); background: var(--surface-2); }
+.server-management-token-field code { flex: 1; min-width: 0; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: var(--text-size-ui); color: var(--muted); }
+.server-management-token-field > button { flex-shrink: 0; min-height: 36px; padding: 0 var(--space-6); }
+.server-management-token > small { color: var(--danger); font-size: var(--text-size-meta); }
 .server-management-share-actions, .server-management-primary-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .server-management-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
 .server-management-actions button, .server-management-share-actions button { min-height: 36px; flex-shrink: 0; padding: 0 12px; }

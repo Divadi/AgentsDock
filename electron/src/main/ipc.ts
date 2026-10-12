@@ -222,6 +222,7 @@ export function registerIpc(
   handle('servers:refresh', (profileId, profileGeneration) => service.refreshServer(profileId, profileGeneration))
   handle('servers:test-connection', input => service.testServerConnection(input))
   handle('servers:copy-token', profileId => service.copyServerToken(profileId))
+  handle('servers:token-preview', profileId => service.serverTokenPreview(profileId))
   handle('servers:connection-qr', profileId => service.serverConnectionQr(profileId))
   handle('servers:save-connection-qr', (profileId, revision) => service.saveServerConnectionQr(profileId, revision))
   handle('servers:restart-status', scope => service.serverRestartStatus(scope))

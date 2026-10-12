@@ -7838,6 +7838,48 @@ describe('credential-free profile metadata and asynchronous authentication', () 
     expect(JSON.stringify(service.listServers())).not.toContain('fake-b')
   })
 
+  it('masks the selected token before returning a preview without connecting or copying it', async () => {
+    const { service, settings, read, readAsync, clientFactory } = prepare(2)
+    settings.updateProfile('b', { accessToken: 'abcd-private-token-fixture' })
+    electronHarness.copyText.mockClear()
+    read.mockClear()
+    expect(await service.serverTokenPreview('b')).toBe('abcd••••••••')
+    expect(read).not.toHaveBeenCalled()
+    expect(readAsync).toHaveBeenCalledExactlyOnceWith('agent-access-token:b')
+    expect(clientFactory).not.toHaveBeenCalled()
+    expect(electronHarness.copyText).not.toHaveBeenCalled()
+    expect(service.getActiveServer().id).toBe('a')
+    expect(JSON.stringify(service.listServers())).not.toContain('abcd')
+  })
+
+  it.each(['a', 'abcd', '12345678'])('fully masks short tokens such as %s', async token => {
+    const { service, settings } = prepare(2)
+    settings.updateProfile('b', { accessToken: token })
+    expect(await service.serverTokenPreview('b')).toBe('••••••••')
+  })
+
+  it.each(['changed', 'removed', 'stopped'] as const)('rejects a preview when the profile is %s during the credential read', async action => {
+    const { service, readAsync } = prepare(2)
+    const token = deferred<string>()
+    readAsync.mockReturnValueOnce(token.promise)
+    const preview = service.serverTokenPreview('b')
+    const rejected = expect(preview).rejects.toThrow()
+    if (action === 'changed') await service.updateServer('b', { accessToken: 'replacement' })
+    else if (action === 'removed') await service.removeServer('b')
+    else service.stop()
+    token.resolve('abcd-private-token-fixture')
+    await rejected
+  })
+
+  it('rejects previews for missing credentials and inaccessible credential storage', async () => {
+    const { service, settings, readAsync } = prepare(2)
+    await expect(service.serverTokenPreview('unknown')).rejects.toThrow()
+    readAsync.mockRejectedValueOnce(new Error('Keychain unavailable'))
+    await expect(service.serverTokenPreview('b')).rejects.toThrow('Keychain unavailable')
+    settings.updateProfile('b', { accessToken: null })
+    await expect(service.serverTokenPreview('b')).rejects.toThrow('no saved access token')
+  })
+
   it('generates and saves a PNG for the selected profile without contacting any server', async () => {
     const { service, clientFactory } = prepare(2)
     const qr = await service.serverConnectionQr('b')

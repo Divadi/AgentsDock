@@ -2,12 +2,13 @@
 import { t, getLocale } from '@shared/i18n'
 import { useLocale } from '../lib/i18n'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Check, ChevronRight, Copy, LoaderCircle, Pencil, Plus, QrCode, Server, Trash2, Wifi } from 'lucide-react'
+import { Check, ChevronRight, LoaderCircle, Pencil, Plus, QrCode, Server, Trash2, Wifi } from 'lucide-react'
 import type { Health, PublicServerProfile } from '@shared/types'
 import { normalizeServerURL } from '@shared/server-url'
 import { trackEvent } from '../lib/analytics'
 import { useAppStore } from '../store/app-store'
 import { ServerConnectionQr } from './ServerConnectionQr'
+import { ServerTokenRow } from './ServerTokenRow'
 
 interface ServerDraft {
   profileId: string | null
@@ -43,6 +44,7 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
   const [activationError, setActivationError] = useState<{ profileId: string; message: string } | null>(null)
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
   const [tokenCopy, setTokenCopy] = useState<{ profileId: string; failed: boolean } | null>(null)
+  const [tokenPreviewRevisions, setTokenPreviewRevisions] = useState<Record<string, number>>({})
   const [qrProfileId, setQrProfileId] = useState<string | null>(null)
   const qrProfile = profiles.find(profile => profile.id === qrProfileId && profile.hasAccessToken)
   const testLease = useRef(0)
@@ -213,6 +215,10 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
       setTestError(detail)
       useAppStore.getState().setError(detail)
     } finally {
+      if (draft.profileId && (draft.accessToken || draft.clearAccessToken)) {
+        const profileId = draft.profileId
+        setTokenPreviewRevisions(current => ({ ...current, [profileId]: (current[profileId] ?? 0) + 1 }))
+      }
       setBusy(null)
     }
   }
@@ -345,6 +351,9 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
               {profile.serverVersion && <div><dt>{t('serverProfile.version')}</dt><dd>{profile.serverVersion}</dd></div>}
               {profile.serverIdentity && <div><dt>{t('serverProfile.identity')}</dt><dd><code>{profile.serverIdentity}</code></dd></div>}
             </dl>}
+            <ServerTokenRow key={`${profile.id}:${profile.serverUrl}:${tokenPreviewRevisions[profile.id] ?? 0}`}
+              profile={profile} disabled={Boolean(busy)} copying={busy === `copy:${profile.id}`}
+              onCopy={() => void copyToken(profile)} />
             <div className="server-management-copy">
               {tokenCopy?.profileId === profile.id && <small role="status" className={tokenCopy.failed ? 'server-management-error' : ''}>
                 {t(tokenCopy.failed ? 'serverConnection.copyFailed' : 'serverConnection.tokenCopied')}
@@ -356,12 +365,6 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
             <div className="server-management-sharing">
               <span className="server-management-section-label">{t('serverProfile.shareConnection')}</span>
               <div className="server-management-share-actions">
-              <button type="button" className="quiet-button"
-                aria-label={t('serverConnection.copyTokenFor', { server: profile.name })}
-                title={t(profile.hasAccessToken ? 'serverConnection.copyToken' : 'serverConnection.noSavedToken')}
-                disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => void copyToken(profile)}>
-                {busy === `copy:${profile.id}` ? <LoaderCircle className="spin" size={13} /> : <Copy size={15} />} {t('serverProfile.copyToken')}
-              </button>
               <button type="button" className="quiet-button" aria-label={t('serverConnection.qrFor', { server: profile.name })}
                 title={t('serverConnection.showQr')} disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => setQrProfileId(profile.id)}>
                 <QrCode size={15} /> {t('serverProfile.showQr')}

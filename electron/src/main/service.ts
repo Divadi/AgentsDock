@@ -1830,6 +1830,14 @@ export class AppService {
     clipboard.writeText(token)
   }
 
+  async serverTokenPreview(profileId: string): Promise<string> {
+    const { token, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    assertCurrent()
+    // Mask before crossing IPC. Never reveal a whole short credential or its length.
+    const prefixLength = token.length > 8 ? 4 : 0
+    return `${token.slice(0, prefixLength)}••••••••`
+  }
+
   private async serverCredentialForSharing(profileId: string) {
     if (typeof profileId !== 'string' || !profileId.trim()) throw new Error('Choose a saved server first.')
     this.requireProfileNotRemoving(profileId)

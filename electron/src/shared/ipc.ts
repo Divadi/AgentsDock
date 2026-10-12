@@ -356,6 +356,7 @@ export interface AgentsDockAPI {
     refresh(profileId: string, profileGeneration: number): Promise<ProfileBootstrapPayload>
     testConnection(input: TestServerConnectionInput): Promise<Health>
     copyToken(profileId: string): Promise<void>
+    tokenPreview(profileId: string): Promise<string>
     connectionQr(profileId: string): Promise<import('./server-connection-link').ServerConnectionQr>
     saveConnectionQr(profileId: string, revision: number): Promise<boolean>
     restartStatus(scope: WorkspaceProfileScope): Promise<ServerRestartStatus>

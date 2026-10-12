@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AgentsDockAPI } from '@shared/ipc'
@@ -52,6 +52,7 @@ describe('ServerManagement', () => {
   const remove = vi.fn()
   const testConnection = vi.fn()
   const copyToken = vi.fn()
+  const tokenPreview = vi.fn()
   const connectionQr = vi.fn()
   const saveConnectionQr = vi.fn()
   const switchServer = vi.fn()
@@ -64,6 +65,7 @@ describe('ServerManagement', () => {
     remove.mockReset().mockResolvedValue(true)
     testConnection.mockReset().mockResolvedValue({ ok: true, server_identity: 'server-beta' })
     copyToken.mockReset().mockResolvedValue(undefined)
+    tokenPreview.mockReset().mockResolvedValue('abcd••••••••')
     connectionQr.mockReset().mockResolvedValue({ dataUrl: 'data:image/png;base64,fixture', serverUrl: 'http://127.0.0.1:7851', localOnly: true, revision: 7 })
     saveConnectionQr.mockReset().mockResolvedValue(true)
     switchServer.mockReset().mockImplementation(async (profileId: string) => {
@@ -72,7 +74,7 @@ describe('ServerManagement', () => {
     })
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
-      value: { servers: { list, add, update, remove, testConnection, copyToken, connectionQr, saveConnectionQr } } as unknown as AgentsDockAPI
+      value: { servers: { list, add, update, remove, testConnection, copyToken, tokenPreview, connectionQr, saveConnectionQr } } as unknown as AgentsDockAPI
     })
     useAppStore.setState({
       profiles: [alpha],
@@ -88,7 +90,7 @@ describe('ServerManagement', () => {
     vi.restoreAllMocks()
   })
 
-  it('starts folded, exposes status, and reveals actions without any requests', async () => {
+  it('starts folded and reads a masked token only when expanded, without connecting', async () => {
     useAppStore.setState({ profiles: [alpha, beta] })
     const user = userEvent.setup()
     render(<ServerManagement activeServerControls={<button>Restart server</button>} />)
@@ -99,7 +101,10 @@ describe('ServerManagement', () => {
     expect(screen.getByText(alpha.serverUrl)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Edit Alpha' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Restart server' })).not.toBeInTheDocument()
+    expect(tokenPreview).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Server details for Alpha' }))
+    expect(await screen.findByText('abcd••••••••')).toBeVisible()
+    expect(tokenPreview).toHaveBeenCalledExactlyOnceWith('alpha')
     expect(screen.getByText(alpha.serverUrl)).toBeVisible()
     expect(screen.getByRole('button', { name: 'Edit Alpha' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Copy access token for Alpha' })).toBeVisible()
@@ -110,6 +115,49 @@ describe('ServerManagement', () => {
     expect(copyToken).not.toHaveBeenCalled()
     expect(connectionQr).not.toHaveBeenCalled()
     expect(switchServer).not.toHaveBeenCalled()
+  })
+
+  it('discards a late preview after folding and fetches a fresh preview on reopening', async () => {
+    let resolveOld!: (value: string) => void
+    tokenPreview.mockReturnValueOnce(new Promise<string>(resolve => { resolveOld = resolve }))
+    tokenPreview.mockResolvedValueOnce('new1••••••••')
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    const header = screen.getByRole('button', { name: 'Server details for Alpha' })
+    await user.click(header)
+    await user.click(header)
+    await user.click(header)
+    expect(await screen.findByText('new1••••••••')).toBeVisible()
+    await act(async () => { resolveOld('old1••••••••') })
+    expect(screen.queryByText('old1••••••••')).not.toBeInTheDocument()
+    expect(tokenPreview).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not read absent tokens and keeps preview errors free of credential details', async () => {
+    useAppStore.setState({ profiles: [alpha, { ...beta, hasAccessToken: false }] })
+    tokenPreview.mockRejectedValueOnce(new Error('secret-bearing-credential-error'))
+    renderExpanded(<ServerManagement />)
+    expect(await screen.findByText('Token preview unavailable. Reopen this card to retry.')).toBeVisible()
+    expect(screen.queryByText(/secret-bearing/)).not.toBeInTheDocument()
+    expect(screen.getByText('No saved access token')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Copy access token for Beta' })).toBeDisabled()
+    expect(tokenPreview).toHaveBeenCalledExactlyOnceWith('alpha')
+  })
+
+  it('refreshes the preview after saving a replacement token without reading on each keystroke', async () => {
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    await user.click(screen.getByRole('button', { name: 'Server details for Beta' }))
+    expect(await screen.findByText('abcd••••••••')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Edit Beta' }))
+    await user.type(screen.getByLabelText('Access token'), 'replaced-token-fixture')
+    expect(tokenPreview).toHaveBeenCalledTimes(1)
+    tokenPreview.mockResolvedValueOnce('repl••••••••')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('repl••••••••')).toBeVisible()
+    expect(tokenPreview).toHaveBeenCalledTimes(2)
+    expect(update).toHaveBeenCalledWith('beta', { accessToken: 'replaced-token-fixture' })
   })
 
   it('preserves an unfinished edit when folded and clears QR and removal confirmation', async () => {
