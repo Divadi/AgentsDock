@@ -1,7 +1,9 @@
 import type { ProviderUsageScope, ProviderUsageSnapshot, UsageBackend } from '../shared/provider-usage'
 import { customModelBackend, customModelInput, type CustomModelBackend, type CustomModelInput } from '../shared/custom-models'
 import { cliAccountBackend, type CLIAccountBackend, connectionRequest, type ConnectionBackend, type ConnectionAction, type ProviderConnectionRequest, type ProviderConnectionReply } from '../shared/provider-connections'
-import { app, BrowserWindow, dialog, nativeImage, Notification, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, nativeImage, Notification, shell } from 'electron'
+import QRCode from 'qrcode'
+import { localOnlyServerUrl, serverConnectionLink, type ServerConnectionQr } from '../shared/server-connection-link'
 import { discoverLocalServers, type DiscoveredLocalServer } from './local-server-discovery'
 import { applyOpenCodeSessionEvent } from '../shared/opencode'
 import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -1819,6 +1821,55 @@ export class AppService {
     }
     await this.refreshAll(false, true, scope)
     return this.loadCachedBootstrap(this.requireProfileScope(profileId, profileGeneration))
+  }
+
+  async copyServerToken(profileId: string): Promise<void> {
+    const { token, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    assertCurrent()
+    // Keep the credential in the main process; IPC returns no secret to the renderer.
+    clipboard.writeText(token)
+  }
+
+  private async serverCredentialForSharing(profileId: string) {
+    if (typeof profileId !== 'string' || !profileId.trim()) throw new Error('Choose a saved server first.')
+    this.requireProfileNotRemoving(profileId)
+    const shutdownEpoch = this.shutdownEpoch
+    const revision = this.settings.connectionRevision(profileId)
+    const profile = this.settings.getProfile(profileId)!
+    const assertCurrent = () => {
+      this.requireProfileNotRemoving(profileId)
+      if (this.shutdownEpoch !== shutdownEpoch || this.settings.connectionRevision(profileId) !== revision) throw staleProfileError()
+    }
+    const token = await this.settings.accessTokenForConnectionAsync(profileId)
+    assertCurrent()
+    if (!token) throw new Error('This server has no saved access token.')
+    return { token, profile, revision, assertCurrent }
+  }
+
+  async serverConnectionQr(profileId: string): Promise<ServerConnectionQr> {
+    const { token, profile, revision, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    const dataUrl = await QRCode.toDataURL(serverConnectionLink({ serverUrl: profile.serverUrl, accessToken: token,
+      name: profile.name, serverIdentity: profile.serverIdentity ?? null }), { width: 512, margin: 4, errorCorrectionLevel: 'M' })
+    assertCurrent()
+    return { dataUrl, serverUrl: profile.serverUrl, revision, localOnly: localOnlyServerUrl(profile.serverUrl) }
+  }
+
+  async saveServerConnectionQr(profileId: string, revision: number): Promise<boolean> {
+    const epoch = this.shutdownEpoch
+    const assertCurrent = () => {
+      this.requireProfileNotRemoving(profileId)
+      if (this.shutdownEpoch !== epoch || this.settings.connectionRevision(profileId) !== revision) throw staleProfileError()
+    }
+    assertCurrent()
+    const image = await this.serverConnectionQr(profileId)
+    assertCurrent()
+    const result = await dialog.showSaveDialog({ defaultPath: 'AgentsDock-server-connection.png',
+      filters: [{ name: 'PNG', extensions: ['png'] }] })
+    if (result.canceled || !result.filePath) return false
+    assertCurrent()
+    // The image contains a credential. Never log it or the payload, and restrict new files.
+    await writeFile(result.filePath, Buffer.from(image.dataUrl.split(',')[1], 'base64'), { mode: 0o600 })
+    return true
   }
 
   async testServerConnection(input: TestServerConnectionInput): Promise<Health> {

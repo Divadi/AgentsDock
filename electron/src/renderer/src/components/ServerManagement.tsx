@@ -2,11 +2,12 @@
 import { t, getLocale } from '@shared/i18n'
 import { useLocale } from '../lib/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, Check, LoaderCircle, Pencil, Plus, Server, Trash2, Wifi } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, Copy, LoaderCircle, Pencil, Plus, QrCode, Server, Trash2, Wifi } from 'lucide-react'
 import type { Health, PublicServerProfile } from '@shared/types'
 import { normalizeServerURL } from '@shared/server-url'
 import { trackEvent } from '../lib/analytics'
 import { useAppStore } from '../store/app-store'
+import { ServerConnectionQr } from './ServerConnectionQr'
 
 interface ServerDraft {
   profileId: string | null
@@ -38,6 +39,9 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
   const [testError, setTestError] = useState<string | null>(null)
   const [activationError, setActivationError] = useState<{ profileId: string; message: string } | null>(null)
   const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null)
+  const [tokenCopy, setTokenCopy] = useState<{ profileId: string; failed: boolean } | null>(null)
+  const [qrProfileId, setQrProfileId] = useState<string | null>(null)
+  const qrProfile = profiles.find(profile => profile.id === qrProfileId && profile.hasAccessToken)
   const testLease = useRef(0)
   const editorRef = useRef<HTMLDivElement | null>(null)
   const nameInputRef = useRef<HTMLInputElement | null>(null)
@@ -83,6 +87,20 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
     editorRef.current?.scrollIntoView?.({ block: 'nearest' })
     nameInputRef.current?.focus({ preventScroll: true })
   }, [draft])
+
+  const copyToken = async (profile: PublicServerProfile) => {
+    setBusy(`copy:${profile.id}`)
+    setTokenCopy(null)
+    try {
+      await window.agentsDock.servers.copyToken(profile.id)
+      setTokenCopy({ profileId: profile.id, failed: false })
+    } catch {
+      // Credential-store errors must not expose secret-bearing details in the UI.
+      setTokenCopy({ profileId: profile.id, failed: true })
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const beginEdit = (profile: PublicServerProfile) => {
     openEditor({
@@ -288,11 +306,24 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
           <div className="server-management-copy">
             <strong>{profile.name}{current && <span>{t("ui.ServerManagement.active_9234069")}</span>}</strong>
             <small>{profile.serverUrl}</small>
+            {tokenCopy?.profileId === profile.id && <small role="status" className={tokenCopy.failed ? 'server-management-error' : ''}>
+              {t(tokenCopy.failed ? 'serverConnection.copyFailed' : 'serverConnection.tokenCopied')}
+            </small>}
             {(details || profile.lastConnectionError || rowActivationError) && <small className={rowActivationError || profile.lastConnectionError ? profile.connectionState === 'degraded' && !rowActivationError ? 'server-management-warning' : 'server-management-error' : ''}>
               {rowActivationError || profile.lastConnectionError || details}
             </small>}
           </div>
           <div className="server-management-actions">
+            <button type="button" className="icon-button"
+              aria-label={t('serverConnection.copyTokenFor', { server: profile.name })}
+              title={t(profile.hasAccessToken ? 'serverConnection.copyToken' : 'serverConnection.noSavedToken')}
+              disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => void copyToken(profile)}>
+              {busy === `copy:${profile.id}` ? <LoaderCircle className="spin" size={13} /> : <Copy size={13} />}
+            </button>
+            <button type="button" className="icon-button" aria-label={t('serverConnection.qrFor', { server: profile.name })}
+              title={t('serverConnection.showQr')} disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => setQrProfileId(profile.id)}>
+              <QrCode size={13} />
+            </button>
             <button type="button" className="icon-button" aria-label={t("ui.ServerManagement.move_up_0bca820", { "server": String(profile.name) })} disabled={index === 0 || Boolean(busy)} onClick={() => void move(profile.id, -1)}><ArrowUp size={13} /></button>
             <button type="button" className="icon-button" aria-label={t("ui.ServerManagement.move_down_c5ebfeb", { "server": String(profile.name) })} disabled={index === profiles.length - 1 || Boolean(busy)} onClick={() => void move(profile.id, 1)}><ArrowDown size={13} /></button>
             {!current && <button type="button" className="quiet-button" aria-label={working ? t("ui.ServerManagement.switching_to_e7437c0", { "server": String(profile.name) }) : t("ui.ServerManagement.use_367b9be", { "server": String(profile.name) })} disabled={Boolean(busy) || Boolean(switchingProfileId)} onClick={() => void activate(profile.id)}>{working && <LoaderCircle className="spin" size={12} />} {working ? t("ui.ServerManagement.switching_b7b9fbf") : t("ui.ServerManagement.use_c36d819")}</button>}
@@ -309,6 +340,7 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0 }: { addReq
         </div>
       })}
     </div>
+    {qrProfile && <ServerConnectionQr key={`${qrProfile.id}:${qrProfile.serverUrl}`} profile={qrProfile} onClose={() => setQrProfileId(null)} />}
     {draft && <div ref={editorRef} className="server-management-editor">
       <div className="server-management-editor-heading">
         <div><strong>{draft.profileId ? t("ui.ServerManagement.ServerManagement.edit_966e044", { "server": String(editedProfile?.name || 'server') }) : t("ui.ServerManagement.ServerManagement.add_server_1099b2a")}</strong><small>{t("ui.ServerManagement.ServerManagement.connection_credentials_stay_in_this_mac_s__d4f7858")}</small></div>

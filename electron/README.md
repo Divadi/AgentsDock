@@ -73,6 +73,13 @@ Server identity scopes sessions, preferences, timeline rows, read state, jobs,
 files, and pins so aliases for one server share data without contaminating a
 different server.
 
+Settings → Server has per-profile actions to copy the saved access token and
+generate/save a connection QR image, without switching the active server.
+Connection QR import still needs a matching mobile implementation; the image
+does not make a loopback-only server reachable from a phone. See
+[`SERVER_CONNECTION_SHARING.md`](../docs/SERVER_CONNECTION_SHARING.md) for the
+format and remaining acceptance checks.
+
 <a id="opencode-optional-beta-backend"></a>
 
 ## OpenCode

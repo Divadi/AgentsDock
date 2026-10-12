@@ -168,6 +168,9 @@ const api: AgentsDockAPI = {
     switch: (profileId, force) => ipcRenderer.invoke('servers:switch', profileId, force),
     refresh: (profileId, profileGeneration) => ipcRenderer.invoke('servers:refresh', profileId, profileGeneration),
     testConnection: input => ipcRenderer.invoke('servers:test-connection', input),
+    copyToken: profileId => ipcRenderer.invoke('servers:copy-token', profileId),
+    connectionQr: profileId => ipcRenderer.invoke('servers:connection-qr', profileId),
+    saveConnectionQr: (profileId, revision) => ipcRenderer.invoke('servers:save-connection-qr', profileId, revision),
     restartStatus: scope => ipcRenderer.invoke('servers:restart-status', scope),
     restart: (scope, expectedServerInstanceId, forceConfirmation) => forceConfirmation
       ? ipcRenderer.invoke('servers:restart', scope, expectedServerInstanceId, forceConfirmation)

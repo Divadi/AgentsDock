@@ -1,5 +1,21 @@
 # Public development log
 
+## 2026-10-11 — Desktop saved-server token copy and connection QR
+
+- Add per-server Settings actions for native clipboard token copying and locally
+  generated, saveable QR images, including inactive/offline saved profiles.
+  Copying never returns the token through IPC. Generation/saving checks the
+  selected credential revision; profile metadata stays credential-free.
+- Define a versioned connection-link contract and document the separate mobile
+  import work. Show local-only address and credential-sharing explanations;
+  generating a QR does not change network binding or grant restricted chat access.
+- Validation: focused service/IPC/preload/component/format checks, TypeScript
+  and production compilation; native offscreen copy and QR display; real macOS
+  clipboard and local-server authenticated health; independent Vision QR decode.
+  Native save-picker interaction was blocked by computer-control policy. Picker,
+  theme/layout and mobile end-to-end acceptance remain pending. No server source
+  change, service restart or public publication is included.
+
 ## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
 
 - Automatic reconnect/model discovery and Recheck CLIs no longer request an

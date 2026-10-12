@@ -46,6 +46,9 @@ describe('ServerManagement', () => {
   const remove = vi.fn()
   const reorder = vi.fn()
   const testConnection = vi.fn()
+  const copyToken = vi.fn()
+  const connectionQr = vi.fn()
+  const saveConnectionQr = vi.fn()
   const switchServer = vi.fn()
 
   beforeEach(() => {
@@ -56,13 +59,16 @@ describe('ServerManagement', () => {
     remove.mockReset().mockResolvedValue(true)
     reorder.mockReset().mockResolvedValue([beta, alpha])
     testConnection.mockReset().mockResolvedValue({ ok: true, server_identity: 'server-beta' })
+    copyToken.mockReset().mockResolvedValue(undefined)
+    connectionQr.mockReset().mockResolvedValue({ dataUrl: 'data:image/png;base64,fixture', serverUrl: 'http://127.0.0.1:7851', localOnly: true, revision: 7 })
+    saveConnectionQr.mockReset().mockResolvedValue(true)
     switchServer.mockReset().mockImplementation(async (profileId: string) => {
       useAppStore.setState(state => ({ activeProfileId: profileId, profileGeneration: state.profileGeneration + 1 }))
       return true
     })
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
-      value: { servers: { list, add, update, remove, reorder, testConnection } } as unknown as AgentsDockAPI
+      value: { servers: { list, add, update, remove, reorder, testConnection, copyToken, connectionQr, saveConnectionQr } } as unknown as AgentsDockAPI
     })
     useAppStore.setState({
       profiles: [alpha],
@@ -76,6 +82,67 @@ describe('ServerManagement', () => {
   afterEach(() => {
     cleanup()
     vi.restoreAllMocks()
+  })
+
+  it('copies an inactive server token without switching, testing, or changing its profile', async () => {
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    expect(copyToken).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Copy access token for Beta' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Access token copied')
+    expect(copyToken).toHaveBeenCalledExactlyOnceWith('beta')
+    expect(switchServer).not.toHaveBeenCalled()
+    expect(testConnection).not.toHaveBeenCalled()
+    expect(update).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Copy access token for Alpha' }))
+    await waitFor(() => expect(copyToken).toHaveBeenLastCalledWith('alpha'))
+    expect(useAppStore.getState().activeProfileId).toBe('alpha')
+  })
+
+  it('generates a QR only on request, explains local-only addresses, and saves the selected revision', async () => {
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    expect(connectionQr).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
+    expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toBeInTheDocument()
+    expect(connectionQr).toHaveBeenCalledExactlyOnceWith('beta')
+    expect(screen.getByRole('note')).toHaveTextContent('only on this computer')
+    await user.click(screen.getByRole('button', { name: 'Save QR image…' }))
+    expect(saveConnectionQr).toHaveBeenCalledExactlyOnceWith('beta', 7)
+    expect(await screen.findByText('QR image saved')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Close connection QR code' }))
+    expect(screen.queryByRole('img', { name: 'Connection QR code for Beta' })).not.toBeInTheDocument()
+    expect(switchServer).not.toHaveBeenCalled()
+  })
+
+  it('does not show a late QR from a previously selected server', async () => {
+    let finish!: (value: unknown) => void
+    connectionQr.mockReturnValueOnce(new Promise(resolve => { finish = resolve }))
+    useAppStore.setState({ profiles: [alpha, beta] })
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    await user.click(screen.getByRole('button', { name: 'Connection QR code for Alpha' }))
+    await user.click(screen.getByRole('button', { name: 'Connection QR code for Beta' }))
+    expect(await screen.findByRole('img', { name: 'Connection QR code for Beta' })).toHaveAttribute('src', 'data:image/png;base64,fixture')
+    finish({ dataUrl: 'data:image/png;base64,stale', revision: 0 })
+    await waitFor(() => expect(screen.queryByRole('img', { name: 'Connection QR code for Alpha' })).not.toBeInTheDocument())
+    expect(screen.getByRole('img', { name: 'Connection QR code for Beta' })).toHaveAttribute('src', 'data:image/png;base64,fixture')
+  })
+
+  it('disables copying absent tokens and shows a retryable error without raw credential-store details', async () => {
+    useAppStore.setState({ profiles: [alpha, { ...beta, hasAccessToken: false }] })
+    copyToken.mockRejectedValueOnce(new Error('Sensitive keychain diagnostics'))
+    const user = userEvent.setup()
+    render(<ServerManagement />)
+    expect(screen.getByRole('button', { name: 'Copy access token for Beta' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Copy access token for Alpha' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Could not copy the saved token')
+    expect(screen.queryByText('Sensitive keychain diagnostics')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Copy access token for Alpha' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Copy access token for Alpha' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Access token copied')
   })
 
   it('tests a new connection, saves the profile, and switches without reloading', async () => {
