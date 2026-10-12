@@ -26,7 +26,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Verify public CLI and existing signed-update entry point
-        run: node --test server/npm/cli.test.cjs server/npm/agentsdock/cli.test.cjs server/npm/agentsdock/postinstall.test.cjs
+        run: node --test server/npm/cli.test.cjs server/npm/agentsdock/cli.test.cjs server/npm/agentsdock/postinstall.test.cjs server/npm/agentsdock/pair.test.cjs
       - name: Pack and install exact CLI/runtime in disposable npm prefixes
         env:
           PYTHONDONTWRITEBYTECODE: "1"
@@ -83,6 +83,11 @@ jobs:
       - run: pnpm test:history
         working-directory: mobile-react
       - run: pnpm test:server-setup
+        working-directory: mobile-react
+      - name: Verify QR pairing contract and confirmation flow
+        run: |
+          node scripts/run-history-tests.mjs src/lib/server-pairing.test.ts
+          node --test tests/server-pairing-ui.test.mjs tests/server-profiles.test.mjs
         working-directory: mobile-react
       - run: node scripts/run-history-tests.mjs src/lib/team-references.test.ts
         working-directory: mobile-react

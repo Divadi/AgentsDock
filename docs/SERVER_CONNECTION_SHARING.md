@@ -131,3 +131,6 @@ CLI/mobile follow-up verification:
   scanning/import, native SecureStore persistence across reopen, theme/layout,
   cold/warm deep-link presentation, and a physical phone over LAN/Tailscale remain
   manual acceptance requirements. Build success alone does not close those gaps.
+- The iOS simulator Release build passed with camera permission and both URL
+  schemes verified in the actual bundle. It was installed into an isolated
+  simulator with a QR image fixture; it has not been launched or driven.

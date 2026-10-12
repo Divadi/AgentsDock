@@ -19,7 +19,8 @@
   are mocked. Simulator UI control is blocked by computer policy; actual native
   scan/import, persistence/reopen, deep-link presentation, and physical-phone
   LAN/Tailscale acceptance remain pending. This is local development, not a public
-  npm/mobile release.
+  npm/mobile release. The iOS simulator Release build and isolated simulator
+  installation passed; the QR fixture was imported for manual image-scan testing.
 
 ## 2026-10-11 — Desktop saved-server token copy and connection QR
 
