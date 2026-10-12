@@ -9,7 +9,7 @@
   native session identity, credentials and jobs are not copied.
 - Unavailable inherited agents/connections require an explicit choice instead of
   silently switching providers. Late preference reads cannot cross server scopes.
-- Verification: 728 focused desktop tests, typecheck and production compilation
+- Verification: 729 focused desktop tests, typecheck and production compilation
   passed. Isolated native offscreen Electron reproduced stale model inheritance
   with the old renderer, then exercised the new renderer via actual mouse/keyboard
   input and production IPC/HTTP against an authenticated test service. Codex,
@@ -17,6 +17,11 @@
   completed a live provider turn. Unavailable OpenCode opened the chooser;
   cancel/reopen and explicit provider selection worked. The test used isolated
   in-memory credential storage, not the user's desktop profile.
+- Pre-merge review also covered a Claude-only availability fixture: initialization
+  cannot silently replace an unavailable inherited provider, including after
+  cancel/reopen. The native offscreen app checked the chooser against a controlled
+  catalog and created the explicitly selected Claude chat through real IPC/HTTP.
+  User testing accepted the primary inheritance workflow.
 - OpenCode availability and custom-endpoint propagation are covered by regression
   fixtures, not live authenticated OpenCode/custom-provider runs. This is a local
   desktop change; no public release, mobile change or primary-server update.

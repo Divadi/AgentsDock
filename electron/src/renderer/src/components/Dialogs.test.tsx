@@ -925,6 +925,24 @@ describe('SessionDialog runtime selection', () => {
     expect(create.mock.calls[0][0]).not.toHaveProperty('claude_permission_mode')
   })
 
+  it('does not let initial provider fallback overwrite inherited settings when only Claude is available', async () => {
+    Object.defineProperty(window, 'agentsDock', { configurable: true, value: { preferences: { get: vi.fn().mockResolvedValue(null) } } as unknown as AgentsDockAPI })
+    useAppStore.setState({ profiles: [], activeProfileId: null, profileGeneration: 0, selectedSessionId: 'opened',
+      sessions: [{ id: 'opened', title: 'Unavailable agent', backend: 'opencode', model: 'previous-model', opencode_permission_mode: 'plan' }],
+      health: { ok: true }, runtimeCatalog: { backends: { claude: runtimeCatalog.backends.claude } },
+      modals: { ...useAppStore.getState().modals, newChat: true, resume: false }
+    })
+    render(<SessionDialog mode="newChat" />)
+    await waitFor(() => expect(screen.getByLabelText('Model')).toHaveValue('previous-model'))
+    expect(screen.getByRole('button', { name: 'Claude' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Create chat' })).toBeDisabled()
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cancel' }))
+    act(() => useAppStore.getState().setModal('newChat', true))
+    await waitFor(() => expect(screen.getByLabelText('Model')).toHaveValue('previous-model'))
+    expect(screen.getByRole('button', { name: 'Claude' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: 'Create chat' })).toBeDisabled()
+  })
+
   it('creates a custom Codex chat without replacing normal Codex choices', async () => {
     const create = vi.fn().mockResolvedValue({ id: 'custom-chat' })
     Object.defineProperty(window, 'agentsDock', { configurable: true, value: {

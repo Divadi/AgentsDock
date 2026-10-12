@@ -2931,7 +2931,7 @@ export function SessionDialog({ mode }: { mode: 'newChat' | 'resume' }) {
   const profileId = useAppStore(state => state.activeProfileId)
   const profileGeneration = useAppStore(state => state.profileGeneration)
   const [inheritedDefaults, setInheritedDefaults] = useState<NewChatDefaults | null>(null)
-  const [initializing, setInitializing] = useState(false)
+  const [initializing, setInitializing] = useState(mode === 'newChat')
   const [title, setTitle] = useState('')
   const [folder, setFolder] = useState('General')
   const [cwd, setCwd] = useState('')
@@ -2947,7 +2947,11 @@ export function SessionDialog({ mode }: { mode: 'newChat' | 'resume' }) {
   const folders = useMemo(() => [...new Set(sessions.map(session => session.folder || 'General'))].sort(), [sessions])
   const backendOptions = useMemo(() => selectableChatBackendChoices(health, catalog).filter(choice => mode !== 'resume' || choice !== 'opencode' && !choice.endsWith('-custom')), [catalog, health, mode])
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      // Keep fallback effects gated for the first render of the next opening.
+      setInitializing(mode === 'newChat')
+      return
+    }
     setTitle(mode === 'newChat' ? 'New chat' : 'Resumed chat')
     setProviderId('')
     setModel('')
