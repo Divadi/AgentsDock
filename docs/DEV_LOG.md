@@ -9,6 +9,10 @@
 - Preserve the latest main release-pipeline checks when integrating this branch.
   Desktop QR sharing stays commented out. No package publication or deployment
   is part of this source integration.
+- Update restart regression journeys to expand the active server card before
+  exercising its controls; preserve safe/force confirmation and recovery checks.
+  Keep the server-settings light background explicitly transparent. All 116
+  related restart and light-theme checks pass.
 
 ## 2026-10-11 — Temporarily hide desktop QR sharing
 

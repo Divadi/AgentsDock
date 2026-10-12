@@ -2941,6 +2941,7 @@ button.tool-event-toggle:hover { background: #242424; }
 :root[data-theme="light"] .claude-mcp-server-copy .claude-mcp-server-error { color: #a33d38; }
 :root[data-theme="light"] .claude-mcp-row.status-needs-auth .claude-mcp-status-label,
 :root[data-theme="light"] .claude-mcp-server-copy .claude-mcp-auth-help { color: #795a17; }
+:root[data-theme="light"] .server-management { background: transparent; }
 :root[data-theme="light"] .server-management-editor { background: var(--surface-2); border-color: var(--border); }
 :root[data-theme="light"] .server-setup-guide { background: var(--surface-2); border-color: var(--border); }
 :root[data-theme="light"] .server-setup-guide:not(:disabled):hover { background: var(--surface-3); border-color: var(--control-border); }
