@@ -75,6 +75,8 @@ different server.
 
 Settings → Server has per-profile actions to copy the saved access token and
 generate/save a connection QR image, without switching the active server.
+Persistent goals have no server-wide Settings toggle. Updated servers keep the
+capability available by default; each chat retains its own goal controls.
 Connection QR import still needs a matching mobile implementation; the image
 does not make a loopback-only server reachable from a phone. See
 [`SERVER_CONNECTION_SHARING.md`](../docs/SERVER_CONNECTION_SHARING.md) for the

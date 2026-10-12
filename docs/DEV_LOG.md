@@ -1,5 +1,21 @@
 # Public development log
 
+## 2026-10-11 — Make persistent goals available without a global toggle
+
+- Remove the persistent-goals switch from desktop Server settings. Goal creation,
+  pause, resume and limits remain per-chat controls.
+- Updated servers ignore the retired environment/config opt-out. Preserve the
+  authenticated legacy status route as non-configurable; enabling is read-only
+  and disabling returns 409 without restarting providers or changing goal state.
+  Existing paused goals stay paused and unrelated shared settings are preserved.
+- Validation: 151 desktop component tests, TypeScript, production compilation,
+  local bundle audit and strict ad-hoc signature checks passed. Fifty isolated
+  server tests passed, including actual ASGI routes with synthetic credentials,
+  stale disabled settings, rejected legacy writes and unchanged goal/subagent
+  state. Native App visual/goal acceptance remains pending because computer
+  control is blocked. Availability: local desktop package and server source;
+  existing services were not restarted or deployed.
+
 ## 2026-10-11 — Simplify saved-server actions
 
 - Remove the up/down ordering buttons from desktop Settings → Server and
