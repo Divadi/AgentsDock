@@ -1,5 +1,17 @@
 # Public development log
 
+## 2026-10-11 — Inline token-copy confirmation
+
+- Confirm a successful token copy by replacing the button's copy icon with a
+  checkmark, keeping its Copy label and the card height unchanged. Remove the
+  separate success line; failed copies still show a retryable error. Editing or
+  folding the card clears the prior confirmation.
+- Validation: 31 focused server-settings tests, TypeScript, production compilation,
+  bundle audits and strict ad-hoc signature checks passed. Actual-app visual
+  acceptance remains pending because computer control is blocked. Availability:
+  local desktop package (0.2.0, build 85), automatic updates disabled. No server
+  update is needed.
+
 ## 2026-10-11 — Masked token row in server settings
 
 - Show the first four token characters followed by masking dots in each expanded

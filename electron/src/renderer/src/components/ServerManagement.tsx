@@ -111,6 +111,7 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
   }
 
   const beginEdit = (profile: PublicServerProfile) => {
+    setTokenCopy(null)
     openEditor({
       profileId: profile.id,
       name: profile.name,
@@ -332,6 +333,7 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
               setExpanded(current => { const next = new Set(current); if (next.has(profile.id)) next.delete(profile.id); else next.add(profile.id); return next })
               if (open && qrProfileId === profile.id) setQrProfileId(null)
               if (open && confirmRemoveId === profile.id) setConfirmRemoveId(null)
+              if (open && tokenCopy?.profileId === profile.id) setTokenCopy(null)
             }}>
             <ChevronRight size={16} className="server-management-chevron" />
             <span className="server-management-title">
@@ -353,10 +355,11 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
             </dl>}
             <ServerTokenRow key={`${profile.id}:${profile.serverUrl}:${tokenPreviewRevisions[profile.id] ?? 0}`}
               profile={profile} disabled={Boolean(busy)} copying={busy === `copy:${profile.id}`}
+              copied={tokenCopy?.profileId === profile.id && !tokenCopy.failed}
               onCopy={() => void copyToken(profile)} />
             <div className="server-management-copy">
-              {tokenCopy?.profileId === profile.id && <small role="status" className={tokenCopy.failed ? 'server-management-error' : ''}>
-                {t(tokenCopy.failed ? 'serverConnection.copyFailed' : 'serverConnection.tokenCopied')}
+              {tokenCopy?.profileId === profile.id && tokenCopy.failed && <small role="status" className="server-management-error">
+                {t('serverConnection.copyFailed')}
               </small>}
               {(profile.lastConnectionError || rowActivationError) && <small className={profile.connectionState === 'degraded' && !rowActivationError ? 'server-management-warning' : 'server-management-error'}>
                 {rowActivationError || profile.lastConnectionError}
