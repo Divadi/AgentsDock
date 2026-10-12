@@ -4561,6 +4561,38 @@ describe('untouched startup chat cleanup', () => {
     expect(useAppStore.getState().sessions.map(s => s.id)).toEqual([draft.id])
   })
 
+  it('cleans legacy blanks without local markers, including changed model settings, and preserves drafts', async () => {
+    const empty = untouchedStartupChat('legacy-empty', { empty_chat_cleanup: 'client-v1', model: 'new-model' })
+    const draft = untouchedStartupChat('legacy-draft', { empty_chat_cleanup: 'client-v1' })
+    const harness = installStartupCleanupHarness(profile, [empty, draft])
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, key, fallback) =>
+      key === `draft:${draft.id}` ? 'Unsent on this desktop' as any : fallback)
+    await useAppStore.getState().initialize()
+    expect(harness.remove).toHaveBeenCalledExactlyOnceWith(expect.anything(), empty.id, empty.updated_at)
+    expect(useAppStore.getState().sessions.map(s => s.id)).toEqual([draft.id])
+  })
+
+  it('preserves unmarked blanks on an old server and skips background-refresh cleanup', async () => {
+    const empty = untouchedStartupChat('legacy-server')
+    const harness = installStartupCleanupHarness(profile, [empty])
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, _key, fallback) => fallback)
+    await useAppStore.getState().initialize()
+    expect(harness.remove).not.toHaveBeenCalled()
+    useAppStore.setState({ sessions: [{ ...empty, empty_chat_cleanup: 'client-v1' }] })
+    await refreshSessions()
+    expect(harness.remove).not.toHaveBeenCalled()
+  })
+
+  it('checks the first online startup result when the initial cache has no candidates', async () => {
+    const empty = untouchedStartupChat('fresh-online', { empty_chat_cleanup: 'client-v1' })
+    const harness = installStartupCleanupHarness(profile, [empty])
+    vi.mocked(window.agentsDock.bootstrap).mockResolvedValue(startupCleanupBootstrap(profile, []))
+    vi.mocked(window.agentsDock.preferences.getScoped).mockImplementation(async (_scope, _key, fallback) => fallback)
+    await useAppStore.getState().initialize()
+    await vi.waitFor(() => expect(harness.remove).toHaveBeenCalledExactlyOnceWith(expect.anything(), empty.id, empty.updated_at))
+    expect(useAppStore.getState().sessions).toEqual([])
+  })
+
   it('does not fall back to ordinary Delete when the server rejects conditional cleanup', async () => {
     const placeholder = untouchedStartupChat('old-server')
     const harness = installStartupCleanupHarness(profile, [placeholder])
