@@ -1,5 +1,87 @@
 # Public development log
 
+## 2026-10-12 — Verify the consolidated Files inspector for merge
+
+- Integrate current main and preserve its release-tooling changes. Update the
+  old Explorer-column style regression to require the editor's full-width layout.
+- Validation: 230 of 231 focused checks passed initially; the sole failure was
+  the obsolete layout expectation, and all 13 style checks passed after updating
+  it. Both previously timing-sensitive directory checks passed this time.
+  TypeScript, production compilation and eight package/license checks passed.
+- The first hosted desktop run passed 5,138 checks but hit the second-page
+  reveal fixture's one-second DOM polling limit. Await its mocked page responses
+  and React commits before checking the rendered target; retain the selected-row
+  and exact paging-offset assertions without changing production deadlines.
+  All three focused pagination/reveal checks passed after that fixture change.
+- The user reported the local app looks good and authorized the PR and merge.
+  Agent-operated native acceptance remains pending because computer control is
+  disabled. The local app remains the previously verified package; no runtime
+  behavior changed during this merge preparation. No server update is required.
+
+## 2026-10-11 — Show Files when opening a file
+
+- Opening or selecting a workspace, attachment or image/PDF file tab now opens
+  the right panel and selects Files, including when the panel was closed or
+  showing Details/Review. The choice is remembered for subsequent reopening.
+- Apply the same behavior in split chats. Reject stale notifications from a
+  previous chat, working directory or server connection. Cancelling the picker
+  or rejecting a file before opening a tab leaves the panel unchanged.
+- Validation: all 56 focused app/file-opening checks passed. The broader
+  194-case run passed 191; a separate rerun passed its large-file timeout case.
+  Two remaining large-directory timing failures also reproduced against the
+  preceding source, so broader editor acceptance retains that limitation.
+  TypeScript and production compilation passed.
+- Native desktop acceptance is pending because computer control is disabled;
+  component fixtures use mocked IPC. No server changes are required.
+  Local package: version 0.2.0/build 85, source `b771f38f`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
+
+## 2026-10-11 — Consolidate workspace browsing in Files
+
+- Move the editor Explorer into the right-hand Files tab. Reuse its new
+  file/folder, refresh, open beside, copy path, download, rename and delete
+  operations, retaining dirty-buffer and revision checks. The editor no longer
+  reserves a second tree column or Explorer resize handle.
+- Remember the last Details/Files choice across panel and app reopening. Review
+  remains transient. Split-chat browsing follows the focused chat without
+  covering either conversation; opening a file activates the same editor.
+- Preserve paged results on folder errors, allow retry, reject changed roots,
+  and prevent background folder loads from resetting a quick-open selection.
+- Validation: 223 focused component/style/localization checks passed (the final
+  editor rerun passed all 138 cases), plus eight compilation/license checks.
+  TypeScript and production compilation passed.
+- Native desktop acceptance remains pending because computer control is
+  disabled. Component tests use mocked IPC and cannot establish live server
+  authorization or actual desktop appearance. No server API change is required.
+  Local package: version 0.2.0/build 85, source `ec572e80`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
+
+## 2026-10-11 — Browse workspace files from chat details
+
+- Add Details / Files tabs to the chat inspector, retaining Review when present.
+  Files shows the server-side working directory, expandable folders, explicit
+  pagination and refresh, and opens selected files in the existing editor.
+- Load only the root and folders requested by the user. Clear directory state
+  when the chat, server generation or working directory changes; ignore stale
+  responses. Preserve existing authenticated workspace access and symlink rules.
+- Validation: 172 focused checks passed, including component fixtures for
+  browsing, errors/retry, paging, stale responses, English/Chinese labels and
+  the Files-to-editor handoff. TypeScript and production compilation passed.
+  The full desktop run had 5,125 passes and five skips; its only failure was an
+  existing clipboard-permission fixture under umask 077, which passed with its
+  expected umask 022; all 421 service checks passed on that rerun. All eight
+  compilation-output/license checks passed.
+  Native desktop acceptance is pending because computer control is unavailable;
+  mocked IPC checks do not establish the real app/server journey. Availability:
+  local desktop package, version 0.2.0/build 85, packaged source `61265aca`.
+  Bundle audit, strict ad-hoc signature verification and packaged-renderer byte
+  comparison passed. The package uses isolated app data with automatic updates
+  disabled. No server API change or restart is required.
+
 ## 2026-10-11 — Reconcile hosted desktop release readiness
 
 - Bring the release line's audited native build-number epochs into the maintained
