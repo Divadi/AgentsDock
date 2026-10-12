@@ -1,5 +1,19 @@
 # Public development log
 
+## 2026-10-11 — Give server settings a clearer layout
+
+- Keep the server name and URL together in the collapsed header, with connection
+  status alongside them. Expanded cards show version and identity on separate
+  labeled rows, with wrapping for long addresses and identifiers.
+- Group Copy token and Show QR code under Connect another device. Separate
+  Use/Edit from the red Remove action, with more spacing and wrapping. Remove
+  the duplicate status/identity block beside the active server's restart control.
+- Validation: 118 targeted component/localization tests, TypeScript, production
+  compilation, bundle audits and strict ad-hoc signature checks passed. Tests
+  use mocked IPC; actual-app visual acceptance is pending because computer
+  control is blocked. Availability: local desktop test package (0.2.0, build 85),
+  automatic updates disabled; no server update is needed for this layout change.
+
 ## 2026-10-11 — Collapsible server settings cards
 
 - Match the My Agents settings layout with server cards collapsed by default.

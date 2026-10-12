@@ -2832,7 +2832,10 @@ export function SettingsDialog() {
   }
   const serverSettingsContent = <div className="dialog-form settings-dialog-body app-settings-server-page">
     <ServerManagement addRequest={addServerRequest} manageRequest={manageServersRequest} activeServerControls={
-      <div className={`server-health ${connected ? degraded ? 'degraded' : 'online' : 'offline'}`}><span /><div className="server-health-copy"><strong>{connected ? degraded ? t("ui.Dialogs.SettingsDialog.connected_limited_a6733ca") : t("ui.Dialogs.SettingsDialog.connected_2296556") : t("ui.Dialogs.SettingsDialog.offline_a179478")}</strong><small>{health?.server_identity || t("ui.Dialogs.SettingsDialog.connection_settings_are_stored_on_this_mac_7348bfb")}</small>{restartNotice && <small className={`server-restart-notice ${restartNotice.kind}`} role={restartNotice.kind === 'error' ? 'alert' : 'status'} aria-live="polite">{restartNotice.message}</small>}</div>{restartServerButton()}</div>
+      <div className="server-management-runtime-actions">
+        {restartServerButton()}
+        {restartNotice && <small className={`server-restart-notice ${restartNotice.kind}`} role={restartNotice.kind === 'error' ? 'alert' : 'status'} aria-live="polite">{restartNotice.message}</small>}
+      </div>
     } />
     <footer><button type="button" className="primary-button" onClick={closeSettings}>{t("ui.Dialogs.SettingsDialog.done_11a6767")}</button></footer>
   </div>

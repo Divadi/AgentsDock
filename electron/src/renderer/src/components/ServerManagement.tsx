@@ -319,7 +319,6 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
         const panelId = `server-details-${encodeURIComponent(profile.id)}`
         const working = busy === `switch:${profile.id}` || switchingProfileId === profile.id
         const rowActivationError = activationError?.profileId === profile.id ? activationError.message : null
-        const details = [profile.serverIdentity ? t("ui.ServerManagement.identity_96fbbb0", { "id": String(profile.serverIdentity) }) : '', profile.serverVersion ? `AgentsServer ${profile.serverVersion}` : ''].filter(Boolean).join(' · ')
         return <div className={`server-management-row${current ? ' active' : ''}`} key={profile.id}>
           <button type="button" className="server-management-toggle" aria-expanded={open} aria-controls={open ? panelId : undefined}
             aria-label={t('serverProfile.detailsFor', { server: profile.name })}
@@ -329,40 +328,54 @@ export function ServerManagement({ addRequest = 0, manageRequest = 0, activeServ
               if (open && confirmRemoveId === profile.id) setConfirmRemoveId(null)
             }}>
             <ChevronRight size={16} className="server-management-chevron" />
-            <strong title={profile.name}>{profile.name}</strong>
-            {current && <span className="server-management-active">{t("ui.ServerManagement.active_9234069")}</span>}
-            <span className={`server-management-status ${profile.connectionState}`}>
-              <span className={`server-connection-dot ${profile.connectionState}`} title={connectionLabel(profile)} role="img" aria-label={connectionLabel(profile)} />
-              {t(`serverProfile.status.${profile.connectionState}`)}
+            <span className="server-management-title">
+              <strong>{profile.name}</strong>
+              <span className="server-management-url">{profile.serverUrl}</span>
+            </span>
+            <span className="server-management-header-status">
+              <span className={`server-management-status ${profile.connectionState}`}>
+                <span className={`server-connection-dot ${profile.connectionState}`} title={connectionLabel(profile)} role="img" aria-label={connectionLabel(profile)} />
+                {t(`serverProfile.status.${profile.connectionState}`)}
+              </span>
+              {current && <span className="server-management-active">{t("ui.ServerManagement.active_9234069")}</span>}
             </span>
           </button>
           {open && <div id={panelId} className="server-management-body">
+            {(profile.serverVersion || profile.serverIdentity) && <dl className="server-management-metadata">
+              {profile.serverVersion && <div><dt>{t('serverProfile.version')}</dt><dd>{profile.serverVersion}</dd></div>}
+              {profile.serverIdentity && <div><dt>{t('serverProfile.identity')}</dt><dd><code>{profile.serverIdentity}</code></dd></div>}
+            </dl>}
             <div className="server-management-copy">
-              <small>{profile.serverUrl}</small>
               {tokenCopy?.profileId === profile.id && <small role="status" className={tokenCopy.failed ? 'server-management-error' : ''}>
                 {t(tokenCopy.failed ? 'serverConnection.copyFailed' : 'serverConnection.tokenCopied')}
               </small>}
-              {details && <small>{details}</small>}
               {(profile.lastConnectionError || rowActivationError) && <small className={profile.connectionState === 'degraded' && !rowActivationError ? 'server-management-warning' : 'server-management-error'}>
                 {rowActivationError || profile.lastConnectionError}
               </small>}
             </div>
-            <div className="server-management-actions">
+            <div className="server-management-sharing">
+              <span className="server-management-section-label">{t('serverProfile.shareConnection')}</span>
+              <div className="server-management-share-actions">
               <button type="button" className="quiet-button"
                 aria-label={t('serverConnection.copyTokenFor', { server: profile.name })}
                 title={t(profile.hasAccessToken ? 'serverConnection.copyToken' : 'serverConnection.noSavedToken')}
                 disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => void copyToken(profile)}>
-                {busy === `copy:${profile.id}` ? <LoaderCircle className="spin" size={13} /> : <Copy size={13} />} {t('serverConnection.copyToken')}
+                {busy === `copy:${profile.id}` ? <LoaderCircle className="spin" size={13} /> : <Copy size={15} />} {t('serverProfile.copyToken')}
               </button>
               <button type="button" className="quiet-button" aria-label={t('serverConnection.qrFor', { server: profile.name })}
                 title={t('serverConnection.showQr')} disabled={!profile.hasAccessToken || Boolean(busy)} onClick={() => setQrProfileId(profile.id)}>
-                <QrCode size={13} /> {t('serverConnection.showQr')}
+                <QrCode size={15} /> {t('serverProfile.showQr')}
               </button>
-              {!current && <button type="button" className="quiet-button" aria-label={working ? t("ui.ServerManagement.switching_to_e7437c0", { "server": String(profile.name) }) : t("ui.ServerManagement.use_367b9be", { "server": String(profile.name) })} disabled={Boolean(busy) || Boolean(switchingProfileId)} onClick={() => void activate(profile.id)}>{working && <LoaderCircle className="spin" size={12} />} {working ? t("ui.ServerManagement.switching_b7b9fbf") : t("ui.ServerManagement.use_c36d819")}</button>}
-              <button type="button" className="quiet-button" aria-label={t("ui.ServerManagement.edit_966e044", { "server": String(profile.name) })} disabled={Boolean(busy)} onClick={() => beginEdit(profile)}><Pencil size={13} /> {t('serverProfile.edit')}</button>
+              </div>
+            </div>
+            <div className="server-management-actions">
+              <div className="server-management-primary-actions">
+              {!current && <button type="button" className="quiet-button" aria-label={working ? t("ui.ServerManagement.switching_to_e7437c0", { "server": String(profile.name) }) : t("ui.ServerManagement.use_367b9be", { "server": String(profile.name) })} disabled={Boolean(busy) || Boolean(switchingProfileId)} onClick={() => void activate(profile.id)}>{working && <LoaderCircle className="spin" size={12} />} {working ? t("ui.ServerManagement.switching_b7b9fbf") : t('serverProfile.use')}</button>}
+              <button type="button" className="quiet-button" aria-label={t("ui.ServerManagement.edit_966e044", { "server": String(profile.name) })} disabled={Boolean(busy)} onClick={() => beginEdit(profile)}><Pencil size={15} /> {t('serverProfile.edit')}</button>
+              </div>
               <button
                 type="button"
-                className={confirmRemoveId === profile.id ? 'danger-button compact' : 'quiet-button'}
+                className={confirmRemoveId === profile.id ? 'danger-button server-management-remove' : 'quiet-button server-management-remove'}
                 aria-label={current ? t("ui.ServerManagement.cannot_remove_active_server_b699625", { "server": String(profile.name) }) : t("ui.ServerManagement.remove_6f8460e", { "filename": String(profile.name) })}
                 title={current ? t("ui.ServerManagement.switch_to_another_server_before_removing_t_1ed6f7e") : t("ui.ServerManagement.remove_saved_server_cached_chats_are_prese_3fae6c2")}
                 disabled={current || Boolean(busy)}

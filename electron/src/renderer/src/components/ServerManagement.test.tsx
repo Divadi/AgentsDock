@@ -96,7 +96,7 @@ describe('ServerManagement', () => {
     expect(screen.getByRole('button', { name: 'Server details for Alpha' })).toHaveAttribute('aria-expanded', 'false')
     expect(screen.getByText('Connected')).toBeVisible()
     expect(screen.getAllByText('Active')).toHaveLength(1)
-    expect(screen.queryByText(alpha.serverUrl)).not.toBeInTheDocument()
+    expect(screen.getByText(alpha.serverUrl)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Edit Alpha' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Restart server' })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Server details for Alpha' }))
@@ -289,8 +289,8 @@ describe('ServerManagement', () => {
 
     renderExpanded(<ServerManagement />)
 
-    expect(screen.getByRole('button', { name: 'Use Beta' })).toHaveTextContent('Use')
-    expect(screen.getByRole('button', { name: 'Use Gamma' })).toHaveTextContent('Use')
+    expect(screen.getByRole('button', { name: 'Use Beta' })).toHaveTextContent('Use server')
+    expect(screen.getByRole('button', { name: 'Use Gamma' })).toHaveTextContent('Use server')
     expect(screen.queryByRole('button', { name: 'Use Alpha' })).not.toBeInTheDocument()
   })
 
@@ -358,7 +358,8 @@ describe('ServerManagement', () => {
 
     expect(screen.getByRole('img', { name: `Degraded: ${message}` })).toHaveClass('degraded')
     expect(screen.getByText(message)).toHaveClass('server-management-warning')
-    expect(screen.getByText('Identity: server-beta · AgentsServer 1.4.2')).toBeVisible()
+    expect(screen.getByText('server-beta')).toBeVisible()
+    expect(screen.getByText('1.4.2')).toBeVisible()
     expect(screen.getAllByText('Active')).toHaveLength(1)
   })
 
@@ -367,7 +368,8 @@ describe('ServerManagement', () => {
 
     renderExpanded(<ServerManagement />)
 
-    expect(screen.getByText('Identity: server-alpha · AgentsServer 1.4.2')).toBeInTheDocument()
+    expect(screen.getByText('server-alpha')).toBeVisible()
+    expect(screen.getByText('1.4.2')).toBeVisible()
   })
 
   it('does not reconnect the active server for a name-only edit', async () => {
