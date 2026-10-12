@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setLocale } from '@shared/i18n'
 import { SideChatController } from '../lib/side-chat'
 import { useAppStore } from '../store/app-store'
+import { WorkspaceEditor, resetWorkspaceEditorMemoryForTests } from './WorkspaceEditor'
+import { WorkspaceFilesProvider } from './WorkspaceFilesContext'
 import { InspectorWorkspace, type InspectorWorkspaceTab } from './InspectorWorkspace'
 
 const scope = { profileId: 'server-a', profileGeneration: 7 }
@@ -21,10 +23,12 @@ function Workspace({ initialTab = 'details', review = false }: {
 
 beforeEach(() => {
   setLocale('en')
+  resetWorkspaceEditorMemoryForTests()
   controller = new SideChatController()
   hide = vi.fn()
   Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
-    native: { openExternal: vi.fn() },
+    native: { openExternal: vi.fn(), log: vi.fn().mockResolvedValue(undefined) },
+    preferences: { getScoped: vi.fn().mockResolvedValue(null), setScoped: vi.fn().mockResolvedValue(undefined) },
     pins: { list: vi.fn().mockResolvedValue([]) }, files: { list: vi.fn().mockResolvedValue({ files: [], total: 0 }) },
     workspace: { entries: vi.fn().mockResolvedValue({ root: '/work', path: '', entries: [], total: 0, offset: 0, limit: 500, has_more: false }) }
   } })
@@ -43,7 +47,10 @@ describe('Inspector workspace', () => {
     useAppStore.setState({ sessions: [current], health: { ok: true, capabilities: { workspace_files: { available: true, version: 6, required: false, message: "", action: "" } } } })
     function Tabs() {
       const [tab, setTab] = useState<InspectorWorkspaceTab>('details')
-      return <InspectorWorkspace session={current} scope={scope} controller={controller} tab={tab} onTabChange={setTab} onHide={hide} />
+      return <WorkspaceFilesProvider>
+        <WorkspaceEditor session={current} profileScope={scope} workspaceKey="tabs" available capabilityVersion={6} chatContent={<p>Chat</p>} />
+        <InspectorWorkspace session={current} scope={scope} controller={controller} tab={tab} onTabChange={setTab} onHide={hide} />
+      </WorkspaceFilesProvider>
     }
     await act(async () => render(<Tabs />))
     expect(window.agentsDock.workspace.entries).not.toHaveBeenCalled()

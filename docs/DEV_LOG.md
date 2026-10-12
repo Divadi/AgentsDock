@@ -1,5 +1,23 @@
 # Public development log
 
+## 2026-10-11 — Consolidate workspace browsing in Files
+
+- Move the editor Explorer into the right-hand Files tab. Reuse its new
+  file/folder, refresh, open beside, copy path, download, rename and delete
+  operations, retaining dirty-buffer and revision checks. The editor no longer
+  reserves a second tree column or Explorer resize handle.
+- Remember the last Details/Files choice across panel and app reopening. Review
+  remains transient. Split-chat browsing follows the focused chat without
+  covering either conversation; opening a file activates the same editor.
+- Preserve paged results on folder errors, allow retry, reject changed roots,
+  and prevent background folder loads from resetting a quick-open selection.
+- Validation: 223 focused component/style/localization checks passed (the final
+  editor rerun passed all 138 cases), plus eight compilation/license checks.
+  TypeScript and production compilation passed.
+- Native desktop acceptance remains pending because computer control is
+  disabled. Component tests use mocked IPC and cannot establish live server
+  authorization or actual desktop appearance. No server API change is required.
+
 ## 2026-10-11 — Browse workspace files from chat details
 
 - Add Details / Files tabs to the chat inspector, retaining Review when present.

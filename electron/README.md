@@ -141,10 +141,16 @@ frame. Timeline rows are virtualized with stable semantic keys.
 
 Every selected chat also owns a lightweight workspace surface rooted at its
 server-side `cwd`. The right-hand Details panel has a **Files** tab for browsing
-that directory and opening files in the existing workspace editor. Folders load
-only when expanded; large folders have an explicit Load more button. Refresh
-reloads the root, and changing chat, server or working directory clears the old
-tree. Symlinks retain the server's existing access restriction.
+that directory and opening files in the existing workspace editor. It replaces
+the editor's separate Explorer pane and retains new file/folder, refresh and
+right-click actions (open beside, copy path, download, rename and delete), with
+the existing unsaved-edit and revision checks. Folders load on expansion or
+when revealing the active file; large folders have an explicit Load more button.
+Changing chat, server or working directory clears the old tree. Symlinks retain
+the server's existing access restriction. The last Details/Files selection is
+remembered across panel and app reopening; temporary Review views do not change
+that preference. In split chat, Files follows the focused chat and browsing
+does not cover the conversations until a file editor or dialog is needed.
 
 Chat remains the pinned default tab. Use `Cmd+O` to search
 and open a UTF-8 source file, switch explicitly from read-only to edit mode,

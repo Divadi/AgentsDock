@@ -4,7 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setLocale } from '@shared/i18n'
 import type { Session, WorkspaceEntriesPage, WorkspaceEntry } from '@shared/types'
 import { useAppStore } from '../store/app-store'
-import { InspectorFiles } from './InspectorFiles'
+import { InspectorFiles as RealInspectorFiles } from './InspectorFiles'
+import { WorkspaceEditor, resetWorkspaceEditorMemoryForTests } from './WorkspaceEditor'
+import { WorkspaceFilesProvider, workspaceFilesKey } from './WorkspaceFilesContext'
+
+vi.mock('./CodeMirrorEditor', () => ({ CodeMirrorEditor: ({ value, ariaLabel }: { value: string; ariaLabel: string }) => <textarea readOnly value={value} aria-label={ariaLabel} /> }))
+
+function InspectorFiles({ session, scope }: { session: Session; scope: { profileId: string; profileGeneration: number; serverIdentity: string } }) {
+  return <WorkspaceFilesProvider>
+    <WorkspaceEditor key={workspaceFilesKey(scope, session.id, session.cwd ?? '')} session={session} profileScope={scope}
+      workspaceKey={workspaceFilesKey(scope, session.id, session.cwd ?? '')} available capabilityVersion={6} chatContent={<p>Chat</p>} />
+    <RealInspectorFiles session={session} scope={scope} />
+  </WorkspaceFilesProvider>
+}
 
 const scope = { profileId: 'profile-a', profileGeneration: 4, serverIdentity: 'server-a' }
 const session: Session = { id: 'chat-a', title: 'Chat A', backend: 'codex', cwd: '/work/project' }
@@ -24,8 +36,13 @@ function deferred<T>() {
 
 beforeEach(() => {
   setLocale('en')
+  resetWorkspaceEditorMemoryForTests()
   entries.mockReset().mockResolvedValue(page([folder]))
-  Object.defineProperty(window, 'agentsDock', { configurable: true, value: { workspace: { entries } } })
+  Object.defineProperty(window, 'agentsDock', { configurable: true, value: {
+    workspace: { entries, read: vi.fn().mockImplementation(async (_id, path) => ({ root: '/work/project', path, name: path.split('/').at(-1), content: 'hello', writable: true, revision: 'r1', size: 5, mtime_ns: 1 })) },
+    preferences: { getScoped: vi.fn().mockResolvedValue(null), setScoped: vi.fn().mockResolvedValue(undefined) },
+    native: { log: vi.fn().mockResolvedValue(undefined) }
+  } })
   useAppStore.setState({ activeProfileId: scope.profileId, profileGeneration: scope.profileGeneration,
     switchingProfileId: null, connected: true, health: { ok: true, capabilities: { workspace_files: { available: true, version: 6, required: false, message: "", action: "" } } },
     selectedSessionId: session.id, sessions: [session] })
@@ -33,7 +50,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks() })
 
 describe('Inspector files', () => {
-  it('loads folders on expansion, caches them and opens files through the existing editor event', async () => {
+  it('loads folders on expansion, caches them and opens files in the existing editor', async () => {
     entries.mockImplementation(async (_id, path) => path ? page([file], 'src') : page([folder]))
     const opened = vi.fn()
     window.addEventListener('agentsdock:open-workspace-path', opened)
@@ -43,7 +60,8 @@ describe('Inspector files', () => {
       expect(entries).toHaveBeenCalledExactlyOnceWith('chat-a', '', 0, 500)
       fireEvent.click(screen.getByRole('button', { name: 'src' }))
       fireEvent.click(await screen.findByRole('button', { name: 'Open src/hello world.ts' }))
-      expect((opened.mock.calls[0][0] as CustomEvent).detail).toEqual({ sessionId: 'chat-a', path: file.path })
+      await screen.findByRole('textbox', { name: 'Contents of src/hello world.ts' })
+      expect(window.agentsDock.workspace.read).toHaveBeenCalledWith(session.id, file.path)
       fireEvent.click(screen.getByRole('button', { name: 'src' }))
       expect(screen.queryByRole('button', { name: 'Open src/hello world.ts' })).not.toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'src' }))
