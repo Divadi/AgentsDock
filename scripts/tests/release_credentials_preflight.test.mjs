@@ -104,6 +104,20 @@ test('search-list snapshot is immediately restored and always restored/verified 
   assert.doesNotMatch(workflow, /"default-keychain", "-d", "user", "-s"|rm -rf|(?:HOME|CODEX_HOME)=/)
 })
 
+test('signing checkpoints are fixed public labels, never private command output', () => {
+  const labels = [...signing.matchAll(/^    +checkpoint\("([a-z-]+)"\)$/gm)].map(match => match[1])
+  assert.deepEqual(labels, [
+    'validate-private-directory', 'decode-existing-certificate', 'snapshot-keychain-state',
+    'create-disposable-keychain', 'restore-keychain-search-list', 'verify-keychain-state',
+    'configure-disposable-keychain', 'import-existing-certificate', 'configure-signing-key-access',
+    'find-valid-developer-id', 'compile-disposable-probe', 'sign-disposable-probe',
+    'verify-disposable-signature', 'verify-final-keychain-state',
+  ])
+  assert.equal((signing.match(/checkpoint\(/g) || []).length, labels.length + 1)
+  assert.match(signing, /print\("Developer ID probe checkpoint: " \+ name, flush=True\)/)
+  assert.match(signing, /Private command output is intentionally suppressed/)
+})
+
 test('notarization checks only read-only history, emits counts, and never persists private history', () => {
   assert.match(notary, /\["xcrun", "notarytool", "history", "--key", str\(key\)/)
   assert.match(notary, /"--output-format", "json", "--no-progress"/)
