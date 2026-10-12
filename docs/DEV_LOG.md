@@ -1,5 +1,16 @@
 # Public development log
 
+## 2026-10-11 — Remove subagent concurrency from Server settings
+
+- Remove the Codex subagent-limit form from desktop Server settings. Opening
+  the page no longer reads or offers to change this per-chat default through
+  the server administration API.
+- Validation: all 163 related settings/goal/server-management component tests,
+  TypeScript, production compilation, local bundle audit and strict ad-hoc
+  signature checks passed. Native visual acceptance remains pending because
+  computer-control policy blocks the desktop app. Availability: local test
+  package only; no server update is required for this UI removal.
+
 ## 2026-10-11 — Make persistent goals available without a global toggle
 
 - Remove the persistent-goals switch from desktop Server settings. Goal creation,
