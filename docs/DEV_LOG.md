@@ -1,5 +1,22 @@
 # Public development log
 
+## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
+
+- Automatic reconnect/model discovery and Recheck CLIs no longer request an
+  opaque-login handoff. Genuine native login revisions are still detected;
+  custom endpoint managers and background-work ownership remain unchanged.
+- Add a native-admin-only sign-in reload POST and wire the existing Codex CLI
+  account action to it, with English/Chinese copy and truthful pending status.
+  Account reads and page mounts remain passive; unsupported older servers keep
+  a read-only Recheck. Profile-generation fencing applies to explicit reload.
+- Log handoff source, reason and coalesced waiting/release outcomes without
+  credentials, account identity, revision digests or command content.
+- Validation: 67 focused server HTTP/auth/lifecycle tests and 527 desktop
+  transport/service/component/preload tests passed; desktop typecheck and
+  production build passed. Isolated live-service acceptance is in progress.
+  Actual App interaction is blocked by disabled computer control and remains
+  pending; no public release, push or merge is included in this change.
+
 ## 2026-10-08 — Configure custom APIs before choosing a model
 
 - Remove Model ID from Claude/OpenCode connection forms. Initial connection

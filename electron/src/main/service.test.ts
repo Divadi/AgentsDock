@@ -1101,6 +1101,15 @@ describe('Codex account status profile isolation', () => {
     await expect(pending).rejects.toThrow('superseded')
     expect(client.codexAuth).toHaveBeenCalledOnce()
   })
+  it('reloads only the captured server on explicit request and fences stale callers', async () => {
+    const { service, client } = harness()
+    await service.codexAuth(caller, true)
+    expect(client.codexAuth).toHaveBeenCalledExactlyOnceWith(true)
+    client.codexAuth.mockClear()
+    Object.assign(service, { activeProfileId: 'profile-b', profileGeneration: 2 })
+    await expect(service.codexAuth(caller, true)).rejects.toThrow('superseded')
+    expect(client.codexAuth).not.toHaveBeenCalled()
+  })
 })
 
 describe('settings-only provider connection profile isolation', () => {

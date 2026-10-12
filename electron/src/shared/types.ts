@@ -278,6 +278,8 @@ export type CodexServerSettingsScope = Pick<WorkspaceProfileScope, 'profileId' |
 
 /** Native Codex account metadata only. Credentials never cross back to the renderer. */
 export interface CodexAuthStatus {
+  login_reload_available?: boolean
+  login_reload_pending?: boolean
   available: boolean
   auth_mode: 'apiKey' | 'chatgpt' | 'other' | 'none'
   email: string | null

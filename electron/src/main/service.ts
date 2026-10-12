@@ -2283,11 +2283,11 @@ export class AppService {
     this.emitRuntime(scope, catalog)
   }
 
-  async codexAuth(expected: CodexServerSettingsScope): Promise<CodexAuthStatus> {
+  async codexAuth(expected: CodexServerSettingsScope, reloadLogin = false): Promise<CodexAuthStatus> {
     const scope = this.requireProfileScope(expected?.profileId, expected?.profileGeneration)
     await this.ensureValidatedScope(scope)
     this.assertCurrentScope(scope)
-    const result = await scope.client.codexAuth()
+    const result = reloadLogin ? await scope.client.codexAuth(true) : await scope.client.codexAuth()
     this.assertCurrentScope(scope)
     return result
   }
