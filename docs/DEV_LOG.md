@@ -13,6 +13,10 @@
   exercising its controls; preserve safe/force confirmation and recovery checks.
   Keep the server-settings light background explicitly transparent. All 116
   related restart and light-theme checks pass.
+- Allow two asynchronous test fixtures to reach their intended cancellation and
+  private-revision audit checkpoints despite full-suite scheduling pauses.
+  Retain the real SQLite/threaded-probe paths, all assertions and production
+  deadlines; no tests are skipped.
 
 ## 2026-10-11 — Temporarily hide desktop QR sharing
 
