@@ -1,5 +1,13 @@
 # Public development log
 
+## 2026-10-11 — Identify hosted signing-preflight failure stages safely
+
+- Add fixed public checkpoint labels to the non-publishing Developer ID probe
+  so operators can distinguish certificate import, identity discovery, signing
+  and verification failures without exposing credentials or raw command output.
+- Preserve the protected hosted-runner guards, disposable-keychain cleanup and
+  all release acceptance requirements. A failed probe remains a failed check.
+
 ## 2026-10-11 — Make release operation independent of the operator computer
 
 - Reconcile paired npm release tooling with current main while preserving the
