@@ -1,5 +1,23 @@
 # Public development log
 
+## 2026-10-13 — View local server logs from the CLI
+
+- Add `agentsdock logs [NAME]`, defaulting to the default instance, with
+  `--lines` / `-n` and `--follow` / `-f`. Viewing logs does not install,
+  restart, stop, or reconfigure a service.
+- Select the installed macOS log layout, including gateway and worker files
+  for split default installations. Bound file reads, handle rotation and
+  missing files, reject unsafe paths, and escape terminal control characters.
+  Linux reads the selected user-service journal without a pager.
+- Verify the actual packaged command against a running macOS named instance:
+  recent-log output, follow, and interruption preserved service PID/start time,
+  authenticated health, identity, version and configuration. Package tests use
+  disposable installations. Targeted checks: 191 passed, with one native
+  systemd parser check skipped on macOS. Native Linux journal acceptance
+  remains untested.
+- Logs can contain private data and must be reviewed before sharing. This is
+  an unpublished source change, not included in existing CLI releases.
+
 ## 2026-10-13 — Recover server updates and preserve detached jobs
 
 - Linux execution workers now restart independently of detached background
