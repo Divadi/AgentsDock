@@ -1,5 +1,96 @@
 # Public development log
 
+## 2026-10-12 — Validate large-history imports for merge
+
+- Recheck import, incremental synchronization, Claude/Codex provenance, recent
+  history repair, fork boundaries and runtime manifests: 402 of 406 checks
+  passed on the development filesystem. The remaining four also fail on
+  unchanged main because their fixtures require preserved inode identities or
+  pre-1980 timestamps. All four passed using native temporary storage; the full
+  15-case recent-history suite passed there as well. Production identity checks
+  and test assertions remain unchanged.
+- All 11 npm/legacy package checks passed, including actual disposable archive
+  creation and offline npm installation. Python compilation, shell syntax and
+  diff checks passed.
+- Repeat authenticated imports for Claude and Codex confirmed explicit
+  single-record limits, observed byte counts and correct record offsets.
+  Rejected imports created no chats and preserved native source bytes, existing
+  chats, server identity and credentials; temporary fixtures were removed.
+- Native desktop UI and actual provider resume acceptance remain unverified.
+  No desktop or server release publication is included in this change.
+
+## 2026-10-12 — Explain native import resource limits
+
+- Identify single-record text/metadata, field/scalar size, nesting, value-count,
+  scan-record-count and timeout failures separately. Include observed amounts
+  and limits, plus scan-relative record position and source byte offset.
+- Explain that retained-byte accounting includes overhead and is distinct from
+  total conversation disk size. Observed sizes are lower bounds because reading
+  stops at exhaustion; do not expose transcript content in diagnostics.
+- Preserve the import API's error contract, failure semantics and source bytes.
+  All 97 focused reader/import/sync checks passed, including real parser errors
+  reaching both providers' bulk-import responses without creating a chat.
+  Changed Python compilation and diff checks passed.
+  Live authenticated Claude and Codex imports of disposable 33 MiB text records
+  returned the specific 32 MiB accounting limit and correct record offsets.
+  Failed imports created no chats, left native fixture bytes unchanged, and
+  preserved pre-existing chats, server identity and credentials. Fixtures were
+  removed after verification.
+  Native desktop acceptance remains pending while computer control is unavailable.
+
+## 2026-10-12 — Stream large native history payloads
+
+- Replace whole-record JSON loading for native imports, sync and native proof
+  reads with bounded-memory projection. Opaque image/tool payloads remain in
+  the unchanged provider transcript; message text and provenance are preserved.
+- Remove the native import file-size cutoff and raw media-record cap. Retain
+  explicit text/metadata, JSON structure, record-count and work budgets. Hash
+  original bytes in chunks and keep file-identity/offset checks; a processing
+  failure cannot become a successful partial import.
+- Include the shared reader in both server package formats, installation,
+  deployment and staged import/compilation checks.
+- Isolated-reader measurements: approximately 281 MiB peak RSS with the former
+  parser versus 23 MiB with streaming for the same 64 MiB image record; a
+  300 MiB record used approximately 24 MiB. These are fixture measurements,
+  not the running server's total memory or a guaranteed upper bound.
+- Validation: 267 of 269 import/sync/provenance/package checks passed; the two
+  remaining failures reproduce on unmodified main (candidate ordering and
+  malformed-line native proof). Another 93 legacy-proof/deferral/fork checks
+  passed. The memory-growth regression passed in separate reader processes.
+  Changed Python and installer/deployment shell syntax checks passed.
+- Native desktop acceptance is pending because computer control is unavailable;
+  no native-provider resume or desktop UI acceptance is claimed.
+- Final focused checks passed all 30 cases after reviewing blank/malformed and
+  non-object JSON distinctions, including bounded-memory growth and native fork
+  checkpoint behavior. Live authenticated import accepted a 300 MiB Claude image
+  record and a 64 MiB Codex tool record that the preceding runtime rejected.
+  Appending 40 MiB records, reopen-triggered synchronization and repeated reads
+  preserved order without duplicates. Excessive retained text still failed
+  explicitly. Original transcript bytes, pre-existing chat IDs/titles, server
+  identity and credentials were preserved; disposable test data was removed.
+
+## 2026-10-12 — Accept larger native transcript records
+
+- Raise the Claude/Codex JSONL record bound from 4 MiB to 32 MiB across import,
+  cursor synchronization, fork scans and native history proof readers. Include
+  the actual bound in import errors. Embedded media and tool output no longer
+  fail solely because one record exceeds the former 4 MiB bound.
+- Preserve total-file, scan, displayed-text and aggregate proof budgets. Separate
+  the existing proof-text cap from the larger raw-record cap; original provider
+  history remains read-only.
+- Validation: 250 of 252 targeted regression checks passed, including nine new
+  boundary, synchronization and provenance cases. The two existing failures
+  (candidate ordering and malformed-line native proof) also reproduce against
+  unmodified main. Native desktop acceptance remains pending because computer
+  control is unavailable.
+- Live authenticated server checks reproduced the former rejection for separate
+  5 MiB Claude image and Codex tool fixtures, then passed import, reopen-triggered
+  incremental synchronization and repeated reads without duplicates after the
+  update. Over-limit input still failed explicitly. Fixture source bytes and
+  pre-existing chat identities/titles, server identity and credentials were
+  preserved; only disposable test chats and transcripts were removed. These
+  HTTP checks do not establish native-provider resume or desktop UI acceptance.
+
 ## 2026-10-12 — Verify the consolidated Files inspector for merge
 
 - Integrate current main and preserve its release-tooling changes. Update the
