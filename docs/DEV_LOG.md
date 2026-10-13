@@ -1,5 +1,26 @@
 # Public development log
 
+## 2026-10-12 — Prepare stable 1.0.10 and close CLI release blockers
+
+- Prepare a newly versioned matched desktop, server and short CLI from the
+  reviewed beta.6 release line. Keep existing published beta archives unchanged;
+  this preparation does not promote a beta tag or publish stable packages.
+- Make macOS named/legacy `stop` wait for launchd to remove its registration
+  before returning, preventing an immediate `start` from treating the old job
+  as still running. Unknown state, command failure and timeout fail closed.
+  Linux and the split default lifecycle retain their existing implementations.
+- Add an immediate stop/start journey to exact-package native CLI acceptance,
+  requiring fresh stable authenticated health and an unchanged default server.
+  Unit fixtures do not establish that the previously failing native check passes.
+- Accept only npm's inert empty `directories` normalization during registry
+  comparison; retain rejection of mappings, dependency changes and changed
+  archive bytes. A stable CLI may advance an explicitly pinned beta `latest`
+  baseline, without silently accepting a changed tag or relaxing beta gates.
+- Initial validation: 100 instance regressions, 67 focused release JavaScript
+  tests and 18 native-harness unit tests pass. The stop/start regression fails
+  against the frozen beta.6 implementation. Exact signed native acceptance,
+  app/update checks and public stable publication remain pending.
+
 ## 2026-10-09 — Prepare matched beta.6 with npm PATH isolation
 
 - Prepare `1.0.10-beta.6` from the reviewed beta release line for the direct

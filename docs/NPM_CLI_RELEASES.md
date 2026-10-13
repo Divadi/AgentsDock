@@ -6,6 +6,32 @@ committed source snapshot and one public version; the CLI dependency must be
 `"@agentsdock/server": "VERSION"`, never a range or floating tag. The desktop
 continues to pin the signed runtime descriptor, not a floating npm channel.
 
+## Stable 1.0.10 preparation
+
+The current candidate is `1.0.10` on `release/1.0.10`, based on the reviewed
+beta.6 source plus release-blocking fixes. Build new versioned artifacts from
+its final committed source; never relabel or replace beta.6 archives. The older
+beta preparation details below are retained as historical context, not the
+source/version selection for this stable cut.
+
+Recheck registry state before publishing. On 2026-10-12 the observed runtime
+`latest` is `1.0.9`; the short CLI's first publication caused npm to assign
+`latest` to `1.0.10-beta.6` as well as `beta`, despite explicit beta publication.
+For stable preparation, pin those two distinct observed baselines. The stable
+publish intentionally advances both `latest` tags to the new stable version.
+Do not pretend the prior CLI baseline was absent or silently change its tag.
+
+The stable candidate's native CLI check includes immediate named stop/start,
+with no observer or sleep between the two commands, and requires a fresh,
+stable authenticated server epoch. The earlier beta-only exception does not
+waive stable native acceptance. The registry verifier permits npm's empty
+`directories: {}` normalization but no nonempty mapping or other resolver drift.
+Full app/update acceptance and the separate short-package Trusted Publisher
+remain required; source tests and an existing-version registry check do not
+prove either. No stable publication is recorded by this preparation section.
+
+## Historical beta preparation
+
 This document describes release preparation, not a publication receipt. As of
 2026-10-07, runtime `latest` is `1.0.9`, runtime `beta` is `1.0.10-beta.4`, and
 `agentsdock` is not public. Leave those existing bytes and stable defaults alone.
