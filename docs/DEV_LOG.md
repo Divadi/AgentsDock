@@ -12,6 +12,11 @@
   All 97 focused reader/import/sync checks passed, including real parser errors
   reaching both providers' bulk-import responses without creating a chat.
   Changed Python compilation and diff checks passed.
+  Live authenticated Claude and Codex imports of disposable 33 MiB text records
+  returned the specific 32 MiB accounting limit and correct record offsets.
+  Failed imports created no chats, left native fixture bytes unchanged, and
+  preserved pre-existing chats, server identity and credentials. Fixtures were
+  removed after verification.
   Native desktop acceptance remains pending while computer control is unavailable.
 
 ## 2026-10-12 — Stream large native history payloads
