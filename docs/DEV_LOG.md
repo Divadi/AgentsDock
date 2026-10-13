@@ -16,7 +16,17 @@
 - A real loopback HTTP fixture with a 256 MiB unrelated record acknowledged in
   about 1.6 seconds; the unchanged stable source timed out at 30 seconds. This is
   a synthetic regression, not proof of a particular user's remote cause.
-- Validation and native desktop acceptance are in progress. No release is
+- Validation: 187 focused Python checks, 5,142 desktop checks (five skipped),
+  TypeScript, production compilation, bundle audit and strict ad-hoc signature
+  verification passed. Permission-sensitive test fixtures used native temporary
+  storage; build outputs remain local.
+- A separate native Electron profile completed a real Codex request through the
+  production client transport. A synthetic provider alert appeared in the UI;
+  clicking Acknowledge cleared its active controls and committed exactly one
+  durable acknowledgement. An explicit repeated request returned acknowledged
+  false, preserving idempotency. Recovery failures were injected in isolated
+  HTTP/regression fixtures, not into a user's active service.
+- Available as a local test server and local desktop build. No release is
   published by this change.
 
 ## 2026-10-13 — Recover server updates and preserve detached jobs
