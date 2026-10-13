@@ -8,6 +8,13 @@ supported.
 
 ## Install the command
 
+First install [uv](https://docs.astral.sh/uv/getting-started/installation/) on
+the **server machine** to manage its Python environment. On macOS with Homebrew,
+run `brew install uv`, then confirm `uv --version` works in the same terminal.
+Client-only devices do not need uv. npm setup does not install uv automatically;
+if this prerequisite fails, the error gives installation and version-pinned
+retry commands without printing private installer logs.
+
 ```sh
 npm install -g agentsdock
 agentsdock list

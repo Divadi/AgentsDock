@@ -182,7 +182,63 @@ test('failed setup and invalid receipts cannot report ready or disclose raw diag
       return child
     }
     await assert.rejects(postinstall({ ...f.context, launch }), error =>
-      /did not complete.*uv.*AGENTSDOCK_SKIP_SETUP/.test(error.message) && !error.message.includes('private-token'))
+      /did not complete.*uv[\s\S]*AGENTSDOCK_SKIP_SETUP/.test(error.message) && !error.message.includes('private-token'))
     assert.doesNotMatch(f.output.join('\n'), /ready|private-token|xxx/)
   }
+})
+
+test('uv failures provide platform-appropriate installation and exact-version retry commands', async t => {
+  for (const platform of ['darwin', 'linux']) {
+    for (const version of ['1.0.10', '1.0.11-beta.1']) {
+      const f = fixture(t)
+      f.runtime.version = version
+      let launches = 0
+      const launch = () => {
+        launches++
+        const child = new EventEmitter()
+        child.stdout = new PassThrough(); child.stderr = new PassThrough()
+        queueMicrotask(() => {
+          child.stderr.write('private-token\nUnavailable prerequisite: uv\nInstall the trusted ')
+          child.stderr.write('uv package manager before running this installer.\n')
+          child.emit('close', 1)
+        })
+        return child
+      }
+      await assert.rejects(postinstall({ ...f.context, platform, launch }), error => {
+        assert.match(error.message, /uv is missing from PATH or cannot run/)
+        assert.match(error.message, /needs uv to prepare its Python environment/)
+        assert.match(error.message, /https:\/\/docs\.astral\.sh\/uv\/getting-started\/installation\//)
+        assert.match(error.message, /\n  uv --version\n/)
+        assert.ok(error.message.includes(`npm install -g agentsdock@${version} --foreground-scripts`))
+        assert.ok(error.message.includes(`AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock@${version}`))
+        assert.match(error.message, /\n  agentsdock setup\n/)
+        assert.equal(error.message.includes('brew install uv'), platform === 'darwin')
+        assert.match(error.message, /Existing state is never deleted automatically/)
+        assert.doesNotMatch(error.message, /private-token|Unavailable prerequisite/)
+        return true
+      })
+      assert.equal(launches, 1) // Guidance never executes brew, a download or a retry.
+      assert.equal(f.calls.length, 1) // Existing read-only preflight only.
+      assert.doesNotMatch(f.output.join('\n'), /ready|private-token/)
+    }
+  }
+})
+
+test('unrelated setup failures do not suggest that installing uv will fix them', async t => {
+  const f = fixture(t)
+  f.context.launch = () => {
+    const child = new EventEmitter()
+    child.stdout = new PassThrough(); child.stderr = new PassThrough()
+    queueMicrotask(() => {
+      child.stderr.write('private diagnostic: service manager failed\n')
+      child.emit('close', 1)
+    })
+    return child
+  }
+  await assert.rejects(postinstall(f.context), error => {
+    assert.match(error.message, /Automatic setup did not complete successfully/)
+    assert.match(error.message, /AGENTSDOCK_SKIP_SETUP/)
+    assert.doesNotMatch(error.message, /brew install uv|uv is missing|private diagnostic/)
+    return true
+  })
 })

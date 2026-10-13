@@ -1,5 +1,19 @@
 # Public development log
 
+## 2026-10-13 — Explain missing uv during npm setup
+
+- When automatic server setup cannot find or run uv, explain its Python
+  environment role and show installation, verification and retry instructions.
+  macOS guidance includes `brew install uv`; other platforms link the official
+  installation guide. Retry commands preserve the selected stable/beta version.
+- Keep installer logs and credentials out of npm diagnostics. Guidance does
+  not execute package managers, download prerequisites, retry setup, or add
+  telemetry. Unrelated failures retain their existing diagnostic path.
+- All 44 Node CLI checks and five package checks passed, including real npm
+  lifecycle execution with a synthetic missing-uv installer failure and private
+  output assertions. No uv installation/removal, live service changes or new
+  server creation was performed. This improvement is source-only until released.
+
 ## 2026-10-13 — View local server logs from the CLI
 
 - Add `agentsdock logs [NAME]`, defaulting to the default instance, with

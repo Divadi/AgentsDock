@@ -102,7 +102,10 @@ if (require.main === module) {
   assert.deepEqual(process.argv.slice(2), ['install', '--non-interactive']);
   console.log('private installer output secret-lifecycle-sentinel');
   console.error('private installer diagnostic secret-lifecycle-sentinel');
-  if (fs.existsSync(path.join(process.env.HOME, 'synthetic-failure'))) process.exit(7);
+  if (fs.existsSync(path.join(process.env.HOME, 'synthetic-failure'))) {
+    console.error('A trusted uv installation is not available on PATH.');
+    process.exit(7);
+  }
   fs.writeFileSync(marker, 'one synthetic service start');
   console.log('AGENTSDOCK_SETUP_RESULT=' + JSON.stringify({server_url:'http://127.0.0.1:7850',
     server_version:require('../package.json').version, access_token:'secret-lifecycle-sentinel'}));
@@ -157,6 +160,14 @@ if (require.main === module) {
                                 env={**env, "HOME": str(failed_home)}, text=True, capture_output=True, timeout=45)
         self.assertNotEqual(failed.returncode, 0)
         self.assertIn("Automatic setup did not complete", failed.stderr)
+        self.assertIn("uv is missing from PATH or cannot run", failed.stderr)
+        self.assertIn("uv --version", failed.stderr)
+        self.assertIn(f"npm install -g agentsdock@{version} --foreground-scripts", failed.stderr)
+        self.assertIn("https://docs.astral.sh/uv/getting-started/installation/", failed.stderr)
+        if sys.platform == "darwin":
+            self.assertIn("brew install uv", failed.stderr)
+        else:
+            self.assertNotIn("brew install uv", failed.stderr)
         self.assertFalse((failed_home / "synthetic-service-started").exists())
         for output in (result.stdout, result.stderr, repeated.stdout, repeated.stderr, failed.stdout, failed.stderr):
             self.assertNotIn("secret-lifecycle-sentinel", output)

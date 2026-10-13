@@ -105,8 +105,26 @@ async function postinstall(overrides = {}) {
     return 0
   }
   if (status !== 0 || !receipt) {
-    const detail = missingUv ? ' A trusted uv installation is required on PATH.' : ''
-    throw new Error('Automatic setup did not complete successfully.' + detail +
+    if (missingUv) {
+      // Fixed guidance only: never echo the installer's potentially private
+      // diagnostics. Preserve the selected version, including a beta.
+      const install = `npm install -g agentsdock@${runtime.version}`
+      throw new Error([
+        'Automatic setup did not complete: uv is missing from PATH or cannot run.',
+        'AgentsDock Server needs uv to prepare its Python environment.',
+        ...(context.platform === 'darwin'
+          ? ['On macOS with Homebrew, install uv:', '  brew install uv'] : []),
+        'Installation guide: https://docs.astral.sh/uv/getting-started/installation/',
+        'Then verify and retry the same AgentsDock version:',
+        '  uv --version',
+        `  ${install} --foreground-scripts`,
+        'If uv works but setup still fails, run these for interactive diagnostics:',
+        `  AGENTSDOCK_SKIP_SETUP=1 ${install}`,
+        '  agentsdock setup',
+        'Existing state is never deleted automatically.',
+      ].join('\n'))
+    }
+    throw new Error('Automatic setup did not complete successfully.' +
       ' For interactive diagnostics, install the CLI with AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock, then run agentsdock setup. Existing state is never deleted automatically.')
   }
   context.print(`Server ${receipt.version} is ready at ${receipt.url}. Open AgentsDock to connect. Use agentsdock token to view/copy its private token.`)
