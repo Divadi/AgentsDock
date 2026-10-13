@@ -6,9 +6,27 @@ committed source snapshot and one public version; the CLI dependency must be
 `"@agentsdock/server": "VERSION"`, never a range or floating tag. The desktop
 continues to pin the signed runtime descriptor, not a floating npm channel.
 
+## 1.0.10 public completion
+
+On 2026-10-13 UTC, the pending runtime became publicly installable. Attempt 2
+of [paired publication 38346314422](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38346314422)
+verified its exact bytes without re-uploading, then successfully published the
+short CLI through its own Trusted Publisher. Both packages' `latest` tags now
+resolve to `1.0.10`; both `beta` tags remain `1.0.10-beta.6`. Exact registry
+verification and an isolated scripts-disabled installation passed.
+
+The signed legacy server bridge and both desktop download repositories are
+also public. [Desktop publication 38362425715](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38362425715)
+passed four-platform verification before publishing the unchanged build 1251
+and verifying the public updater feeds. The documented acceptance limitations
+remain in the release notes. No frozen artifact was rebuilt or replaced.
+
+This completion supersedes the pending publication state recorded below;
+the earlier preparation and attempt notes are retained as history.
+
 ## Stable 1.0.10 preparation
 
-The current candidate is `1.0.10` on `release/1.0.10`, based on the reviewed
+The frozen stable source is `1.0.10` on `release/1.0.10`, based on the reviewed
 beta.6 source plus release-blocking fixes. Build new versioned artifacts from
 its final committed source; never relabel or replace beta.6 archives. The older
 beta preparation details below are retained as historical context, not the

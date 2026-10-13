@@ -1,5 +1,30 @@
 # Public development log
 
+## 2026-10-13 — Publish AgentsDock 1.0.10 stable
+
+- Publish the previously accepted immutable source
+  `4f0a5c25a95574f21b0505320a03edcbfb877765`, native build 1251. No artifact was
+  rebuilt, repacked or replaced after acceptance.
+- npm runtime validation completed. [Paired publication, attempt 2](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38346314422)
+  verified and skipped the existing runtime, then published the exact short CLI
+  through its separate Trusted Publisher. Both `@agentsdock/server` and
+  `agentsdock` now resolve `latest` to `1.0.10`; both beta tags remain
+  `1.0.10-beta.6`. Verify downloaded package bytes and an isolated registry
+  installation with lifecycle scripts disabled, including the exact dependency
+  and command help. This check did not operate existing services.
+- Publish the signed [legacy server bridge](https://github.com/ZhengyiLuo/AgentsServer/releases/tag/v1.0.10).
+  [Desktop publication](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38362425715)
+  passed all four native platform verifiers, then published the
+  [canonical desktop release](https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.10)
+  and [compatibility mirror](https://github.com/ZhengyiLuo/AgentsDock-Releases/releases/tag/v1.0.10).
+  Both expose the same 16 sealed assets and all four public updater feeds.
+  The full manifest remains
+  `ff944031ebd114fca66d96c70e432d68c94fe1b6576be972ec983a487a286548`.
+- Preserve the approved disclosures on both desktop releases: Windows is
+  unsigned; populated provider-history migration, active/queued upgrades,
+  logout/reboot survival and the native Windows updater remain unverified.
+  Publication does not turn those boundaries into passed acceptance.
+
 ## 2026-10-12 — Complete scoped 1.0.10 checks; await npm validation
 
 - All four desktop packages for source `4f0a5c25`, build 1251 passed native
