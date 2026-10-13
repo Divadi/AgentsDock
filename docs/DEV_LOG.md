@@ -22,6 +22,14 @@
   Changed Python and installer/deployment shell syntax checks passed.
 - Native desktop acceptance is pending because computer control is unavailable;
   no native-provider resume or desktop UI acceptance is claimed.
+- Final focused checks passed all 30 cases after reviewing blank/malformed and
+  non-object JSON distinctions, including bounded-memory growth and native fork
+  checkpoint behavior. Live authenticated import accepted a 300 MiB Claude image
+  record and a 64 MiB Codex tool record that the preceding runtime rejected.
+  Appending 40 MiB records, reopen-triggered synchronization and repeated reads
+  preserved order without duplicates. Excessive retained text still failed
+  explicitly. Original transcript bytes, pre-existing chat IDs/titles, server
+  identity and credentials were preserved; disposable test data was removed.
 
 ## 2026-10-12 — Accept larger native transcript records
 
