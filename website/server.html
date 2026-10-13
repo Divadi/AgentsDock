@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/server.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/server.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/server.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -73,7 +73,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link" href="./update.html">Updates</a>
           <a class="docs-nav-link" href="./language.html">Language</a>
@@ -82,8 +96,7 @@
             <a href="#install">Install &amp; update</a>
             <a href="#token">Access token</a>
             <a href="#health">Check it's running</a>
-            <a href="#service">Start, stop, restart, logs</a>
-            <a href="#manual">Run it manually</a>
+            <a href="#service">Start, stop, restart</a>
             <a href="#uninstall">Uninstall</a>
             <a href="#env">Settings &amp; file locations</a>
           </span>
@@ -100,7 +113,7 @@
         <p class="section-kicker">Docs</p>
         <h1>Manage your server</h1>
         <p class="legal-lead">AgentsServer is the open-source backend that runs on your own machine. Everything below is done from a terminal on that machine — the <strong>server</strong>, not the device running the app.</p>
-        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">AgentsServer on GitHub <span aria-hidden="true">&rarr;</span></a></p>
+        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">AgentsServer on GitHub <span aria-hidden="true">&rarr;</span></a></p>
 
         <p class="legal-meta">Looking for every installer option, environment variable, multiple servers on one machine, or backups? See the <a href="./advanced-install.html">Server reference</a>.</p>
 
@@ -109,81 +122,68 @@
         </div>
 
         <h2 id="install">Install &amp; update</h2>
-        <p>First install — clone the repo and run the installer:</p>
-<pre>git clone https://github.com/ZhengyiLuo/AgentsServer.git
-cd AgentsServer
-./install.sh</pre>
-        <p>To update, pull and rerun the same installer. It swaps in the new runtime, restarts the service, and keeps your token and state:</p>
-<pre>git pull --ff-only
-./install.sh</pre>
-        <p>You can also update from the app — <strong>Settings &rarr; Install or update AgentsServer</strong>, or the Stable / Beta switch described in <a href="./update.html">Updates</a>.</p>
-        <p><strong>Installer options</strong></p>
+        <p>First install — install the AgentsDock CLI as the user who will own the server:</p>
+<pre>npm install -g agentsdock</pre>
+        <p>On a fresh machine, the global install creates the default user service and installs the runtime under <code>~/.local/share/agents-server</code>. No repo clone is needed. Do not use <code>sudo</code>. A local <code>npm install agentsdock</code> only adds a project dependency; it does not create a server service.</p>
+        <p>To update an existing server, use the app: open <strong>Settings &rarr; Updates</strong>, click <strong>Check now</strong>, then use <strong>Update server</strong> or <strong>Retry server update</strong> when offered. The managed updater swaps in the new runtime, restarts the service, and keeps your token and state.</p>
+        <p><strong>Custom install options</strong></p>
+<pre>AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
+agentsdock setup [--port PORT] [--bind ADDRESS] [--non-interactive] [--dry-run]</pre>
         <ul>
-          <li><code>--port PORT</code> — pin an exact port (default <code>7850</code>). Without it, the installer picks one of the next 5 free ports if the default is taken.</li>
+          <li><code>--port PORT</code> — pin an exact port (default <code>7850</code>).</li>
           <li><code>--bind ADDRESS</code> — bind address (default <code>0.0.0.0</code>, reachable from your other devices).</li>
-          <li><code>--allow-port-fallback</code> / <code>--no-port-fallback</code> — allow or forbid the nearby-port fallback.</li>
-          <li><code>--release-version VERSION</code> — install a specific release.</li>
           <li><code>--non-interactive</code> — no prompts; for scripted or SSH-driven runs.</li>
-          <li><code>--show-token</code> — print the access token and exit (see below).</li>
+          <li><code>--dry-run</code> — print the native installer command without executing it.</li>
         </ul>
-        <p>Requirements: macOS (Apple silicon) or Linux, a preinstalled <code>uv</code> (<code>brew install uv</code> on macOS), and whichever provider CLIs you plan to use installed and signed in. <code>tmux</code> is optional — it powers the in-app terminal and managed updates.</p>
+        <p>Requirements: macOS (Apple silicon) or Linux, Node.js/npm, a preinstalled <code>uv</code> (<code>brew install uv</code> on macOS), and whichever provider CLIs you plan to use installed and signed in. <code>tmux</code> is optional — it powers the in-app terminal and managed updates.</p>
+        <p>If an older server update was interrupted during the 1.0.4-era migration, run <code>agentsdock recover</code> on the server machine, then choose <strong>Retry server update</strong> in the app.</p>
 
         <h2 id="token">Show your access token</h2>
-        <p>The installer prints the token once when it finishes. To see it again at any time, run this on the server — it only reads the existing configuration and changes nothing:</p>
-<pre>./install.sh --show-token</pre>
+        <p>To see the token at any time, run this on the server — it only reads the existing configuration and changes nothing:</p>
+<pre>agentsdock token</pre>
         <p>Paste it into the app's <strong>Access token</strong> field when adding the server (see the <a href="./setup.html#part-device">Setup guide</a>).</p>
 
         <h2 id="health">Check it's running</h2>
         <p>From the server machine:</p>
-<pre>curl http://127.0.0.1:7850/api/health</pre>
-        <p>If the server requires a token (the default after <code>install.sh</code>), pass it as a bearer header:</p>
-<pre>curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:7850/api/health</pre>
-        <p>The response includes whether <code>tmux</code> and your provider CLIs are available. Inside the app, <strong>Settings</strong> shows the same runtime checks and a <strong>Restart server</strong> button.</p>
+<pre>agentsdock status</pre>
+        <p>This shows each server instance's status, address, installed version, and port. For one named instance, run <code>agentsdock status NAME</code>. Inside the app, <strong>Settings</strong> shows the same runtime checks and a <strong>Restart server</strong> button.</p>
+        <p class="legal-meta">Example output:</p>
+<pre class="terminal-output"><code><span class="term-head">Server (default):</span>
+  <span class="term-label">Status:</span>   <span class="term-success">running</span>
+  <span class="term-label">Address:</span>  <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(Tailscale / other networks)</span>
+            <span class="term-url">http://192.168.1.23:7850</span> <span class="term-dim">(Same Wi-Fi / LAN)</span>
+            <span class="term-url">http://127.0.0.1:7850</span> <span class="term-dim">(This machine only)</span>
+  <span class="term-label">Version:</span>  1.0.10
+  <span class="term-label">Port:</span>     7850</code></pre>
 
-        <h2 id="service">Start, stop, restart, and logs</h2>
-        <p>The installer registers AgentsServer as a user-level service that starts at login. Manage it with your platform's service manager.</p>
-        <p><strong>macOS</strong> — the LaunchAgent is <code>com.agentsdock.server</code>:</p>
-<pre># status
-launchctl print gui/$(id -u)/com.agentsdock.server
+        <h2 id="service">Start, stop, and restart</h2>
+        <p>The installer registers AgentsServer as a user-level service that starts at login. Use the AgentsDock CLI for normal service control:</p>
+<pre># default server
+agentsdock restart default
+agentsdock stop default
+agentsdock start default
 
-# restart
-launchctl kickstart -k gui/$(id -u)/com.agentsdock.server
-
-# stop until next login / start again
-launchctl bootout gui/$(id -u)/com.agentsdock.server
-launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.agentsdock.server.plist
-
-# logs
+# named instance
+agentsdock restart work</pre>
+        <p>Most checks should start with <code>agentsdock status</code> or the app's Settings page. If you need raw logs for troubleshooting, use your platform's log viewer:</p>
+<pre># macOS
 tail -f ~/Library/Logs/AgentsServer/server.log
-tail -f ~/Library/Logs/AgentsServer/server-error.log</pre>
-        <p><strong>Linux</strong> — the unit is <code>agents-server.service</code>:</p>
-<pre># status
-systemctl --user status agents-server.service --no-pager -l
+tail -f ~/Library/Logs/AgentsServer/server-error.log
 
-# restart / stop / start
-systemctl --user restart agents-server.service
-systemctl --user stop agents-server.service
-systemctl --user start agents-server.service
-
-# logs
+# Linux
 journalctl --user -u agents-server.service -f</pre>
 
-        <h2 id="manual">Run it manually</h2>
-        <p>For development or a one-off run without the service, start the server directly from the repo:</p>
-<pre>uv venv &amp;&amp; uv sync --frozen
-uv run python agent_server.py serve --bind 0.0.0.0 --port 7850</pre>
-        <p>Set <code>AGENTSDOCK_AGENT_TOKEN</code> in that shell to require a token, and <code>AGENTSDOCK_STATE_DIR</code> to keep state somewhere other than <code>~/.agentsdock</code>.</p>
-
         <h2 id="uninstall">Uninstall</h2>
-<pre>./uninstall.sh</pre>
-        <p>This stops and removes the service, the versioned runtime, and the generated configuration including the access token. It asks before changing anything (<code>--yes</code> skips the prompt). Your chats, jobs, files, and terminals under <code>~/.agentsdock</code> are <strong>kept</strong>, so a later <code>./install.sh</code> picks them straight back up.</p>
+<pre>agentsdock remove default</pre>
+        <p>This stops and removes the service, the versioned runtime, and the generated configuration including the access token. It asks before changing anything (<code>--yes</code> skips the prompt). Your chats, jobs, files, and terminals under <code>~/.agentsdock</code> are <strong>kept</strong>, so a later install picks them straight back up.</p>
         <p>To delete that state as well, add <code>--purge-state</code> — it always requires typing the exact path to confirm and cannot be undone. Persistent chat terminals are left running as tmux sessions on this server's tmux server; <code>tmux ls</code> lists them. Only close sessions you recognise as this server's chat terminals — other tmux sessions on the machine, and any named server instances (which use their own tmux sockets), are unaffected by uninstalling the default server.</p>
 
         <h2 id="env">Settings &amp; file locations</h2>
         <p>Where things live on the server:</p>
         <ul>
           <li><code>~/.agentsdock</code> — chat history, jobs, files, tokens (the state directory).</li>
-          <li><code>~/.local/share/agents-server</code> — versioned server releases; <code>current</code> points at the active one.</li>
+          <li><code>~/.config/agents-server/env</code> — generated service configuration, including the access token.</li>
+          <li><code>~/.local/share/agents-server/releases/&lt;version&gt;</code> — versioned server releases; <code>~/.local/share/agents-server/current</code> points at the active one.</li>
           <li><code>~/Library/Logs/AgentsServer/</code> (macOS) or <code>journalctl --user</code> (Linux) — logs.</li>
         </ul>
         <p>Most settings are environment variables. The ones you're most likely to touch:</p>
@@ -195,7 +195,7 @@ uv run python agent_server.py serve --bind 0.0.0.0 --port 7850</pre>
           <li><code>AGENTSDOCK_BACKEND</code> — default backend, <code>claude</code> or <code>codex</code>.</li>
           <li><code>CLAUDE_BIN</code> / <code>CODEX_BIN</code> — path to each CLI if it isn't on <code>PATH</code>.</li>
         </ul>
-        <p>The full list, including job concurrency and memory guardrails, is in the <a href="https://github.com/ZhengyiLuo/AgentsServer#useful-configuration" target="_blank" rel="noopener">README's configuration table</a>.</p>
+        <p>The full list, including job concurrency and memory guardrails, is in the <a href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">server source tree</a>.</p>
 
         <div class="guide-note">
           <p><strong>Keep it private.</strong> Don't expose port <code>7850</code> to the public internet. Reach the server over Tailscale or another private network, and leave the access token enabled.</p>

@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, manual install, service templates, and the full environment-variable reference for AgentsServer." />
+    <meta name="description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, service templates, and the full environment-variable reference for AgentsServer." />
     <!-- Social preview (Open Graph / Twitter) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AgentsDock" />
     <meta property="og:title" content="Advanced install & configuration · AgentsDock" />
-    <meta property="og:description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, manual install, service templates, and the full environment-variable reference for AgentsServer." />
+    <meta property="og:description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, service templates, and the full environment-variable reference for AgentsServer." />
     <meta property="og:url" content="https://agentsdock.net/advanced-install.html" />
     <meta property="og:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
     <meta property="og:image:width" content="1200" />
@@ -16,7 +16,7 @@
     <meta property="og:image:alt" content="AgentsDock — an IDE designed for agentic AI research" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Advanced install & configuration · AgentsDock" />
-    <meta name="twitter:description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, manual install, service templates, and the full environment-variable reference for AgentsServer." />
+    <meta name="twitter:description" content="Every installer option, port and bind behaviour, remote access over Tailscale, access tokens, service templates, and the full environment-variable reference for AgentsServer." />
     <meta name="twitter:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
     <meta name="theme-color" content="#0d1013" />
     <meta name="robots" content="index,follow" />
@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/advanced-install.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/advanced-install.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/advanced-install.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -73,7 +73,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link" href="./update.html">Updates</a>
           <a class="docs-nav-link" href="./language.html">Language</a>
@@ -88,7 +102,6 @@
             <a href="#ports">Ports &amp; bind address</a>
             <a href="#remote">Remote access (Tailscale)</a>
             <a href="#tokens">Access tokens</a>
-            <a href="#manual">Manual install &amp; run</a>
             <a href="#service">Service templates</a>
             <a href="#env">Environment variables</a>
             <a href="#paths">File locations</a>
@@ -102,11 +115,12 @@
         <p class="section-kicker">Server reference</p>
         <h1>Advanced install &amp; configuration</h1>
         <p class="legal-lead">The full reference for installing and configuring AgentsServer. For day-to-day commands (update, token, restart, logs) see <a href="./server.html">Manage your server</a>; for a first-time walkthrough see the <a href="./setup.html">Setup guide</a>.</p>
-        <p class="legal-meta">Applies to AgentsServer 1.0.x releases. Source of truth: <a href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">the AgentsServer repository</a> and <code>./install.sh --help</code>.</p>
+        <p class="legal-meta">Applies to AgentsServer 1.0.x releases. Source of truth: <a href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">the AgentsServer source tree</a>, <code>agentsdock --help</code>, and the installed native helper scripts.</p>
 
         <h2 id="requirements">Requirements</h2>
         <ul>
           <li><strong>Host:</strong> Linux, or Apple-silicon macOS. Intel macOS is not supported; the installer stops before changing anything.</li>
+          <li><strong>Node.js/npm</strong> for the <code>agentsdock</code> CLI. Node.js 22.14 or later is required.</li>
           <li><strong><code>uv</code></strong> preinstalled on <code>PATH</code> (<code>brew install uv</code> on macOS; your distro's package manager on Linux). It provisions the isolated Python 3.10+ runtime. The installer never downloads a bootstrap script.</li>
           <li>Any provider CLIs you plan to use — <strong>Claude Code</strong>, <strong>Codex</strong>, <strong>OpenCode</strong>, or <strong>Cursor</strong> — installed and signed in on the host, in the same user account that runs the server.</li>
           <li><strong>tmux</strong> (optional) — enables the in-app terminal, live pane inspection, and in-app managed updates. On macOS with Homebrew, the installer offers to install it; otherwise it prints the command and continues.</li>
@@ -114,27 +128,26 @@
           <li>A working user service session: <code>launchctl</code> (macOS) or <code>systemctl --user</code> (Linux). No <code>sudo</code> is ever used.</li>
         </ul>
 
-        <h2 id="installer">Installer options</h2>
-<pre>./install.sh [--port PORT] [--bind ADDRESS] [--release-version VERSION]
-             [--non-interactive] [--allow-port-fallback | --no-port-fallback]
-             [--show-token] [--instance NAME]</pre>
+        <h2 id="installer">CLI install options</h2>
+<pre># standard default setup
+npm install -g agentsdock
+
+# custom setup
+AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
+agentsdock setup [--port PORT] [--bind IP] [--non-interactive] [--dry-run]</pre>
         <ul>
           <li><code>--port PORT</code> — pin an exact port. Without it the default is <code>7850</code>.</li>
           <li><code>--bind ADDRESS</code> — address to listen on. Default <code>0.0.0.0</code> (all interfaces, so other devices can connect).</li>
-          <li><code>--release-version VERSION</code> — install a specific published release instead of the latest.</li>
           <li><code>--non-interactive</code> — never prompt (skips the tmux offer and clipboard copy). Use for scripts and SSH-driven runs.</li>
-          <li><code>--allow-port-fallback</code> / <code>--no-port-fallback</code> — control automatic nearby-port selection (see below).</li>
-          <li><code>--show-token</code> — print the access token and exit without reinstalling or restarting.</li>
-          <li><code>--instance NAME</code> — act on a named instance instead of the default server. See <a href="./multiple-servers.html">Multiple servers</a>.</li>
+          <li><code>--dry-run</code> — print the native installer command without executing it.</li>
         </ul>
-        <p>Every run is idempotent: it keeps the previous healthy release for rollback, preserves the access token and configuration, and never touches chat state. A failed run leaves the active release unchanged and prints recovery guidance. An install lock stops a cancelled SSH attempt from racing a retry.</p>
+        <p>The global install sets up a new default user service only when no existing installation or state is present. No repo clone is needed. Existing servers are left unchanged; update them from the app's <strong>Settings &rarr; Updates</strong>. A local <code>npm install agentsdock</code> only adds a project dependency; it does not create a service. The running service never runs from the npm cache.</p>
+        <p>After installation, use <code>agentsdock token</code> for tokens, <code>agentsdock remove default</code> for removal, and <code>agentsdock new</code> / <code>agentsdock list</code> for named instances. The native helper scripts remain under <code>~/.local/share/agents-server/current</code> for advanced troubleshooting.</p>
 
         <h2 id="ports">Ports &amp; bind address</h2>
         <p>If the default port is already held by something that isn't the AgentsServer being replaced, the installer reports the listener (using <code>lsof</code> when available) and picks one of up to five higher free ports. The chosen port is printed at the end of the run.</p>
         <ul>
-          <li><code>--port</code> alone pins that exact port and fails if it's taken.</li>
-          <li><code>--port … --allow-port-fallback</code> lets an explicit port fall back to a nearby free one.</li>
-          <li><code>--no-port-fallback</code> disables fallback for the default port too.</li>
+          <li><code>--port</code> pins that exact port and fails if it's taken.</li>
         </ul>
         <p>Bind to <code>0.0.0.0</code> (default) to accept connections from other devices; bind to <code>127.0.0.1</code> only if the app runs on the same machine. A server bound to loopback is not reachable over Tailscale.</p>
 
@@ -149,26 +162,10 @@ tailscale ip -4</pre>
         <div class="guide-note"><p><strong>Never expose port 7850 to the public internet.</strong> Use Tailscale or another private network, and keep the access token enabled.</p></div>
 
         <h2 id="tokens">Access tokens</h2>
-        <p>The installer generates a private bearer token and prints it once. It is required for every HTTP call, upload, file/video fetch, and WebSocket stream. Retrieve it any time with:</p>
-<pre>./install.sh --show-token</pre>
-        <p>Clients send it as <code>Authorization: Bearer &lt;token&gt;</code> (or the <code>X-AgentsDock-Token</code> header). When running the server manually, set <code>AGENTSDOCK_AGENT_TOKEN</code> yourself; leave it unset only for trusted local development.</p>
-
-        <h2 id="manual">Manual install &amp; run</h2>
-        <p>If you'd rather not use the installer or the service, run the server directly from a checkout:</p>
-<pre>git clone https://github.com/ZhengyiLuo/AgentsServer.git
-cd AgentsServer
-uv venv
-uv sync --frozen
-
-# confirm the CLIs work in this same shell/user
-command -v claude &amp;&amp; claude --version
-command -v codex  &amp;&amp; codex --version
-
-export AGENTSDOCK_AGENT_TOKEN='replace-with-a-long-random-token'
-uv run python agent_server.py serve --bind 0.0.0.0 --port 7850</pre>
-        <p>Check it from the server machine:</p>
-<pre>curl -H 'Authorization: Bearer replace-with-a-long-random-token' http://127.0.0.1:7850/api/health</pre>
-        <p>Use <code>AGENTSDOCK_STATE_DIR</code> to keep state somewhere other than <code>~/.agentsdock</code>, and <code>AGENTSDOCK_BACKEND</code> if you only install one of the CLIs.</p>
+        <p>The installer generates a private bearer token. It is required for every HTTP call, upload, file/video fetch, and WebSocket stream. Retrieve it any time with:</p>
+<pre>agentsdock token</pre>
+        <p>Clients send it as <code>Authorization: Bearer &lt;token&gt;</code> (or the <code>X-AgentsDock-Token</code> header). For a low-level health check from the server machine:</p>
+<pre>curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:7850/api/health</pre>
 
         <h2 id="service">Service templates</h2>
         <p>The installer creates and manages the user service for you: the LaunchAgent <code>com.agentsdock.server</code> on macOS, or <code>agents-server.service</code> on Linux. You only need the template below for custom deployments.</p>
@@ -226,8 +223,8 @@ systemctl --user status agents-server.service --no-pager -l</pre>
         <h2 id="paths">File locations</h2>
         <ul>
           <li><code>~/.agentsdock</code> — state: chats, jobs, files, uploads, tokens, secure-peer credentials</li>
-          <li><code>~/.config/agents-server</code> — generated configuration and the access token</li>
-          <li><code>~/.local/share/agents-server</code> — versioned releases; <code>current</code> points at the active one</li>
+          <li><code>~/.config/agents-server/env</code> — generated service configuration and the access token</li>
+          <li><code>~/.local/share/agents-server/releases/&lt;version&gt;</code> — versioned releases; <code>~/.local/share/agents-server/current</code> points at the active one</li>
           <li><code>~/Library/Logs/AgentsServer/</code> (macOS) · <code>journalctl --user -u agents-server.service</code> (Linux) — logs</li>
         </ul>
         <p>Named instances use sibling paths of their own — see <a href="./multiple-servers.html#paths">Where each instance lives</a>.</p>

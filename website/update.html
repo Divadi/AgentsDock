@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/update.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/update.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/update.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -73,7 +73,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link current" href="./update.html">Updates</a>
           <span class="docs-nav-subs">
@@ -108,7 +122,7 @@
 
         <h2 id="both">Update the app and server together</h2>
         <p>AgentsDock has two halves — the <strong>app</strong> (the client on your device) and the <strong>AgentsServer</strong> (running on your remote). Each shows its own version and its own <strong>Check</strong> and update controls in the same panel.</p>
-        <p>When you update, <strong>bring both to the latest version at the same time</strong>. Keeping the app and server on matching releases avoids version mismatches — features and fixes often land on both sides together. Use <strong>Update server to Beta</strong> / <strong>Install or update AgentsServer</strong> for the remote, and <strong>Restart to update</strong> for the app.</p>
+        <p>When you update, <strong>bring both to the latest version at the same time</strong>. Keeping the app and server on matching releases avoids version mismatches — features and fixes often land on both sides together. In <strong>Settings &rarr; Updates</strong>, click <strong>Check now</strong>, use <strong>Restart to update</strong> for the app, and use <strong>Update server</strong> or <strong>Retry server update</strong> for the remote when offered.</p>
 
         <h2 id="channels">Stable vs. Beta</h2>
         <p>Both the app and the server have a <strong>Stable</strong> / <strong>Beta</strong> switch:</p>
@@ -117,7 +131,7 @@
           <li><strong>Beta</strong> — the newest signed builds, with features and fixes before they reach Stable. Great if you want the latest, and don't mind the occasional rough edge.</li>
         </ul>
         <p>Pick the same channel on both sides so the app and server stay in step. Want to know exactly what changed in each version — and which are Stable vs. Beta? Every release and its notes are on GitHub.</p>
-        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock-Releases/releases" target="_blank" rel="noopener">Browse releases &amp; release notes <span aria-hidden="true">&rarr;</span></a></p>
+        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/releases" target="_blank" rel="noopener">Browse releases &amp; release notes <span aria-hidden="true">&rarr;</span></a></p>
       </article>
     </main>
 

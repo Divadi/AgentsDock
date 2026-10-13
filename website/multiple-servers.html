@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/multiple-servers.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/multiple-servers.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/multiple-servers.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -73,7 +73,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link" href="./update.html">Updates</a>
           <a class="docs-nav-link" href="./language.html">Language</a>
@@ -104,36 +118,52 @@
         <p class="legal-lead">One machine, one user account, several fully independent AgentsServers — each with its own port, service, token, chat history, and terminals. Useful for separating work and personal, running a beta next to stable, or giving each project its own server.</p>
 
         <h2 id="availability">Availability</h2>
-        <div class="guide-note"><p><strong>Not yet in a published release.</strong> Named instances are on the AgentsServer <code>main</code> branch (merged 20 Sep 2026). They are not in <code>v1.0.3</code> or <code>v1.0.4-beta.9</code>. Until a release ships them, you need a server installed from a <code>main</code> checkout. Check the <a href="https://github.com/ZhengyiLuo/AgentsServer/releases" target="_blank" rel="noopener">release notes</a> for the first version that includes them.</p></div>
+        <div class="guide-note"><p><strong>Available in AgentsServer 1.0.9 and later.</strong> First install the default server, then use <code>agentsdock new</code> to create additional named services. The initial npm install creates only the default service.</p></div>
 
         <h2 id="concept">How instances work</h2>
         <p>Your first server is the <strong>default</strong> instance — it keeps the paths, service name, and port you already have. Each additional server is a <strong>named</strong> instance (<code>work</code>, <code>beta</code>, …) with its own service, port, configuration, state directory, logs, and tmux server, installed as siblings of the default. Nothing is shared, and removing the default can never remove a named instance.</p>
         <p>Instances are independent services for convenience — they are <strong>not</strong> a security boundary between each other, since they all run as your user account.</p>
 
         <h2 id="create">Create an instance</h2>
-        <p>From an AgentsServer checkout on <code>main</code>:</p>
+        <p>From the server machine:</p>
 <pre># automatic name and the next free port (7851 upwards)
-./instances.sh new
+agentsdock new
 
 # or choose the name and port
-./instances.sh new --name work --port 7851
+agentsdock new work --port 7851
 
 # optional bind address (default 0.0.0.0)
-./instances.sh new --name lab --port 7852 --bind 0.0.0.0</pre>
+agentsdock new lab --port 7852 --bind 0.0.0.0</pre>
         <p>A new instance starts with an empty chat list and its own freshly generated access token. Names are lowercase: a letter followed by up to 31 letters, digits, or hyphens.</p>
+        <p class="legal-meta">Example output for a named instance:</p>
+<pre class="terminal-output"><code><span class="term-cmd">$ agentsdock new work --port 7851</span>
+<span class="term-label">Create:</span> <span class="term-success">work:7851</span>
+<span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
+
+  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7851</span>
+
+<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7851</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
 
         <h2 id="list">List &amp; connect</h2>
-<pre>./instances.sh list        # name, status, port (also the default action)
-./instances.sh info work   # details for one instance</pre>
+<pre>agentsdock list        # name, status, port
+agentsdock info work   # details for one instance</pre>
+        <p class="legal-meta">Example list output:</p>
+<pre class="terminal-output"><code><span class="term-label">NAME                 STATUS     PORT</span>
+<span class="term-head">default</span>              <span class="term-success">running</span>    7850
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7850</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7850</span>
+
+<span class="term-head">work</span>                 <span class="term-success">running</span>    7851
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7851</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7851</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7851</span></code></pre>
         <p>Connect the app to an instance exactly like any server — its URL is your host address plus <em>that instance's port</em>, and its token comes from:</p>
-<pre>./install.sh --instance work --show-token</pre>
+<pre>agentsdock token work</pre>
         <p>Add several instances to the app and switch between them from the server switcher.</p>
 
         <h2 id="update">Update an instance</h2>
-        <p>Each instance updates independently; add <code>--instance</code> to the normal update command:</p>
-<pre>git pull --ff-only
-./install.sh --instance work</pre>
-        <p><code>./install.sh</code> with no <code>--instance</code> updates only the default server. All other installer options (<code>--port</code>, <code>--bind</code>, <code>--release-version</code>, …) work per instance — see <a href="./advanced-install.html#installer">Installer options</a>.</p>
+        <p>Each instance updates independently. Use the app's managed update controls for the server connection you want to update. The initial npm install does not create or update named instances.</p>
 
         <h2 id="paths">Where each instance lives</h2>
         <p>Replace <code>NAME</code> with the instance name.</p>
@@ -153,10 +183,10 @@
 tmux -L agents-server-work ls       # the 'work' instance's terminals (zdi_work_*)</pre>
 
         <h2 id="remove">Remove an instance</h2>
-<pre>./uninstall.sh --instance work            # one instance
-./uninstall.sh --all                      # every instance, including default
-./uninstall.sh --all --exclude default    # every named instance, keep default</pre>
-        <p>Running <code>./uninstall.sh</code> with no arguments lists your instances and asks you to confirm their exact names. Removal stops the service and deletes the runtime and configuration (including that instance's token); its chat history is <strong>preserved by default</strong>. When a name is released, its state directory is <strong>moved to a private backup</strong>, not erased — see <a href="./backup-uninstall.html#release">Name-release backups</a>. <code>--purge-state</code> is the only destructive option and always requires typing the exact path.</p>
+<pre>agentsdock remove work                  # one instance
+agentsdock remove --all                 # every instance, including default
+agentsdock remove --all --exclude default # every named instance, keep default</pre>
+        <p>Removal stops the service and deletes the runtime and configuration (including that instance's token); its chat history is <strong>preserved by default</strong>. When a name is released, its state directory is <strong>moved to a private backup</strong>, not erased — see <a href="./backup-uninstall.html#release">Name-release backups</a>. <code>--purge-state</code> is the only destructive option and always requires typing the exact path.</p>
 
         <h2 id="limits">Rules &amp; limits</h2>
         <ul>

@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/backup-uninstall.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/backup-uninstall.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/backup-uninstall.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -73,7 +73,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link" href="./update.html">Updates</a>
           <a class="docs-nav-link" href="./language.html">Language</a>
@@ -127,17 +141,17 @@ systemctl --user start agents-server.service                                    
         <p>For a named instance, use its own service name and the <code>…-instances/NAME</code> paths from <a href="./multiple-servers.html#paths">Where each instance lives</a>. The configuration backup contains your access token — store it somewhere private.</p>
 
         <h2 id="restore">Restore</h2>
-        <p><strong>In-place state is picked up automatically.</strong> If the state directory is still there (as it is after a normal uninstall), simply running <code>./install.sh</code> again reconnects the same chats, jobs, and files. Reinstalling generates a <em>new</em> access token unless the configuration directory was also kept — update the token in the app if so.</p>
-        <p><strong>From a copy you made:</strong> stop the server, put the backed-up directories back at their original paths, then start it (or run <code>./install.sh</code>). Restore the configuration directory too if you want to keep the old token.</p>
+        <p><strong>In-place state is picked up automatically.</strong> If the state directory is still there (as it is after a normal uninstall), a new install reconnects the same chats, jobs, and files. Reinstalling generates a <em>new</em> access token unless the configuration directory was also kept — update the token in the app if so.</p>
+        <p><strong>From a copy you made:</strong> stop the server, put the backed-up directories back at their original paths, then start it (or run <code>npm install -g agentsdock</code>). Restore the configuration directory too if you want to keep the old token.</p>
         <p>Reinstalling does <strong>not</strong> automatically restore a <em>name-release</em> backup — those are handled separately below.</p>
 
         <h2 id="uninstall">Uninstall</h2>
-<pre>./uninstall.sh                          # lists instances, confirms exact names
-./uninstall.sh --instance work          # one named instance
-./uninstall.sh --all                    # everything
-./uninstall.sh --all --exclude default  # all named instances, keep default
-./uninstall.sh --yes                    # skip the prompt (default server)</pre>
-        <p>Uninstalling <strong>removes</strong> the user service, the versioned runtime, and the generated configuration including the access token. It <strong>keeps</strong> chat history, jobs, files, secure-peer credentials, and terminals under the state directory, so a later <code>./install.sh</code> picks the same history back up. It never uses a package manager or <code>sudo</code>, and it refuses to operate on root, home, broad system directories, or overlapping paths.</p>
+<pre>agentsdock remove default               # default server
+agentsdock remove work                  # one named instance
+agentsdock remove --all                 # everything
+agentsdock remove --all --exclude default # all named instances, keep default
+agentsdock remove default --yes         # skip the prompt</pre>
+        <p>Uninstalling <strong>removes</strong> the user service, the versioned runtime, and the generated configuration including the access token. It <strong>keeps</strong> chat history, jobs, files, secure-peer credentials, and terminals under the state directory, so a later install picks the same history back up. It never uses <code>sudo</code>, and it refuses to operate on root, home, broad system directories, or overlapping paths.</p>
 
         <h2 id="release">Name-release backups</h2>
         <p>When a <em>named</em> instance's name is released (removing it, or creating a fresh instance under that name), its state directory is not deleted — it is <strong>moved to a private backup</strong>:</p>
@@ -146,7 +160,7 @@ systemctl --user start agents-server.service                                    
         <p>Releasing a name preserves its saved AgentsDock data in the private backup location printed by the command. Reinstalling the instance does <strong>not</strong> automatically restore that backup, and a reinstalled instance starts with an empty chat list. There is <strong>no built-in restore command yet</strong> — keep the backup unchanged (don't move or merge it, especially if the name has since been reused) and ask for recovery guidance in <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a> or via <a href="./report-issue.html">Report an issue</a>.</p>
 
         <h2 id="purge">Purge state</h2>
-<pre>./uninstall.sh --purge-state</pre>
+<pre>agentsdock remove default --purge-state</pre>
         <p>This is the <strong>only destructive option</strong>. It deletes the state directory — chat history, jobs, files, tokens, secure-peer credentials — permanently. It always asks you to type the exact state path to confirm, and <code>--yes</code> never bypasses that prompt.</p>
 
         <h2 id="terminals">Terminal sessions</h2>

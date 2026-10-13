@@ -34,14 +34,14 @@
     </script>
     <script src="./analytics.js" defer></script>
     <script src="./site-nav.js?v=e6b98484" defer></script>
-    <script src="./docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="alternate" hreflang="en" href="https://agentsdock.net/setup.html" />
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/setup.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/setup.html" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -79,7 +79,21 @@
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
           <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
           <p class="docs-nav-label">Guides</p>
-          <a class="docs-nav-link" href="./features.html">Key features</a>
+          <a class="docs-nav-link" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
           <a class="docs-nav-link" href="./update.html">Updates</a>
           <a class="docs-nav-link" href="./language.html">Language</a>
@@ -96,7 +110,7 @@
       <article class="legal docs-body">
         <p class="section-kicker">Docs</p>
         <h1>Setup guide</h1>
-        <p class="legal-meta">Last updated: September 21, 2026 · about 15 minutes</p>
+        <p class="legal-meta">Last updated: October 1, 2026 · about 15 minutes</p>
 
         <ul class="docs-intro-list">
           <li><strong>AgentsServer</strong> runs the real work on a remote machine you own.</li>
@@ -105,7 +119,7 @@
 
         <h2 id="prereqs">Before you start</h2>
         <ul>
-          <li>A <strong>remote machine</strong> you control — a macOS or Linux computer that stays on — to run the server. <code>tmux</code> is optional, only needed for the in-app terminal.</li>
+          <li>A <strong>remote machine</strong> you control — Linux, or Apple-silicon macOS — to run the server. Install Node.js/npm and <code>uv</code> on that machine first. <code>tmux</code> is optional, only needed for the in-app terminal.</li>
           <li>A <strong>Tailscale</strong> account <em>(optional)</em> — only needed to reach the remote from <strong>outside its local network</strong>. On the same Wi&#8209;Fi you can use the machine's local IP address; Tailscale is what lets you connect securely from anywhere else.</li>
           <li>Any provider CLI you plan to use — <strong>Claude Code</strong>, <strong>Codex</strong>, <strong>OpenCode</strong>, or <strong>Cursor</strong> — installed on the remote.</li>
           <li>A device that can run an <strong>AgentsDock client</strong>: macOS, Windows, Linux, iPhone, iPad, or Android.</li>
@@ -118,15 +132,38 @@
         <p>Do this once, on the machine that will do the work. It stays running and your devices connect to it.</p>
 
         <h3 class="docs-step" id="remote-server"><span class="step-n">1</span>Install the AgentsServer</h3>
-        <p>Clone the server and run its installer on the remote:</p>
-        <pre><code>git clone https://github.com/ZhengyiLuo/AgentsServer.git
-cd AgentsServer
-./install.sh</code></pre>
+        <p>Install the AgentsDock CLI on the remote as the user who will own the server:</p>
+        <pre><code>npm install -g agentsdock</code></pre>
+        <p>On a fresh machine, this also creates and starts the default server. No repo clone is needed. Do not use <code>sudo</code>.</p>
+        <p class="legal-meta">Near the end, the terminal prints the server URL and a setup result line. Your addresses and token will be different:</p>
+        <pre class="terminal-output"><code><span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
+
+<span class="term-success">Your new service is up!</span>
+
+  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7850</span>
+  <span class="term-dim">Other local/network addresses:</span>
+    <span class="term-url">http://192.168.1.23:7850</span>
+
+  <span class="term-label">You already have</span>
+  <span class="term-success">AgentsServer running</span>
+  <span class="term-success">tmux available</span>
+
+<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7850</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
         <p>The server listens on port <strong>7850</strong> by default and stays running on the remote — that's the piece your devices connect to.</p>
-        <p>It's secured with an <strong>access token</strong> that the installer <strong>prints once</strong> when it finishes — copy it now; you'll enter it on each device in Part 2. To show it again later, run this on the remote:</p>
-        <pre><code>./install.sh --show-token</code></pre>
-        <p class="legal-meta">Every server command — update, restart, logs, uninstall — is on <a href="./server.html">Manage your server</a>.</p>
-        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">View the AgentsServer repository on GitHub <span aria-hidden="true">&rarr;</span></a></p>
+        <p>To confirm what is running later:</p>
+        <pre><code>agentsdock status</code></pre>
+        <p class="legal-meta">Example output:</p>
+        <pre class="terminal-output"><code><span class="term-head">Server (default):</span>
+  <span class="term-label">Status:</span>   <span class="term-success">running</span>
+  <span class="term-label">Address:</span>  <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(Tailscale / other networks)</span>
+            <span class="term-url">http://192.168.1.23:7850</span> <span class="term-dim">(Same Wi-Fi / LAN)</span>
+            <span class="term-url">http://127.0.0.1:7850</span> <span class="term-dim">(This machine only)</span>
+  <span class="term-label">Version:</span>  1.0.10
+  <span class="term-label">Port:</span>     7850</code></pre>
+        <p>It's secured with an <strong>access token</strong>. To show it when connecting a device, run this on the remote:</p>
+        <pre><code>agentsdock token</code></pre>
+        <p class="legal-meta">Server commands for status, restart, update, and uninstall are on <a href="./server.html">Manage your server</a>.</p>
+        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">View AgentsServer source on GitHub <span aria-hidden="true">&rarr;</span></a></p>
 
         <h3 class="docs-step" id="remote-cli"><span class="step-n">2</span>Sign in to provider CLIs on the remote</h3>
         <p>Install and sign in to whichever provider CLIs you want AgentsDock to use on the remote: <a href="https://code.claude.com/docs" target="_blank" rel="noopener">Claude Code</a>, <a href="https://developers.openai.com/codex/cli" target="_blank" rel="noopener">Codex</a>, <a href="https://dev.opencode.ai/docs/cli/" target="_blank" rel="noopener">OpenCode</a>, or <a href="https://cursor.com/docs/cli/reference/authentication" target="_blank" rel="noopener">Cursor</a>. Use that provider's normal login flow, such as browser sign-in or API-key configuration. For custom endpoints, see <a href="./agents.html">Connect agents</a>.</p>
@@ -154,7 +191,7 @@ cd AgentsServer
         <p>In AgentsDock, add a server with the remote's <strong>address</strong> — its Tailscale <code>100.x.x.x</code> address and port <code>7850</code> — then paste the <strong>access token</strong> from Part 1 into the <strong>Access token</strong> field. It looks something like this:</p>
         <pre><code>ad_tok_9f3b7c2e••••••••••••••••••••   (sample)</code></pre>
         <p>This token lives on <strong>your server machine</strong> — the remote you set up in Part 1, <em>not</em> the device you're connecting from. To get it again, run this on the remote:</p>
-        <pre><code>./install.sh --show-token</code></pre>
+        <pre><code>agentsdock token</code></pre>
         <p>Click <strong>Test connection</strong> to confirm the app can reach the server, then <strong>Add &amp; switch</strong>. You're connected: start a chat, pick a provider, and point it at a working directory on your remote.</p>
         <figure class="docs-shot">
           <img src="./assets/setup-token.png" alt="AgentsDock connection form on macOS with the Access token field, a Test connection button, and Add and switch" loading="lazy" />
@@ -180,7 +217,7 @@ cd AgentsServer
         </ul>
         <p>Still stuck? Head to <a href="./support.html">Support</a> or ask in our <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a>.</p>
 
-        <p>Connected? Explore what AgentsDock can do in <a href="./features.html">Key features &rarr;</a></p>
+        <p>Connected? Explore what AgentsDock can do in <a href="./features.html">Feature guide &rarr;</a></p>
       </article>
     </main>
 

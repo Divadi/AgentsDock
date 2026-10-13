@@ -22,6 +22,23 @@ painful to rediscover later.
   active server and push the latest server repository/code to GitHub so app and
   server contract versions do not drift.
 
+## 2026-10-13 - Publish the reviewed website documentation
+
+- Grouped English and Chinese feature guides into Chat, Workspace, and
+  Automation, with a separate page per feature and matching sidebar links.
+- Added the Share Chat guide with a redacted video, token entry, revocation,
+  and interactive browser collaboration examples. Video redaction follows
+  the dialog position; all frames passed opaque-mask pixel checks.
+- Updated server documentation to use `npm install -g agentsdock`,
+  `agentsdock token`, and the service management commands. Added colored
+  setup, status, and multiple-server output examples and a reboot FAQ.
+- Updated desktop downloads and release metadata to stable `1.0.10`, keeping
+  mobile download sources unchanged. Checked the four desktop SHA-256 values
+  against their published release assets.
+- Updated shared asset cache versions and verified local links and assets
+  across all 51 HTML pages. Browser checks verified terminal output colors
+  and page overflow on desktop and mobile viewport sizes.
+
 ## 2026-10-01 - Widen FAQ layout on desktop
 
 - Fixed `website/faq.html` and `website/zh/faq.html` inheriting `.legal` side

@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/multiple-servers.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/multiple-servers.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -74,7 +74,21 @@
           <a class="docs-nav-link" href="./agents.html">连接 agents</a>
           <a class="docs-nav-link" href="./first-chat.html">开始第一个会话</a>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link" href="./update.html">更新</a>
           <a class="docs-nav-link" href="./language.html">语言</a>
@@ -102,45 +116,61 @@
       <article class="legal docs-body">
         <p class="section-kicker">服务器参考</p>
         <h1>一台机器上的多个服务器</h1>
-        <p class="legal-lead">一台机器、一个用户账号、多个完全独立的 AgentsServer——各自拥有自己的端口、服务、令牌、会话历史和终端。适合分开工作与个人用途、在稳定版旁边跑一个测试版，或给每个项目一个专属服务器。</p>
+        <p class="legal-lead">一台机器、一个用户账号、多个完全独立的 AgentsServer——各自拥有自己的端口、服务、token、会话历史和终端。适合分开工作与个人用途、在稳定版旁边跑一个测试版，或给每个项目一个专属服务器。</p>
 
         <h2 id="availability">可用性</h2>
-        <div class="guide-note"><p><strong>尚未包含在已发布版本中。</strong>命名实例目前在 AgentsServer 的 <code>main</code> 分支上（2026 年 9 月 20 日合并），不在 <code>v1.0.3</code> 或 <code>v1.0.4-beta.9</code> 中。在正式发布之前，你需要从 <code>main</code> 分支的检出安装服务器。请查看<a href="https://github.com/ZhengyiLuo/AgentsServer/releases" target="_blank" rel="noopener">发布说明</a>了解首个包含该功能的版本。</p></div>
+        <div class="guide-note"><p><strong>AgentsServer 1.0.9 及之后版本已支持。</strong>先安装默认服务器，再使用 <code>agentsdock new</code> 创建额外的命名服务。初始 npm 安装只创建默认服务。</p></div>
 
         <h2 id="concept">实例如何工作</h2>
         <p>你的第一个服务器是<strong>默认</strong>实例——它保留你现有的路径、服务名和端口。每个额外的服务器都是一个<strong>命名</strong>实例（<code>work</code>、<code>beta</code>……），拥有自己的服务、端口、配置、状态目录、日志和 tmux 服务，以默认实例的同级身份安装。它们之间不共享任何东西，移除默认实例也绝不会移除命名实例。</p>
         <p>实例是为方便而设的独立服务——它们之间<strong>不是</strong>安全边界，因为都以你的用户账号运行。</p>
 
         <h2 id="create">创建实例</h2>
-        <p>在 <code>main</code> 分支的 AgentsServer 检出目录中：</p>
+        <p>在服务器机器上运行：</p>
 <pre># automatic name and the next free port (7851 upwards)
-./instances.sh new
+agentsdock new
 
 # or choose the name and port
-./instances.sh new --name work --port 7851
+agentsdock new work --port 7851
 
 # optional bind address (default 0.0.0.0)
-./instances.sh new --name lab --port 7852 --bind 0.0.0.0</pre>
-        <p>新实例从空的会话列表开始，并拥有自己新生成的访问令牌。名称须为小写：一个字母开头，后接最多 31 个字母、数字或连字符。</p>
+agentsdock new lab --port 7852 --bind 0.0.0.0</pre>
+        <p>新实例从空的会话列表开始，并拥有自己新生成的 token。名称须为小写：一个字母开头，后接最多 31 个字母、数字或连字符。</p>
+        <p class="legal-meta">创建命名实例时，输出大概会像这样：</p>
+<pre class="terminal-output"><code><span class="term-cmd">$ agentsdock new work --port 7851</span>
+<span class="term-label">Create:</span> <span class="term-success">work:7851</span>
+<span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
+
+  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7851</span>
+
+<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7851</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
 
         <h2 id="list">列出并连接</h2>
-<pre>./instances.sh list        # name, status, port (also the default action)
-./instances.sh info work   # details for one instance</pre>
-        <p>把应用连接到实例的方式和连接任何服务器完全一样——URL 是主机地址加<em>该实例的端口</em>，令牌用这条命令获取：</p>
-<pre>./install.sh --instance work --show-token</pre>
+<pre>agentsdock list        # name, status, port
+agentsdock info work   # details for one instance</pre>
+        <p class="legal-meta">列表输出示例：</p>
+<pre class="terminal-output"><code><span class="term-label">NAME                 STATUS     PORT</span>
+<span class="term-head">default</span>              <span class="term-success">running</span>    7850
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7850</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7850</span>
+
+<span class="term-head">work</span>                 <span class="term-success">running</span>    7851
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7851</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7851</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7851</span></code></pre>
+        <p>把应用连接到实例的方式和连接任何服务器完全一样——URL 是主机地址加<em>该实例的端口</em>，token 用这条命令获取：</p>
+<pre>agentsdock token work</pre>
         <p>在应用里添加多个实例，在服务器切换器中随时切换。</p>
 
         <h2 id="update">更新实例</h2>
-        <p>每个实例独立更新；在常规更新命令后加上 <code>--instance</code>：</p>
-<pre>git pull --ff-only
-./install.sh --instance work</pre>
-        <p>不带 <code>--instance</code> 的 <code>./install.sh</code> 只更新默认服务器。其他所有安装选项（<code>--port</code>、<code>--bind</code>、<code>--release-version</code>……）都可按实例使用——见<a href="./advanced-install.html#installer">安装选项</a>。</p>
+        <p>每个实例独立更新。请在应用里对要更新的服务器连接使用托管更新。初始 npm 安装不创建也不更新命名实例。</p>
 
         <h2 id="paths">每个实例的位置</h2>
         <p>把 <code>NAME</code> 替换为实例名。</p>
         <ul>
           <li><strong>服务：</strong><code>agents-server-NAME</code>（Linux，<code>systemctl --user</code>）· <code>com.agentsdock.server.NAME</code>（macOS LaunchAgent）</li>
-          <li><strong>状态</strong>（会话、任务、文件、令牌）：<code>~/.agentsdock-instances/NAME</code></li>
+          <li><strong>状态</strong>（会话、任务、文件、token）：<code>~/.agentsdock-instances/NAME</code></li>
           <li><strong>配置：</strong><code>~/.config/agents-server-instances/NAME</code></li>
           <li><strong>运行时发布：</strong><code>~/.local/share/agents-server-instances/NAME</code></li>
           <li><strong>日志：</strong><code>~/Library/Logs/AgentsServer-instances/NAME/</code>（macOS）· <code>journalctl --user -u agents-server-NAME</code>（Linux）</li>
@@ -154,10 +184,10 @@
 tmux -L agents-server-work ls       # the 'work' instance's terminals (zdi_work_*)</pre>
 
         <h2 id="remove">移除实例</h2>
-<pre>./uninstall.sh --instance work            # one instance
-./uninstall.sh --all                      # every instance, including default
-./uninstall.sh --all --exclude default    # every named instance, keep default</pre>
-        <p>不带参数运行 <code>./uninstall.sh</code> 会列出你的实例并要求确认它们的完整名称。移除会停止服务并删除运行时和配置（包括该实例的令牌）；其会话历史<strong>默认保留</strong>。当一个名称被释放时，它的状态目录会被<strong>移到私有备份</strong>，而不是抹除——见<a href="./backup-uninstall.html#release">名称释放备份</a>。<code>--purge-state</code> 是唯一的破坏性选项，且总是要求输入完整路径。</p>
+<pre>agentsdock remove work                    # one instance
+agentsdock remove --all                   # every instance, including default
+agentsdock remove --all --exclude default # every named instance, keep default</pre>
+        <p>移除会停止服务并删除运行时和配置（包括该实例的 token）；其会话历史<strong>默认保留</strong>。当一个名称被释放时，它的状态目录会被<strong>移到私有备份</strong>，而不是抹除——见<a href="./backup-uninstall.html#release">名称释放备份</a>。<code>--purge-state</code> 是唯一的破坏性选项，且总是要求输入完整路径。</p>
 
         <h2 id="limits">规则与限制</h2>
         <ul>

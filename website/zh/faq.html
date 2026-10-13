@@ -41,7 +41,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/faq.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/faq.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -71,7 +71,7 @@
         <p class="legal-lead">关于 AgentsDock 的常见问题，点击问题展开答案。没找到？<a href="./report-issue.html">告诉我们</a>，我们会补充到这里。</p>
         <label class="faq-search" aria-label="搜索常见问题">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          <input type="search" placeholder="搜索问题，例如：模型、Tailscale、令牌" autocomplete="off" spellcheck="false" />
+          <input type="search" placeholder="搜索问题，例如：模型、Tailscale、token" autocomplete="off" spellcheck="false" />
           <span class="faq-count" aria-live="polite"></span>
         </label>
         <div class="faq-list">
@@ -119,30 +119,37 @@ claude --version</code></pre></li>
 <p>可以。在侧边栏顶部的服务器菜单里用 <strong>Add Server</strong> 逐个添加，之后随时切换。每台服务器保留自己的会话。</p>
             </div>
           </details>
-          <details class="faq-item" id="token">
-            <summary><span class="faq-q">访问令牌在哪里找？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <details class="faq-item" id="server-reboot">
+            <summary><span class="faq-q">服务器机器重启后，需要手动重启 AgentsServer 吗？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
             <div class="faq-a">
-<p>安装脚本结束时会打印一次。想再次查看，在服务器机器上运行：</p>
-<pre><code>./install.sh --show-token</code></pre>
-<p>在应用里添加服务器时，把它粘贴到<strong>访问令牌（Access token）</strong>一栏。</p>
+<p>通常不需要。安装程序会把 AgentsServer 注册成用户级服务，所以对应的服务会话恢复后它会自动启动。macOS 上是在服务器用户登录时启动；Linux 上的 user systemd 服务会被启用到默认 target。</p>
+<p>机器重新上线后，直接打开 AgentsDock 重新连接即可。如果没有自动恢复，可以到<a href="./server.html#service">管理服务器</a>查看服务状态。</p>
+            </div>
+          </details>
+          <details class="faq-item" id="token">
+            <summary><span class="faq-q">token 在哪里找？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+            <div class="faq-a">
+<p>在服务器机器上运行：</p>
+<pre><code>agentsdock token</code></pre>
+<p>在应用里添加服务器时，把它粘贴到<strong>token（Access token）</strong>一栏。</p>
             </div>
           </details>
           <details class="faq-item" id="resume">
             <summary><span class="faq-q">可以恢复在 AgentsDock 之外开始的会话吗？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
             <div class="faq-a">
-<p>可以。从 <code>/</code> 菜单打开<strong>导入会话（Import chat）</strong>，从那台机器上所有的 Claude Code 或 Codex 会话里挑选；或者选择<strong>按会话 ID 恢复（Resume by session ID）</strong>并粘贴 ID。两种方式都会带上完整历史。见<a href="./features.html#feat-resume">恢复其他会话</a>。</p>
+<p>可以。从 <code>/</code> 菜单打开<strong>导入会话（Import chat）</strong>，从那台机器上所有的 Claude Code 或 Codex 会话里挑选；或者选择<strong>按会话 ID 恢复（Resume by session ID）</strong>并粘贴 ID。两种方式都会带上完整历史。见<a href="./resume-chats.html">恢复其他会话</a>。</p>
             </div>
           </details>
           <details class="faq-item" id="update">
             <summary><span class="faq-q">怎么更新 AgentsDock 和服务器？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
             <div class="faq-a">
-<p>两者都在应用的<strong>设置</strong>里更新：点 <strong>Check now</strong>，再点 <strong>Restart to update</strong>。应用和服务器各有自己的 Stable / Beta 开关。见<a href="./update.html">更新</a>。</p>
+<p>两者都在应用的<strong>设置</strong>里更新：点 <strong>Check now</strong>；应用更新用 <strong>Restart to update</strong>，服务器提示出现时用 <strong>Update server</strong> 或 <strong>Retry server update</strong>。见<a href="./update.html">更新</a>。</p>
             </div>
           </details>
           <details class="faq-item" id="open-source">
             <summary><span class="faq-q">AgentsDock 开源吗？</span><svg class="faq-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
             <div class="faq-a">
-<p>开源。客户端在 <a href="https://github.com/ZhengyiLuo/AgentsDock" target="_blank" rel="noopener">GitHub</a>，服务器端在 <a href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">AgentsServer</a>。欢迎点个 star。</p>
+<p>开源。AgentsDock 现在统一放在我们的 <a href="https://github.com/ZhengyiLuo/AgentsDock" target="_blank" rel="noopener">GitHub repo</a>。欢迎点个 star。</p>
             </div>
           </details>
         </div>

@@ -2,120 +2,183 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://agentsdock.net/advanced-install.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/advanced-install.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/advanced-install.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/advanced-install.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/backup-uninstall.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/backup-uninstall.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/backup-uninstall.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/backup-uninstall.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/agents.html</loc>
-    <lastmod>2026-10-01</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/agents.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/agents.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/agents.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/features.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/features.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/features.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/features.html" />
   </url>
   <url>
+    <loc>https://agentsdock.net/agent-to-agent.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/agent-to-agent.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/agent-to-agent.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/agent-to-agent.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/share-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/share-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/share-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/share-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/side-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/side-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/side-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/side-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/fork-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/fork-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/fork-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/fork-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/resume-chats.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/resume-chats.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/resume-chats.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/resume-chats.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/terminal-access.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/terminal-access.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/terminal-access.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/terminal-access.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/view-edit-code.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/view-edit-code.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/view-edit-code.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/view-edit-code.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/slash-commands.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/slash-commands.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/slash-commands.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/slash-commands.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/scheduled-jobs.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/scheduled-jobs.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/scheduled-jobs.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/scheduled-jobs.html" />
+  </url>
+  <url>
     <loc>https://agentsdock.net/first-chat.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/first-chat.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/first-chat.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/first-chat.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/index.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/" />
   </url>
   <url>
     <loc>https://agentsdock.net/iphone.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/iphone.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/iphone.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/iphone.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/language.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/language.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/language.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/language.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/multiple-servers.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/multiple-servers.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/multiple-servers.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/multiple-servers.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/privacy.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
   </url>
   <url>
     <loc>https://agentsdock.net/report-issue.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/report-issue.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/report-issue.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/report-issue.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/server.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/server.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/server.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/server.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/setup.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/setup.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/setup.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/setup.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/shortcuts.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/shortcuts.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/shortcuts.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/shortcuts.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/support.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
   </url>
   <url>
     <loc>https://agentsdock.net/update.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/update.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/update.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/update.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/advanced-install.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/advanced-install.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/advanced-install.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/advanced-install.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/backup-uninstall.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/backup-uninstall.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/backup-uninstall.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/backup-uninstall.html" />
@@ -129,91 +192,154 @@
   </url>
   <url>
     <loc>https://agentsdock.net/zh/features.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/features.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/features.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/features.html" />
   </url>
   <url>
+    <loc>https://agentsdock.net/zh/agent-to-agent.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/agent-to-agent.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/agent-to-agent.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/agent-to-agent.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/share-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/share-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/share-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/share-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/side-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/side-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/side-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/side-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/fork-chat.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/fork-chat.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/fork-chat.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/fork-chat.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/resume-chats.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/resume-chats.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/resume-chats.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/resume-chats.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/terminal-access.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/terminal-access.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/terminal-access.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/terminal-access.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/view-edit-code.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/view-edit-code.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/view-edit-code.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/view-edit-code.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/slash-commands.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/slash-commands.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/slash-commands.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/slash-commands.html" />
+  </url>
+  <url>
+    <loc>https://agentsdock.net/zh/scheduled-jobs.html</loc>
+    <lastmod>2026-10-01</lastmod>
+    <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/scheduled-jobs.html" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/scheduled-jobs.html" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/scheduled-jobs.html" />
+  </url>
+  <url>
     <loc>https://agentsdock.net/zh/first-chat.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/first-chat.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/first-chat.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/first-chat.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/index.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/index.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/iphone.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/iphone.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/iphone.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/iphone.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/language.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/language.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/language.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/language.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/multiple-servers.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/multiple-servers.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/multiple-servers.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/multiple-servers.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/report-issue.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/report-issue.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/report-issue.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/report-issue.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/server.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/server.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/server.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/server.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/setup.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/setup.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/setup.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/setup.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/shortcuts.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-01</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/shortcuts.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/shortcuts.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/shortcuts.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/update.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/update.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/update.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/update.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/faq.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/faq.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/faq.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/faq.html" />
   </url>
   <url>
     <loc>https://agentsdock.net/zh/faq.html</loc>
-    <lastmod>2026-09-22</lastmod>
+    <lastmod>2026-10-13</lastmod>
     <xhtml:link rel="alternate" hreflang="en" href="https://agentsdock.net/faq.html" />
     <xhtml:link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/faq.html" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://agentsdock.net/faq.html" />

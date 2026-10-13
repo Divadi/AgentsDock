@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Browse, preview, and edit files on your remote directly from the app." />
+    <!-- Social preview (Open Graph / Twitter) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AgentsDock" />
+    <meta property="og:title" content="View and edit your code · AgentsDock" />
+    <meta property="og:description" content="Browse, preview, and edit files on your remote directly from the app." />
+    <meta property="og:url" content="https://agentsdock.net/view-edit-code.html" />
+    <meta property="og:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AgentsDock — an IDE designed for agentic AI research" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="View and edit your code · AgentsDock" />
+    <meta name="twitter:description" content="Browse, preview, and edit files on your remote directly from the app." />
+    <meta name="twitter:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
+    <meta name="theme-color" content="#0d1013" />
+    <meta name="robots" content="index,follow" />
+    <title>View and edit your code · AgentsDock</title>
+    <link rel="icon" href="./favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" href="./assets/favicon-96.png" sizes="96x96" />
+    <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G3XRBEHKVD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-G3XRBEHKVD');
+    </script>
+    <script src="./analytics.js" defer></script>
+    <script src="./site-nav.js?v=e6b98484" defer></script>
+    <script src="./docs-nav.js?v=ad0081d0" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="alternate" hreflang="en" href="https://agentsdock.net/view-edit-code.html" />
+    <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/view-edit-code.html" />
+    <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/view-edit-code.html" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="AgentsDock home">
+        <img src="./assets/agentsdock-icon.png" alt="" />
+        <span>AgentsDock</span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <a href="./index.html">Home</a>
+        <a href="./setup.html">Docs</a>
+        <a href="./faq.html">FAQ</a>
+        <a class="nav-discord" href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.317 4.369a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.211.375-.446.865-.608 1.249a18.27 18.27 0 0 0-5.487 0 12.6 12.6 0 0 0-.617-1.25.077.077 0 0 0-.079-.036A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.2 14.2 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10 10 0 0 0 .372-.291.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009q.181.15.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.891.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418m7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418"/></svg>Discord</a>
+      </nav>
+      <div class="lang-switch header-lang">
+        <button type="button" class="lang-switch-btn" aria-haspopup="listbox" aria-expanded="false" aria-label="Language"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-switch-label">English</span><svg class="lang-switch-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <ul class="lang-switch-menu" role="listbox" hidden>
+          <li><a role="option" class="is-current" aria-selected="true" aria-current="true" lang="en">English<svg class="lang-switch-check" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg></a></li>
+          <li><a role="option" href="./zh/view-edit-code.html" hreflang="zh-CN" lang="zh-CN">简体中文</a></li>
+        </ul>
+      </div>
+    </header>
+
+    <main class="docs">
+      <aside class="docs-nav" aria-label="Documentation" data-lang-href="./zh/view-edit-code.html" data-lang-label="中文">
+        <nav>
+          <p class="docs-nav-label">Getting started</p>
+          <a class="docs-nav-link" href="./setup.html">Setup guide</a>
+          <a class="docs-nav-link" href="./iphone.html">Client install</a>
+          <a class="docs-nav-link" href="./agents.html">Connect agents</a>
+          <a class="docs-nav-link" href="./first-chat.html">Start your first chat</a>
+          <p class="docs-nav-label">Guides</p>
+          <a class="docs-nav-link current" href="./features.html">Feature guide</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">Chat</span>
+            <a href="./agent-to-agent.html">Agent-to-agent</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork chat</a>
+            <a href="./resume-chats.html">Resume chats</a>
+            <span class="docs-nav-subgroup">Workspace</span>
+            <a href="./terminal-access.html">Terminal access</a>
+            <a href="./view-edit-code.html" class="active">View &amp; edit code</a>
+            <span class="docs-nav-subgroup">Automation</span>
+            <a href="./slash-commands.html">Slash commands</a>
+            <a href="./scheduled-jobs.html">Scheduled jobs</a>
+          </span>
+          <a class="docs-nav-link" href="./shortcuts.html">Keyboard shortcuts</a>
+          <a class="docs-nav-link" href="./update.html">Updates</a>
+          <a class="docs-nav-link" href="./language.html">Language</a>
+          <a class="docs-nav-link" href="./server.html">Manage your server</a>
+          <p class="docs-nav-label">Help</p>
+          <a class="docs-nav-link" href="./report-issue.html">Report an issue</a>
+          <p class="docs-nav-label">Server reference</p>
+          <a class="docs-nav-link" href="./advanced-install.html">Advanced install</a>
+          <a class="docs-nav-link" href="./multiple-servers.html">Multiple servers</a>
+          <a class="docs-nav-link" href="./backup-uninstall.html">Back up &amp; uninstall</a>
+        </nav>
+      </aside>
+
+      <article class="legal docs-body">
+        <p class="section-kicker">Feature guide / Workspace</p>
+        <h1>View and edit your code</h1>
+        <p class="legal-lead">Browse, preview, and edit files on your remote directly from the app.</p>
+          <figure class="docs-shot">
+            <video autoplay muted loop playsinline preload="metadata" poster="./assets/feature-files-poster.jpg">
+              <source src="./assets/feature-files.mp4" type="video/mp4" />
+            </video>
+          </figure>
+          <p>The files you can open are the ones under the chat's <strong>working directory</strong> — the folder on your remote that this chat's agent works in. Set it when you create the chat, or change it anytime from the <strong>Session</strong> panel on the right.</p>
+          <figure class="docs-shot narrow">
+            <img src="./assets/feat-files-workingdir.png" alt="AgentsDock Session panel on the right, showing the chat's Working directory field" loading="lazy" />
+            <figcaption>Find and change the chat's <strong>Working directory</strong> in the Session panel on the right.</figcaption>
+          </figure>
+        <nav class="feature-page-nav" aria-label="Feature pages">
+          <a href="./features.html">Feature guide</a>
+          <a href="./terminal-access.html">Previous: Terminal access</a>
+          <a href="./slash-commands.html">Next: Slash commands</a>
+        </nav>
+      </article>
+    </main>
+
+    <footer>
+      <div class="brand footer-brand"><img src="./assets/agentsdock-icon.png" alt="" /><span>AgentsDock</span></div>
+      <p>An IDE designed for agentic AI research.<span class="footer-copyright">&copy; 2026 AgentsDock</span></p>
+      <div>
+        <a href="./setup.html">Docs</a>
+        <a href="./support.html">Support</a>
+        <a href="./report-issue.html">Report an issue</a>
+        <a href="./privacy.html">Privacy</a>
+        <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord &#8599;</a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/backup-uninstall.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/backup-uninstall.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -74,7 +74,21 @@
           <a class="docs-nav-link" href="./agents.html">连接 agents</a>
           <a class="docs-nav-link" href="./first-chat.html">开始第一个会话</a>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link" href="./update.html">更新</a>
           <a class="docs-nav-link" href="./language.html">语言</a>
@@ -106,7 +120,7 @@
         <h2 id="what">什么存在哪里</h2>
         <ul>
           <li><strong>状态</strong>——会话及其事件历史、定时任务、上传和生成的文件、安全对等凭据、终端元数据：<code>~/.agentsdock</code>（默认服务器）· <code>~/.agentsdock-instances/NAME</code>（命名实例）</li>
-          <li><strong>配置</strong>——访问令牌和服务设置：<code>~/.config/agents-server</code> · <code>~/.config/agents-server-instances/NAME</code></li>
+          <li><strong>配置</strong>——token 和服务设置：<code>~/.config/agents-server</code> · <code>~/.config/agents-server-instances/NAME</code></li>
           <li><strong>运行时</strong>——已安装的发布版本及其 Python 环境（完全可重装，不含个人数据）：<code>~/.local/share/agents-server</code> · <code>~/.local/share/agents-server-instances/NAME</code></li>
           <li><strong>日志</strong>——<code>~/Library/Logs/AgentsServer/</code>（macOS）或用户日志（Linux）</li>
         </ul>
@@ -125,20 +139,20 @@ cp -a ~/.config/agents-server ~/agentsdock-config-backup-$(date +%F)
 # then start it again
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.agentsdock.server.plist   # macOS
 systemctl --user start agents-server.service                                           # Linux</pre>
-        <p>对于命名实例，请使用它自己的服务名和<a href="./multiple-servers.html#paths">每个实例的位置</a>中列出的 <code>…-instances/NAME</code> 路径。配置备份包含你的访问令牌——请存放在私密的地方。</p>
+        <p>对于命名实例，请使用它自己的服务名和<a href="./multiple-servers.html#paths">每个实例的位置</a>中列出的 <code>…-instances/NAME</code> 路径。配置备份包含你的 token——请存放在私密的地方。</p>
 
         <h2 id="restore">恢复</h2>
-        <p><strong>原位状态会被自动接管。</strong>如果状态目录还在（正常卸载后就是如此），只需再次运行 <code>./install.sh</code> 就能重新连上同样的会话、任务和文件。除非配置目录也保留了，否则重装会生成<em>新的</em>访问令牌——若是这样，请在应用里更新令牌。</p>
-        <p><strong>从你自己做的备份恢复：</strong>停止服务器，把备份的目录放回原来的路径，再启动它（或运行 <code>./install.sh</code>）。想保留旧令牌的话，把配置目录也一并恢复。</p>
+        <p><strong>原位状态会被自动接管。</strong>如果状态目录还在（正常卸载后就是如此），重新安装会连上同样的会话、任务和文件。除非配置目录也保留了，否则重装会生成<em>新的</em> token——若是这样，请在应用里更新 token。</p>
+        <p><strong>从你自己做的备份恢复：</strong>停止服务器，把备份的目录放回原来的路径，再启动它（或运行 <code>npm install -g agentsdock</code>）。想保留旧 token 的话，把配置目录也一并恢复。</p>
         <p>重装<strong>不会</strong>自动恢复<em>名称释放</em>备份——那部分在下文单独说明。</p>
 
         <h2 id="uninstall">卸载</h2>
-<pre>./uninstall.sh                          # lists instances, confirms exact names
-./uninstall.sh --instance work          # one named instance
-./uninstall.sh --all                    # everything
-./uninstall.sh --all --exclude default  # all named instances, keep default
-./uninstall.sh --yes                    # skip the prompt (default server)</pre>
-        <p>卸载会<strong>移除</strong>用户服务、版本化的运行时，以及包括访问令牌在内的生成配置。它会<strong>保留</strong>状态目录下的会话历史、任务、文件、安全对等凭据和终端，之后再运行 <code>./install.sh</code> 会接管同样的历史。它从不使用包管理器或 <code>sudo</code>，并拒绝对根目录、主目录、宽泛的系统目录或相互重叠的路径进行操作。</p>
+<pre>agentsdock remove default                 # default server
+agentsdock remove work                    # one named instance
+agentsdock remove --all                   # everything
+agentsdock remove --all --exclude default # all named instances, keep default
+agentsdock remove default --yes           # skip the prompt</pre>
+        <p>卸载会<strong>移除</strong>用户服务、版本化的运行时，以及包括 token 在内的生成配置。它会<strong>保留</strong>状态目录下的会话历史、任务、文件、安全对等凭据和终端，之后重新安装会接管同样的历史。它从不使用 <code>sudo</code>，并拒绝对根目录、主目录、宽泛的系统目录或相互重叠的路径进行操作。</p>
 
         <h2 id="release">名称释放备份</h2>
         <p>当一个<em>命名</em>实例的名称被释放时（移除它，或用同一名称创建新实例），它的状态目录不会被删除——而是<strong>移到一个私有备份</strong>：</p>
@@ -147,8 +161,8 @@ systemctl --user start agents-server.service                                    
         <p>释放名称会把它保存的 AgentsDock 数据保留在命令打印的私有备份位置。重装该实例<strong>不会</strong>自动恢复那个备份，重装后的实例从空的会话列表开始。目前<strong>还没有内置的恢复命令</strong>——请保持备份原样（不要移动或合并它，尤其是在该名称已被重新使用的情况下），并到 <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a> 或通过<a href="./report-issue.html">反馈问题</a>寻求恢复指引。</p>
 
         <h2 id="purge">清除状态</h2>
-<pre>./uninstall.sh --purge-state</pre>
-        <p>这是<strong>唯一的破坏性选项</strong>。它会永久删除状态目录——会话历史、任务、文件、令牌、安全对等凭据。它总是要求你输入完整的状态路径确认，<code>--yes</code> 永远无法跳过这个提示。</p>
+<pre>agentsdock remove default --purge-state</pre>
+        <p>这是<strong>唯一的破坏性选项</strong>。它会永久删除状态目录——会话历史、任务、文件、token、安全对等凭据。它总是要求你输入完整的状态路径确认，<code>--yes</code> 永远无法跳过这个提示。</p>
 
         <h2 id="terminals">终端会话</h2>
         <p>卸载后，持久会话终端仍会继续运行。它们是普通的 tmux 会话，按服务器隔离：</p>

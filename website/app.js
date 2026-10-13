@@ -1,7 +1,7 @@
 // Download buttons carry a direct link to the current release as a no-JS
 // fallback (see [data-dl] anchors in index.html). On load we ask the GitHub
-// Releases API for the newest builds and upgrade each link in place, so the
-// site always points at the latest version without a manual edit per release.
+// Releases API for the newest appropriate builds and upgrade each link in place.
+// Desktop tracks stable releases; Android still comes from its APK prerelease feed.
 const DESKTOP_RELEASES_API = 'https://api.github.com/repos/ZhengyiLuo/AgentsDock/releases?per_page=30'
 const ANDROID_RELEASES_API = 'https://api.github.com/repos/ZhengyiLuo/AgentsDock-Releases/releases?per_page=30'
 
@@ -39,17 +39,18 @@ function setDesktopVersionLabel(release) {
 
   if (release.prerelease) {
     label.textContent = isChineseReleaseLabel(label)
-      ? `桌面 Beta ${version}`
-      : `Desktop Beta ${version}`
+      ? `桌面预览版 ${version}`
+      : `Desktop preview ${version}`
     return
   }
 
   label.textContent = isChineseReleaseLabel(label)
-    ? `版本 ${version}`
-    : `Version ${version}`
+    ? `桌面版 ${version}`
+    : `Desktop ${version}`
 }
 
-async function loadReleases(url) {
+async function loadReleases(url, options = {}) {
+  const includePrereleases = options.includePrereleases !== false
   let releases
   try {
     const res = await fetch(url, { cache: 'no-store' })
@@ -60,17 +61,17 @@ async function loadReleases(url) {
     return [] // keep the hardcoded fallback links + copy already in the HTML
   }
 
-  // Newest release first — by publish date, INCLUDING betas/prereleases, so
-  // every button tracks the absolute latest build (not just the latest stable).
+  // Newest release first. Desktop tracks stable releases; Android still ships
+  // from its separate APK prerelease feed.
   return releases
-    .filter(r => !r.draft)
+    .filter(r => !r.draft && (includePrereleases || !r.prerelease))
     .sort((a, b) => new Date(b.published_at) - new Date(a.published_at))
 }
 
 async function loadRelease() {
   // Desktop releases moved to the public source repository. A failed lookup
   // keeps its canonical HTML links; the older mirror must not replace them.
-  const sorted = await loadReleases(DESKTOP_RELEASES_API)
+  const sorted = await loadReleases(DESKTOP_RELEASES_API, { includePrereleases: false })
 
   // The newest release that actually ships each platform's asset. Desktop
   // builds (dmg/AppImage/exe) travel together; Android ships in its own release.
@@ -89,7 +90,7 @@ async function loadRelease() {
 
 async function loadAndroidRelease() {
   // Android still publishes separately to the legacy repository.
-  const sorted = await loadReleases(ANDROID_RELEASES_API)
+  const sorted = await loadReleases(ANDROID_RELEASES_API, { includePrereleases: true })
   const android = sorted.find(r => (r.assets || []).some(a => ASSET_MATCHERS.android.test(a.name)))
   setPlatformHref('android', findAsset(android, ASSET_MATCHERS.android))
 }

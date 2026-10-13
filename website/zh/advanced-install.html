@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、访问令牌、手动安装、服务模板，以及完整的环境变量参考。" />
+    <meta name="description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、token、服务模板，以及完整的环境变量参考。" />
     <!-- Social preview (Open Graph / Twitter) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="AgentsDock" />
     <meta property="og:title" content="高级安装与配置 · AgentsDock" />
-    <meta property="og:description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、访问令牌、手动安装、服务模板，以及完整的环境变量参考。" />
+    <meta property="og:description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、token、服务模板，以及完整的环境变量参考。" />
     <meta property="og:url" content="https://agentsdock.net/zh/advanced-install.html" />
     <meta property="og:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
     <meta property="og:image:width" content="1200" />
@@ -16,7 +16,7 @@
     <meta property="og:image:alt" content="AgentsDock — an IDE designed for agentic AI research" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="高级安装与配置 · AgentsDock" />
-    <meta name="twitter:description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、访问令牌、手动安装、服务模板，以及完整的环境变量参考。" />
+    <meta name="twitter:description" content="AgentsServer 的全部安装选项、端口与绑定行为、Tailscale 远程访问、token、服务模板，以及完整的环境变量参考。" />
     <meta name="twitter:image" content="https://agentsdock.net/assets/og-card.png?v=82a3bdda" />
     <meta name="theme-color" content="#0d1013" />
     <meta name="robots" content="index,follow" />
@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/advanced-install.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/advanced-install.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -74,7 +74,21 @@
           <a class="docs-nav-link" href="./agents.html">连接 agents</a>
           <a class="docs-nav-link" href="./first-chat.html">开始第一个会话</a>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link" href="./update.html">更新</a>
           <a class="docs-nav-link" href="./language.html">语言</a>
@@ -88,8 +102,7 @@
             <a href="#installer">安装选项</a>
             <a href="#ports">端口与绑定地址</a>
             <a href="#remote">远程访问（Tailscale）</a>
-            <a href="#tokens">访问令牌</a>
-            <a href="#manual">手动安装与运行</a>
+            <a href="#tokens">token</a>
             <a href="#service">服务模板</a>
             <a href="#env">环境变量</a>
             <a href="#paths">文件位置</a>
@@ -102,12 +115,13 @@
       <article class="legal docs-body">
         <p class="section-kicker">服务器参考</p>
         <h1>高级安装与配置</h1>
-        <p class="legal-lead">安装和配置 AgentsServer 的完整参考。日常命令（更新、令牌、重启、日志）见<a href="./server.html">管理服务器</a>；首次搭建的分步教程见<a href="./setup.html">搭建指南</a>。</p>
-        <p class="legal-meta">适用于 AgentsServer 1.0.x 发布版本。权威来源：<a href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">AgentsServer 仓库</a>和 <code>./install.sh --help</code>。</p>
+        <p class="legal-lead">安装和配置 AgentsServer 的完整参考。日常命令（更新、token、重启、日志）见<a href="./server.html">管理服务器</a>；首次搭建的分步教程见<a href="./setup.html">搭建指南</a>。</p>
+        <p class="legal-meta">适用于 AgentsServer 1.0.x 发布版本。权威来源：<a href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">AgentsServer 源码树</a>、<code>agentsdock --help</code> 和已安装的原生辅助脚本。</p>
 
         <h2 id="requirements">要求</h2>
         <ul>
           <li><strong>主机：</strong>Linux，或 Apple 芯片的 macOS。不支持 Intel macOS；安装脚本会在做任何更改前停止。</li>
+          <li><strong>Node.js/npm：</strong>用于 <code>agentsdock</code> CLI。需要 Node.js 22.14 或更高版本。</li>
           <li><strong><code>uv</code></strong> 预装在 <code>PATH</code> 中（macOS 上 <code>brew install uv</code>；Linux 上用发行版的包管理器）。它负责准备隔离的 Python 3.10+ 运行时。安装脚本从不下载引导脚本。</li>
           <li>你计划使用的提供方 CLI（<strong>Claude Code</strong>、<strong>Codex</strong>、<strong>OpenCode</strong> 或 <strong>Cursor</strong>）已在主机上安装并登录，且与运行服务器的是同一个用户账号。</li>
           <li><strong>tmux</strong>（可选）——启用应用内终端、实时窗格查看和应用内托管更新。装有 Homebrew 的 macOS 上，安装脚本会询问是否代为安装；否则打印安装命令并继续。</li>
@@ -115,27 +129,26 @@
           <li>可用的用户服务会话：<code>launchctl</code>（macOS）或 <code>systemctl --user</code>（Linux）。全程不使用 <code>sudo</code>。</li>
         </ul>
 
-        <h2 id="installer">安装选项</h2>
-<pre>./install.sh [--port PORT] [--bind ADDRESS] [--release-version VERSION]
-             [--non-interactive] [--allow-port-fallback | --no-port-fallback]
-             [--show-token] [--instance NAME]</pre>
+        <h2 id="installer">CLI 安装选项</h2>
+<pre># 标准默认 setup
+npm install -g agentsdock
+
+# 自定义 setup
+AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
+agentsdock setup [--port PORT] [--bind IP] [--non-interactive] [--dry-run]</pre>
         <ul>
           <li><code>--port PORT</code>——固定使用指定端口。不指定时默认为 <code>7850</code>。</li>
           <li><code>--bind ADDRESS</code>——监听地址。默认 <code>0.0.0.0</code>（所有网卡，其他设备可连接）。</li>
-          <li><code>--release-version VERSION</code>——安装指定的已发布版本而非最新版。</li>
           <li><code>--non-interactive</code>——从不提示（跳过 tmux 安装询问和剪贴板复制）。用于脚本和通过 SSH 驱动的运行。</li>
-          <li><code>--allow-port-fallback</code> / <code>--no-port-fallback</code>——控制是否自动选择邻近端口（见下文）。</li>
-          <li><code>--show-token</code>——打印访问令牌并退出，不重新安装也不重启。</li>
-          <li><code>--instance NAME</code>——对命名实例而非默认服务器执行操作。参见<a href="./multiple-servers.html">多服务器</a>。</li>
+          <li><code>--dry-run</code>——打印实际会执行的原生安装命令，但不执行。</li>
         </ul>
-        <p>每次运行都是幂等的：保留上一个健康版本以便回滚，保留访问令牌和配置，绝不触碰会话状态。运行失败时当前生效版本保持不变，并打印恢复指引。安装锁可防止被取消的 SSH 尝试与重试互相竞争。</p>
+        <p>全局安装只会在没有既有安装或状态时创建新的默认用户级服务，标准安装不需要 clone repo。已有服务器会保持不变；请从应用的<strong>设置 &rarr; 更新</strong>里更新。单独在项目里运行 <code>npm install agentsdock</code> 只会添加依赖，不会创建服务。运行中的服务也不会从 npm cache 中执行。</p>
+        <p>安装完成后，查看 token 用 <code>agentsdock token</code>，卸载默认服务器用 <code>agentsdock remove default</code>，命名实例用 <code>agentsdock new</code> / <code>agentsdock list</code>。原生辅助脚本仍位于 <code>~/.local/share/agents-server/current</code>，供高级排查使用。</p>
 
         <h2 id="ports">端口与绑定地址</h2>
         <p>如果默认端口已被某个不是待替换 AgentsServer 的进程占用，安装脚本会报告该监听进程（可用时借助 <code>lsof</code>），并在向上最多五个空闲端口中选一个。所选端口会在运行结束时打印。</p>
         <ul>
-          <li>单独使用 <code>--port</code> 会固定该端口，被占用时直接失败。</li>
-          <li><code>--port … --allow-port-fallback</code> 允许显式指定的端口回退到邻近的空闲端口。</li>
-          <li><code>--no-port-fallback</code> 同样禁用默认端口的回退。</li>
+          <li><code>--port</code> 会固定该端口，被占用时直接失败。</li>
         </ul>
         <p>绑定到 <code>0.0.0.0</code>（默认）以接受其他设备的连接；只有应用与服务器在同一台机器上时才绑定 <code>127.0.0.1</code>。绑定到回环地址的服务器无法通过 Tailscale 访问。</p>
 
@@ -146,30 +159,14 @@
 tailscale ip -4</pre>
         <p>在每台设备上加入同一个 tailnet，然后使用服务器 URL：</p>
 <pre>http://&lt;tailscale-ip&gt;:7850</pre>
-        <p>如果设备上的浏览器能打开 <code>/api/health</code> 但应用连不上，请检查：设备已连接 Tailscale、URL 带有端口、应用里填的是同一个访问令牌，以及服务器绑定的是 <code>0.0.0.0</code>（而不只是 <code>127.0.0.1</code>）。</p>
-        <div class="guide-note"><p><strong>切勿把 7850 端口暴露到公网。</strong>使用 Tailscale 或其他私有网络，并保持访问令牌启用。</p></div>
+        <p>如果设备上的浏览器能打开 <code>/api/health</code> 但应用连不上，请检查：设备已连接 Tailscale、URL 带有端口、应用里填的是同一个 token，以及服务器绑定的是 <code>0.0.0.0</code>（而不只是 <code>127.0.0.1</code>）。</p>
+        <div class="guide-note"><p><strong>切勿把 7850 端口暴露到公网。</strong>使用 Tailscale 或其他私有网络，并保持 token 启用。</p></div>
 
-        <h2 id="tokens">访问令牌</h2>
-        <p>安装脚本会生成一个私有的 bearer 令牌并打印一次。每个 HTTP 调用、上传、文件/视频获取和 WebSocket 流都需要它。随时可以这样取回：</p>
-<pre>./install.sh --show-token</pre>
-        <p>客户端以 <code>Authorization: Bearer &lt;token&gt;</code>（或 <code>X-AgentsDock-Token</code> 请求头）发送它。手动运行服务器时，请自行设置 <code>AGENTSDOCK_AGENT_TOKEN</code>；只有在可信的本地开发环境中才可以不设置。</p>
-
-        <h2 id="manual">手动安装与运行</h2>
-        <p>如果你不想用安装脚本或服务，可以直接从代码检出目录运行服务器：</p>
-<pre>git clone https://github.com/ZhengyiLuo/AgentsServer.git
-cd AgentsServer
-uv venv
-uv sync --frozen
-
-# confirm the CLIs work in this same shell/user
-command -v claude &amp;&amp; claude --version
-command -v codex  &amp;&amp; codex --version
-
-export AGENTSDOCK_AGENT_TOKEN='replace-with-a-long-random-token'
-uv run python agent_server.py serve --bind 0.0.0.0 --port 7850</pre>
-        <p>在服务器机器上检查：</p>
-<pre>curl -H 'Authorization: Bearer replace-with-a-long-random-token' http://127.0.0.1:7850/api/health</pre>
-        <p>用 <code>AGENTSDOCK_STATE_DIR</code> 把状态存放在 <code>~/.agentsdock</code> 以外的位置；只安装了其中一个命令行工具时，设置 <code>AGENTSDOCK_BACKEND</code>。</p>
+        <h2 id="tokens">token</h2>
+        <p>安装脚本会生成一个私有的 bearer token。每个 HTTP 调用、上传、文件/视频获取和 WebSocket 流都需要它。随时可以这样取回：</p>
+<pre>agentsdock token</pre>
+        <p>客户端以 <code>Authorization: Bearer &lt;token&gt;</code>（或 <code>X-AgentsDock-Token</code> 请求头）发送它。如需在服务器机器上做低层健康检查：</p>
+<pre>curl -H 'Authorization: Bearer YOUR_TOKEN' http://127.0.0.1:7850/api/health</pre>
 
         <h2 id="service">服务模板</h2>
         <p>安装脚本会为你创建并管理用户服务：macOS 上是 LaunchAgent <code>com.agentsdock.server</code>，Linux 上是 <code>agents-server.service</code>。只有自定义部署才需要下面的模板。</p>
@@ -186,7 +183,7 @@ systemctl --user status agents-server.service --no-pager -l</pre>
         <ul>
           <li><code>AGENTSDOCK_AGENT_BIND</code>——绑定地址（<code>0.0.0.0</code>）</li>
           <li><code>AGENTSDOCK_AGENT_PORT</code>——端口（<code>7850</code>）</li>
-          <li><code>AGENTSDOCK_AGENT_TOKEN</code>——共享的 bearer 令牌（未设置）</li>
+          <li><code>AGENTSDOCK_AGENT_TOKEN</code>——共享的 bearer token（未设置）</li>
         </ul>
         <p><strong>路径</strong></p>
         <ul>
@@ -226,9 +223,9 @@ systemctl --user status agents-server.service --no-pager -l</pre>
 
         <h2 id="paths">文件位置</h2>
         <ul>
-          <li><code>~/.agentsdock</code>——状态：会话、任务、文件、上传、令牌、安全对等凭据</li>
-          <li><code>~/.config/agents-server</code>——生成的配置和访问令牌</li>
-          <li><code>~/.local/share/agents-server</code>——版本化的发布；<code>current</code> 指向当前生效的版本</li>
+          <li><code>~/.agentsdock</code>——状态：会话、任务、文件、上传、token、安全对等凭据</li>
+          <li><code>~/.config/agents-server/env</code>——生成的服务配置和 token</li>
+          <li><code>~/.local/share/agents-server/releases/&lt;version&gt;</code>——版本化的发布；<code>~/.local/share/agents-server/current</code> 指向当前生效的版本</li>
           <li><code>~/Library/Logs/AgentsServer/</code>（macOS）· <code>journalctl --user -u agents-server.service</code>（Linux）——日志</li>
         </ul>
         <p>命名实例使用各自的同级路径——见<a href="./multiple-servers.html#paths">每个实例的位置</a>。</p>

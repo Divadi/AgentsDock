@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/first-chat.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/first-chat.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -78,7 +78,21 @@
             <a href="#new-chat">开始会话</a>
           </span>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link" href="./update.html">更新</a>
           <a class="docs-nav-link" href="./language.html">语言</a>
@@ -103,12 +117,12 @@
           <img src="../assets/first-chat-servers.png" alt="AgentsDock server switcher — one server offline with a red dot, and the selected Mac Mini server online with a green dot" loading="lazy" />
           <figcaption>绿 = 已连接、在线。红 = 无法访问。</figcaption>
         </figure>
-        <p>连接服务器需要两样东西：它的<strong>地址</strong>——服务器的 IP 或主机名加端口 <code>7850</code>——以及它的<strong>访问令牌</strong>。在应用里填好后，点击<strong>测试连接（Test connection）</strong>。</p>
+        <p>连接服务器需要两样东西：它的<strong>地址</strong>——服务器的 IP 或主机名加端口 <code>7850</code>——以及它的<strong>token</strong>。在应用里填好后，点击<strong>测试连接（Test connection）</strong>。</p>
         <figure class="docs-shot">
           <img src="../assets/first-chat-addserver.png" alt="AgentsDock Add server form with a Server URL field, an Access token field, and a Test connection button" loading="lazy" />
-          <figcaption>用 URL 和访问令牌添加服务器，然后<strong>测试连接</strong>。</figcaption>
+          <figcaption>用 URL 和 token 添加服务器，然后<strong>测试连接</strong>。</figcaption>
         </figure>
-        <p>还没搭建服务器？<a href="./setup.html">搭建指南</a>会一步步带你把服务器跑起来、找到它的地址和访问令牌，再连接你的设备。</p>
+        <p>还没搭建服务器？<a href="./setup.html">搭建指南</a>会一步步带你把服务器跑起来、找到它的地址和 token，再连接你的设备。</p>
 
         <h2 id="new-chat">开始会话</h2>
         <p>点击侧边栏顶部的 <strong>+</strong> 按钮——即<strong>新建会话（New chat）</strong>——或按 <code>⌘N</code>。</p>
@@ -126,7 +140,7 @@
         <p>然后输入第一条消息，按 <code>Enter</code> 发送。就这么简单——agent 在你服务器上的那个目录里运行，而这个会话拥有自己的持久终端，你随时可以从任何设备接入。如果还需要先连接另一个 provider，可以看<a href="./agents.html">连接 agents</a>。</p>
 
         <h2 id="next">接下来</h2>
-        <p>到<a href="./features.html">主要功能</a>看看 AgentsDock 还能做什么，或用<a href="./shortcuts.html">键盘快捷键</a>提速。</p>
+        <p>到<a href="./features.html">功能指南</a>看看 AgentsDock 还能做什么，或用<a href="./shortcuts.html">键盘快捷键</a>提速。</p>
       </article>
     </main>
 

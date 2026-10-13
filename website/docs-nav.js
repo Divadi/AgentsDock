@@ -23,7 +23,7 @@
       iphone: '客户端安装',
       agents: '连接 agents',
       firstChat: '第一个会话',
-      features: '功能概览',
+      features: '功能指南',
       shortcuts: '键盘快捷键',
       update: '更新',
       language: '语言',
@@ -37,7 +37,7 @@
       iphone: 'Client install',
       agents: 'Connect agents',
       firstChat: 'First chat',
-      features: 'Features',
+      features: 'Feature guide',
       shortcuts: 'Keyboard shortcuts',
       update: 'Updates',
       language: 'Language',
@@ -130,7 +130,7 @@
   normalizeDocsDirectory();
 
   var docsLabel = aside.getAttribute('data-docs-label') || 'Docs';
-  var active = nav.querySelector('.docs-nav-link.current');
+  var active = nav.querySelector('.docs-nav-subs a.active') || nav.querySelector('.docs-nav-link.current');
   var current = active ? active.textContent.trim() : docsLabel;
 
   var btn = document.createElement('button');

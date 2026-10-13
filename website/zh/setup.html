@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/setup.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/setup.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -80,7 +80,21 @@
           <a class="docs-nav-link" href="./agents.html">连接 agents</a>
           <a class="docs-nav-link" href="./first-chat.html">开始第一个会话</a>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link" href="./update.html">更新</a>
           <a class="docs-nav-link" href="./language.html">语言</a>
@@ -97,7 +111,7 @@
       <article class="legal docs-body">
         <p class="section-kicker">文档</p>
         <h1>搭建指南</h1>
-        <p class="legal-meta">最后更新：2026 年 9 月 21 日 · 约需 15 分钟</p>
+        <p class="legal-meta">最后更新：2026 年 10 月 1 日 · 约需 15 分钟</p>
 
         <ul class="docs-intro-list">
           <li><strong>AgentsServer</strong> 在你自己的远程机器上执行实际工作。</li>
@@ -106,7 +120,7 @@
 
         <h2 id="prereqs">开始之前</h2>
         <ul>
-          <li>一台由你掌控、保持开机的远程机器（macOS 或 Linux）来运行服务器。<code>tmux</code> 是可选的，只有应用内终端需要它。</li>
+          <li>一台由你掌控的远程机器（Linux，或 Apple silicon Mac）来运行服务器。先在这台机器上安装 Node.js/npm 和 <code>uv</code>。<code>tmux</code> 是可选的，只有应用内终端需要它。</li>
           <li>一个 <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> 账号（可选）——仅在需要从局域网之外访问远程机器时才用得到。在同一 Wi‑Fi 下可以直接用机器的局域网 IP；Tailscale 让你能从其他任何地方安全连接。</li>
           <li>你计划使用的提供方 CLI（<strong>Claude Code</strong>、<strong>Codex</strong>、<strong>OpenCode</strong> 或 <strong>Cursor</strong>）已安装在远程机器上。</li>
           <li>一台能运行 <strong>AgentsDock 客户端</strong>的设备：macOS、Windows、Linux、iPhone、iPad 或 Android。</li>
@@ -119,15 +133,38 @@
         <p>在负责执行工作的那台机器上做一次即可。它会持续运行，你的各个设备都连接到它。</p>
 
         <h3 class="docs-step" id="remote-server"><span class="step-n">1</span>安装 AgentsServer</h3>
-        <p>在远程机器上克隆服务器仓库并运行安装脚本：</p>
-        <pre><code>git clone https://github.com/ZhengyiLuo/AgentsServer.git
-cd AgentsServer
-./install.sh</code></pre>
+        <p>在远程机器上，用将要运行服务器的用户安装 AgentsDock CLI：</p>
+        <pre><code>npm install -g agentsdock</code></pre>
+        <p>在一台新机器上，这个命令也会创建并启动默认服务器。标准安装不需要 clone repo。不要使用 <code>sudo</code>。</p>
+        <p class="legal-meta">接近结束时，终端会打印服务器 URL 和 setup result。你的地址和 token 会不一样：</p>
+        <pre class="terminal-output"><code><span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
+
+<span class="term-success">Your new service is up!</span>
+
+  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7850</span>
+  <span class="term-dim">Other local/network addresses:</span>
+    <span class="term-url">http://192.168.1.23:7850</span>
+
+  <span class="term-label">You already have</span>
+  <span class="term-success">AgentsServer running</span>
+  <span class="term-success">tmux available</span>
+
+<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7850</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
         <p>服务器默认监听 7850 端口，并在远程机器上持续运行——你的设备连接的就是它。</p>
-        <p>服务器会用一个 token 保护；安装脚本结束时会打印一次 token——现在就复制下来，第二步在每台设备上都要输入。之后想再次查看，在远程机器上运行：</p>
-        <pre><code>./install.sh --show-token</code></pre>
-        <p class="legal-meta">所有服务器命令——更新、重启、日志、卸载——都在<a href="./server.html">管理服务器</a>页面。</p>
-        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">在 GitHub 上查看 AgentsServer 仓库 <span aria-hidden="true">&rarr;</span></a></p>
+        <p>之后想确认服务器状态，可以运行：</p>
+        <pre><code>agentsdock status</code></pre>
+        <p class="legal-meta">输出大概会像这样：</p>
+        <pre class="terminal-output"><code><span class="term-head">Server (default):</span>
+  <span class="term-label">Status:</span>   <span class="term-success">running</span>
+  <span class="term-label">Address:</span>  <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(Tailscale / other networks)</span>
+            <span class="term-url">http://192.168.1.23:7850</span> <span class="term-dim">(Same Wi-Fi / LAN)</span>
+            <span class="term-url">http://127.0.0.1:7850</span> <span class="term-dim">(This machine only)</span>
+  <span class="term-label">Version:</span>  1.0.10
+  <span class="term-label">Port:</span>     7850</code></pre>
+        <p>服务器会用一个 token 保护。连接设备时，在远程机器上运行下面的命令查看：</p>
+        <pre><code>agentsdock token</code></pre>
+        <p class="legal-meta">状态、重启、更新和卸载等服务器命令都在<a href="./server.html">管理服务器</a>页面。</p>
+        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">在 GitHub 上查看 AgentsServer 源码 <span aria-hidden="true">&rarr;</span></a></p>
 
         <h3 class="docs-step" id="remote-cli"><span class="step-n">2</span>在远程机器上登录提供方 CLI</h3>
         <p>安装并登录你要让 AgentsDock 使用的提供方 CLI：<a href="https://code.claude.com/docs" target="_blank" rel="noopener">Claude Code</a>、<a href="https://developers.openai.com/codex/cli" target="_blank" rel="noopener">Codex</a>、<a href="https://dev.opencode.ai/docs/cli/" target="_blank" rel="noopener">OpenCode</a> 或 <a href="https://cursor.com/docs/cli/reference/authentication" target="_blank" rel="noopener">Cursor</a>。按提供方支持的正常方式登录即可，例如浏览器登录或配置 API key。自定义 endpoint 的配置见<a href="./agents.html">连接 agents</a>。</p>
@@ -155,7 +192,7 @@ cd AgentsServer
         <p>在 AgentsDock 中添加服务器，填入远程机器的地址——它的 Tailscale <code>100.x.x.x</code> 地址加端口 <code>7850</code>——然后把第一步得到的 token 粘贴到<strong>token</strong>字段。它长这样：</p>
         <pre><code>ad_tok_9f3b7c2e••••••••••••••••••••   (sample)</code></pre>
         <p>这个 token 存放在你的服务器机器上——也就是第一步搭建的远程机器，而不是你正在用来连接的设备。想再次获取，在远程机器上运行：</p>
-        <pre><code>./install.sh --show-token</code></pre>
+        <pre><code>agentsdock token</code></pre>
         <p>点击<strong>测试连接（Test connection）</strong>确认应用能连到服务器，再点<strong>添加并切换（Add &amp; switch）</strong>。连接成功后：新建一个会话，选择一个提供方，并指定远程机器上的一个工作目录。</p>
         <figure class="docs-shot">
           <img src="../assets/setup-token.png" alt="AgentsDock connection form on macOS with the Access token field, a Test connection button, and Add and switch" loading="lazy" />
@@ -181,7 +218,7 @@ cd AgentsServer
         </ul>
         <p>还是不行？前往<a href="../support.html">支持</a>页面，或在我们的 <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a> 提问。</p>
 
-        <p>连接好了？到<a href="./features.html">主要功能</a>看看 AgentsDock 能做什么 &rarr;</p>
+        <p>连接好了？到<a href="./features.html">功能指南</a>看看 AgentsDock 能做什么 &rarr;</p>
       </article>
     </main>
 

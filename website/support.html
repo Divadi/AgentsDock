@@ -37,7 +37,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="./styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -89,12 +89,12 @@
           <li><strong>Linux:</strong> x86_64 and ARM64, distributed as an AppImage.</li>
           <li><strong>Android:</strong> Android client builds are supported.</li>
         </ul>
-        <p><strong>What you need:</strong> a <strong>server</strong> to connect to — a macOS or Linux machine you control, with the provider CLIs you plan to use authenticated. <code>tmux</code> is optional, only for the in-app terminal. The app is the control surface; the work runs on your server.</p>
+        <p><strong>What you need:</strong> a <strong>server</strong> to connect to — Linux, or Apple-silicon macOS, with Node.js/npm, <code>uv</code>, and the provider CLIs you plan to use authenticated. <code>tmux</code> is optional, only for the in-app terminal. The app is the control surface; the work runs on your server.</p>
 
         <h2 id="getting-started">Getting started</h2>
         <p>The app needs a server to talk to. Install one on any machine you own:</p>
         <ul>
-          <li>Clone the server repository and run its installer: <code>git clone https://github.com/ZhengyiLuo/AgentsServer.git</code>, then <code>cd AgentsServer</code> and <code>./install.sh</code>.</li>
+          <li>Install and set up the server on the machine that will do the work: <code>npm install -g agentsdock</code>.</li>
           <li>The server listens on port <code>7850</code>. Sign in to the provider CLIs you want to use on that machine.</li>
           <li>Open the app and connect to the server with its address and access token.</li>
         </ul>
@@ -121,7 +121,7 @@
         <p>Your chats, code, files, and credentials stay on the server you operate. For details on what the apps do and do not collect, see our <a href="./privacy.html">Privacy Policy</a>.</p>
 
         <h2 id="docs">Docs and community</h2>
-        <p>Full setup instructions, release notes, and architecture documentation live in the <a href="https://github.com/ZhengyiLuo/AgentsServer" target="_blank" rel="noopener">AgentsServer repository</a>, and the community is on <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a>.</p>
+        <p>Full setup instructions, release notes, and architecture documentation live in the <a href="https://github.com/ZhengyiLuo/AgentsDock" target="_blank" rel="noopener">AgentsDock repository</a>, and the community is on <a href="https://discord.gg/ZGDrhEWqPt" target="_blank" rel="noopener">Discord</a>.</p>
       </article>
     </main>
 

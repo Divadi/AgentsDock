@@ -34,7 +34,7 @@
     </script>
     <script src="../analytics.js" defer></script>
     <script src="../site-nav.js?v=e6b98484" defer></script>
-    <script src="../docs-nav.js?v=1c49a7d2" defer></script>
+    <script src="../docs-nav.js?v=ad0081d0" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -42,7 +42,7 @@
     <link rel="alternate" hreflang="zh-CN" href="https://agentsdock.net/zh/update.html" />
     <link rel="alternate" hreflang="x-default" href="https://agentsdock.net/update.html" />
     <meta property="og:locale" content="zh_CN" />
-    <link rel="stylesheet" href="../styles.css?v=c8d74e91" />
+    <link rel="stylesheet" href="../styles.css?v=80f4f28e" />
   </head>
   <body>
     <header class="site-header">
@@ -74,7 +74,21 @@
           <a class="docs-nav-link" href="./agents.html">连接 agents</a>
           <a class="docs-nav-link" href="./first-chat.html">开始第一个会话</a>
           <p class="docs-nav-label">指南</p>
-          <a class="docs-nav-link" href="./features.html">主要功能</a>
+          <a class="docs-nav-link" href="./features.html">功能指南</a>
+          <span class="docs-nav-subs feature-docs-subs">
+            <span class="docs-nav-subgroup">会话</span>
+            <a href="./agent-to-agent.html">Agent 之间通话</a>
+            <a href="./share-chat.html">Share Chat</a>
+            <a href="./side-chat.html">Side chat</a>
+            <a href="./fork-chat.html">Fork 会话</a>
+            <a href="./resume-chats.html">恢复会话</a>
+            <span class="docs-nav-subgroup">工作区</span>
+            <a href="./terminal-access.html">终端访问</a>
+            <a href="./view-edit-code.html">查看与编辑代码</a>
+            <span class="docs-nav-subgroup">自动化</span>
+            <a href="./slash-commands.html">斜杠命令</a>
+            <a href="./scheduled-jobs.html">定时任务</a>
+          </span>
           <a class="docs-nav-link" href="./shortcuts.html">键盘快捷键</a>
           <a class="docs-nav-link current" href="./update.html">更新</a>
           <span class="docs-nav-subs">
@@ -109,7 +123,7 @@
 
         <h2 id="both">应用和服务器一起更新</h2>
         <p>AgentsDock 由两部分组成——<strong>应用</strong>（你设备上的客户端）和 <strong>AgentsServer</strong>（运行在你的远程机器上）。两者在同一面板里各自显示版本号，各有自己的<strong>检查</strong>和更新控件。</p>
-        <p>更新时，<strong>请把两端同时升到最新版本</strong>。应用和服务器保持版本一致可以避免不匹配——功能和修复往往两边一起发布。远程机器用<strong>将服务器更新到 Beta（Update server to Beta）</strong>/<strong>安装或更新 AgentsServer（Install or update AgentsServer）</strong>，应用则用<strong>重启以更新（Restart to update）</strong>。</p>
+        <p>更新时，<strong>请把两端同时升到最新版本</strong>。应用和服务器保持版本一致可以避免不匹配——功能和修复往往两边一起发布。在<strong>设置 &rarr; 更新</strong>里点击 <strong>Check now</strong>；应用更新用 <strong>Restart to update</strong>，远程服务器在出现提示时用 <strong>Update server</strong> 或 <strong>Retry server update</strong>。</p>
 
         <h2 id="channels">稳定版与测试版</h2>
         <p>应用和服务器都有<strong>稳定版（Stable）</strong>/<strong>测试版（Beta）</strong>开关：</p>
@@ -118,7 +132,7 @@
           <li><strong>测试版</strong>——最新的签名构建，功能和修复会先于稳定版到达。适合想尝鲜、不介意偶尔有小毛病的人。</li>
         </ul>
         <p>两端选择同一渠道，让应用和服务器步调一致。想知道每个版本具体改了什么、哪些是稳定版哪些是测试版？所有发布版本及其说明都在 GitHub 上。</p>
-        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock-Releases/releases" target="_blank" rel="noopener">浏览发布版本与更新说明 <span aria-hidden="true">&rarr;</span></a></p>
+        <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/releases" target="_blank" rel="noopener">浏览发布版本与更新说明 <span aria-hidden="true">&rarr;</span></a></p>
       </article>
     </main>
 

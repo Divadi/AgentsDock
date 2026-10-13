@@ -656,6 +656,15 @@ a.quote-author--link:hover .quote-handle { text-decoration: none; }
 /* Setup-guide extras */
 .legal pre { margin: 0 0 20px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 10px; background: #090b0f; overflow-x: auto; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13.5px; line-height: 1.75; color: #d3dbe6; }
 .legal pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+.legal pre.terminal-output { border-color: #172235; background: #070a0f; color: #d6deea; box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
+.terminal-output .term-dim { color: #748196; }
+.terminal-output .term-head { color: #7fb2ff; font-weight: 700; }
+.terminal-output .term-success { color: #7bd88f; font-weight: 700; }
+.terminal-output .term-label { color: #e3e9f2; font-weight: 700; }
+.terminal-output .term-url { color: #6db8ff; }
+.terminal-output .term-json { color: #b9c4d6; }
+.terminal-output .term-key { color: #e8c777; }
+.terminal-output .term-cmd { color: #86b7ff; }
 .step-n { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: 12px; border-radius: 999px; background: var(--accent-soft); color: var(--blue); font-family: var(--display); font-size: 15px; font-weight: 600; letter-spacing: 0; vertical-align: 2px; }
 .guide-note { margin: 0 0 24px; padding: 14px 18px; border-left: 3px solid var(--blue); border-radius: 0 8px 8px 0; background: var(--accent-soft); }
 .guide-note p { margin: 0; color: var(--muted-2); }
@@ -697,6 +706,8 @@ a.quote-author--link:hover .quote-handle { text-decoration: none; }
 .docs-nav nav > a.active { color: #cfd6df; background: rgba(255,255,255,.055); font-weight: 500; }
 /* On-this-page anchors for the current page, nested under it with a thin rail. */
 .docs-nav-subs { display: flex; flex-direction: column; margin: 3px 0 4px 22px; padding-left: 0; border-left: 1px solid var(--line); }
+.docs-nav-subgroup { margin: 13px 0 2px -1px; padding: 6px 0 3px 14px; border-left: 2px solid transparent; color: #6f7a86; font-size: 12px; line-height: 1.3; }
+.docs-nav-subgroup:first-child { margin-top: 3px; }
 .docs-nav-subs a { margin-left: -1px; padding: 6px 0 6px 14px; border-left: 2px solid transparent; color: var(--muted); text-decoration: none; font-size: 13px; line-height: 1.3; transition: color .15s ease, border-color .15s ease; }
 .docs-nav-subs a:hover { color: var(--text); }
 .docs-nav-subs a.active { color: #c9d0da; border-left-color: rgba(201,208,218,.64); }
@@ -733,13 +744,28 @@ a.quote-author--link:hover .quote-handle { text-decoration: none; }
 /* Plain sub-headings inside docs prose (e.g. the support troubleshooting Qs). */
 .legal h3:not(.docs-step) { margin: 30px 0 8px; font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--text); scroll-margin-top: 88px; }
 /* In-guide screenshot. */
-/* Numbered feature blocks on the Key features doc page */
-.feature-doc { margin-top: 88px; padding-top: 72px; border-top: 1px solid var(--line); }
-.feature-doc:first-of-type { margin-top: 20px; padding-top: 0; border-top: 0; }
+/* Grouped feature blocks on the feature guide page */
+.feature-group { margin-top: 86px; padding-top: 58px; border-top: 1px solid var(--line); scroll-margin-top: 88px; }
+.feature-group:first-of-type { margin-top: 34px; }
+.feature-group-kicker { margin: 0 0 9px; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--blue); }
+.feature-group h2 { margin: 0; font-size: 32px; line-height: 1.12; letter-spacing: -.02em; }
+.feature-group-desc { margin: 12px 0 0; max-width: 720px; color: var(--muted); font-size: var(--body-1); line-height: var(--line-loose); }
+.feature-doc { margin-top: 68px; padding-top: 54px; border-top: 1px solid var(--line); }
+.feature-doc:first-of-type { margin-top: 34px; padding-top: 0; border-top: 0; }
 .feature-doc-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 12px; scroll-margin-top: 88px; }
 .feature-doc-num { flex-shrink: 0; font-family: var(--display); font-size: 14px; font-weight: 600; letter-spacing: .1em; color: var(--blue); }
-.feature-doc-head h2 { margin: 0; font-size: 30px; line-height: 1.12; }
+.legal .feature-doc-head h3 { margin: 0; font-size: 28px; line-height: 1.12; letter-spacing: -.01em; }
 .feature-doc-desc { margin: 0 0 24px; color: var(--muted); font-size: var(--body-1); line-height: var(--line-loose); max-width: 620px; }
+.feature-doc h4 { margin: 30px 0 8px; font-family: var(--display); font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: var(--text); scroll-margin-top: 88px; }
+.feature-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 24px 0 0; }
+.feature-overview-card { display: block; min-height: 154px; padding: 16px; border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); text-decoration: none; transition: box-shadow .18s ease, transform .18s ease, background-color .18s ease; }
+.feature-overview-card:hover { background: rgba(255,255,255,.045); box-shadow: 0 0 0 1px rgba(255,255,255,.22); transform: translateY(-1px); }
+.feature-overview-card-num { display: block; margin-bottom: 18px; font-family: var(--display); font-size: 12px; font-weight: 600; letter-spacing: .1em; color: var(--blue); }
+.feature-overview-card strong { display: block; color: var(--text); font-size: 17px; line-height: 1.25; }
+.feature-overview-card span:last-child { display: block; margin-top: 9px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.feature-page-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 54px; padding-top: 24px; border-top: 1px solid var(--line); }
+.feature-page-nav a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 8px; background: rgba(255,255,255,.04); color: #c9d0da; text-decoration: none; font-size: 14px; box-shadow: 0 0 0 1px var(--line); }
+.feature-page-nav a:hover { color: var(--text); background: rgba(255,255,255,.07); }
 
 .docs-shot { margin: 26px 0; }
 .docs-shot.narrow { max-width: 250px; margin-left: auto; margin-right: auto; }
