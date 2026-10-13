@@ -3639,7 +3639,7 @@ describe('AgentServerClient emergency contact bridge', () => {
     FakeWebSocket.instances = []
   })
 
-  it('acknowledges the exact alert through the encoded authenticated session route', async () => {
+  it.each([['acknowledgeEmergency', 'expected_alert_id'], ['dismissEmergencyAlerts', 'through_alert_id']] as const)('%s sends the captured alert boundary through the authenticated chat route', async (method, field) => {
     const alertId = `emergency_${'a'.repeat(32)}`
     const session: Session = {
       id: 'chat /?', title: 'Emergency chat', backend: 'codex',
@@ -3652,17 +3652,17 @@ describe('AgentServerClient emergency contact bridge', () => {
     vi.stubGlobal('fetch', fetchMock)
     const client = new AgentServerClient('http://example.test:7850', 'secret')
 
-    await expect(client.acknowledgeEmergency('chat /?', alertId)).resolves.toEqual(session)
+    await expect(client[method]('chat /?', alertId)).resolves.toEqual(session)
 
     expect(fetchMock).toHaveBeenCalledOnce()
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toBe('http://example.test:7850/api/sessions/chat%20%2F%3F/emergency/acknowledge')
     expect(init.method).toBe('POST')
-    expect(JSON.parse(String(init.body))).toEqual({ expected_alert_id: alertId })
+    expect(JSON.parse(String(init.body))).toEqual({ [field]: alertId })
     expect(new Headers(init.headers).get('X-AgentsDock-Token')).toBe('secret')
   })
 
-  it('rejects an acknowledgement response for a different chat', async () => {
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s rejects a response for a different chat', async method => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
       session: {
         id: 'different-chat', title: 'Wrong chat', backend: 'codex',
@@ -3671,10 +3671,30 @@ describe('AgentServerClient emergency contact bridge', () => {
     }), { status: 200, headers: { 'Content-Type': 'application/json' } })))
     const client = new AgentServerClient('http://example.test:7850', 'secret')
 
-    await expect(client.acknowledgeEmergency(
+    await expect(client[method](
       'expected-chat',
       `emergency_${'a'.repeat(32)}`
     )).rejects.toThrow('invalid emergency acknowledgement')
+  })
+
+  it('explains only the legacy dismiss-all validation rejection without retrying', async () => {
+    const detail = [
+      { type: 'missing', loc: ['body', 'expected_alert_id'], msg: 'Field required' },
+      { type: 'extra_forbidden', loc: ['body', 'through_alert_id'], msg: 'Extra inputs are not permitted' }
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 422 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const client = new AgentServerClient('http://example.test:7850', 'secret')
+    await expect(client.dismissEmergencyAlerts('chat', `emergency_${'a'.repeat(32)}`))
+      .rejects.toThrow('Update AgentsServer to dismiss all alerts in this chat.')
+    expect(fetchMock).toHaveBeenCalledOnce()
+  })
+
+  it('preserves unrelated dismiss-all validation errors', async () => {
+    const detail = [{ type: 'string_pattern_mismatch', loc: ['body', 'through_alert_id'], msg: 'Invalid alert boundary' }]
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail }), { status: 422 })))
+    const client = new AgentServerClient('http://example.test:7850', 'secret')
+    await expect(client.dismissEmergencyAlerts('chat', 'bad')).rejects.toMatchObject({ status: 422, detail })
   })
 
   it('delivers validated global snapshots and changes while rejecting malformed alert packets', () => {

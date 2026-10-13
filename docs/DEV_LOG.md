@@ -18,6 +18,48 @@
 - Logs can contain private data and must be reviewed before sharing. This is
   an unpublished source change, not included in existing CLI releases.
 
+## 2026-10-13 — Repair legacy cross-chat reply imports
+
+- Older cross-chat reply/request imports no longer reappear as messages
+  attributed to the user when the matching delivery is outside the loaded
+  timeline page. The previous repair covered asynchronous handoffs but missed
+  this older exchange format.
+- Recovery matches the native provider input to durable delivery records.
+  Genuine user quotations remain visible; the original journal, provider
+  history, event identities and ordering are preserved. This does not enable
+  legacy communication routes.
+- All 48 focused history-repair/import-boundary tests passed. Unchanged source
+  reproduced the gap, while a read-only check of an affected large history
+  confirmed the candidate repair without changing its files or service state.
+- An isolated native offscreen app reproduced the leaked user bubble before
+  the fix. The candidate used real authenticated timeline reads, removed that
+  duplicate, preserved a separate genuine quotation, and remained correct on
+  chat navigation and reload. Fixture journal/provider bytes stayed identical.
+  No model-provider request or new cross-chat delivery was made.
+- Availability: source only; requires a server update. No production restart
+  or release publication is included.
+
+## 2026-10-13 — Dismiss emergency alerts for a chat
+
+- The current chat's emergency banner now has one **Dismiss all** action.
+  It persists acknowledgements through the alert displayed at click time;
+  later alerts and other chats remain active, and historical alert rows stay
+  available. Individual acknowledgements remain available in the timeline.
+- The existing authenticated acknowledgement API accepts an exact durable
+  alert boundary and commits the batch together. Repeated requests and another
+  device acknowledging the boundary are harmless. Active work is untouched.
+- An isolated native offscreen Electron run reproduced the old one-at-a-time
+  behavior, then exercised the new UI through production IPC and authenticated
+  HTTP into a real disposable server. It checked persistence, reconnect,
+  another chat, a new alert during the request, failed request/retry, and
+  supported narrow layout. Component coverage checks localized labels. Alert creation was
+  synthetic; no model-provider request was needed or made.
+- Focused emergency API/CLI, desktop transport/store/component checks,
+  TypeScript checking and production compilation passed. A pre-existing
+  clipboard test assumes umask 022; its isolated rerun passed with that umask.
+- Availability: source only. This feature requires the paired app/server
+  change; no release or production restart is included.
+
 ## 2026-10-13 — Recover server updates and preserve detached jobs
 
 - Linux execution workers now restart independently of detached background

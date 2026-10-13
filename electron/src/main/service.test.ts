@@ -2558,7 +2558,30 @@ describe('bounded cross-chat exchange scope fencing', () => {
 })
 
 describe('emergency contact service fencing', () => {
-  it('validates the captured profile, acknowledges the exact alert, then upserts only after the response fence', async () => {
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s preserves a newer streamed alert before a delayed HTTP receipt', async method => {
+    const response = deferred<Session>()
+    const alertId = `emergency_${'a'.repeat(32)}`
+    const active: Session = { id: 'chat', title: 'Chat', backend: 'codex', latest_event_seq: 10 }
+    const cleared: Session = { ...active, latest_event_seq: 20, emergency_alert: null, unacknowledged_emergency_count: 0 }
+    const newer: Session = { ...active, latest_event_seq: 21, title: 'Current title',
+      emergency_alert: { id: `emergency_${'b'.repeat(32)}`, status: 'active', severity: 'critical', message: 'New alert', raised_at: '2026-10-13T12:00:00Z' },
+      unacknowledged_emergency_count: 1 }
+    const scope = { profileId: 'profile', generation: 2, namespace: 'profile:profile',
+      client: { [method]: vi.fn().mockReturnValue(response.promise) } }
+    const upsertSession = vi.fn()
+    const service = Object.create(AppService.prototype) as AppService
+    Object.assign(service, { scope, sessions: [active], activeProfileId: scope.profileId,
+      profileGeneration: scope.generation, ensureValidatedScope: vi.fn().mockResolvedValue(undefined),
+      assertCurrentScope: vi.fn(), upsertSession })
+    const pending = service[method]('chat', alertId)
+    await Promise.resolve()
+    Object.assign(service, { sessions: [newer] })
+    response.resolve(cleared)
+    await expect(pending).resolves.toBe(newer)
+    expect(upsertSession).toHaveBeenCalledWith(scope, newer)
+  })
+
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s validates the captured profile and upserts only after the response fence', async method => {
     const acknowledged: Session = {
       id: 'chat', title: 'Emergency chat', backend: 'codex',
       emergency_alert: null, unacknowledged_emergency_count: 0
@@ -2566,7 +2589,7 @@ describe('emergency contact service fencing', () => {
     const acknowledgeEmergency = vi.fn().mockResolvedValue(acknowledged)
     const scope = {
       profileId: 'profile', generation: 2, namespace: 'profile:profile',
-      client: { acknowledgeEmergency }
+      client: { [method]: acknowledgeEmergency }
     }
     const ensureValidatedScope = vi.fn().mockResolvedValue(undefined)
     const assertCurrentScope = vi.fn()
@@ -2574,6 +2597,7 @@ describe('emergency contact service fencing', () => {
     const service = Object.create(AppService.prototype) as AppService
     Object.assign(service, {
       scope,
+      sessions: [],
       activeProfileId: scope.profileId,
       profileGeneration: scope.generation,
       ensureValidatedScope,
@@ -2582,7 +2606,7 @@ describe('emergency contact service fencing', () => {
     })
     const alertId = `emergency_${'a'.repeat(32)}`
 
-    await expect(service.acknowledgeEmergency('chat', alertId)).resolves.toBe(acknowledged)
+    await expect(service[method]('chat', alertId)).resolves.toBe(acknowledged)
 
     expect(ensureValidatedScope).toHaveBeenCalledWith(scope)
     expect(acknowledgeEmergency).toHaveBeenCalledWith('chat', alertId)
@@ -2591,7 +2615,7 @@ describe('emergency contact service fencing', () => {
     expect(assertCurrentScope.mock.invocationCallOrder[0]).toBeLessThan(upsertSession.mock.invocationCallOrder[0])
   })
 
-  it('rejects a response from a superseded profile before mutating the active session cache', async () => {
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s rejects a response from a superseded profile before mutating the active session cache', async method => {
     const acknowledged: Session = {
       id: 'same-id', title: 'Old server result', backend: 'codex',
       emergency_alert: null, unacknowledged_emergency_count: 0
@@ -2599,7 +2623,7 @@ describe('emergency contact service fencing', () => {
     const acknowledgeEmergency = vi.fn().mockResolvedValue(acknowledged)
     const scope = {
       profileId: 'old-profile', generation: 4, namespace: 'profile:old-profile',
-      client: { acknowledgeEmergency }
+      client: { [method]: acknowledgeEmergency }
     }
     const upsertSession = vi.fn()
     const service = Object.create(AppService.prototype) as AppService
@@ -2612,7 +2636,7 @@ describe('emergency contact service fencing', () => {
       upsertSession
     })
 
-    await expect(service.acknowledgeEmergency('same-id', `emergency_${'b'.repeat(32)}`))
+    await expect(service[method]('same-id', `emergency_${'b'.repeat(32)}`))
       .rejects.toThrow('Server changed')
     expect(upsertSession).not.toHaveBeenCalled()
   })

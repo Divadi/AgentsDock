@@ -205,6 +205,7 @@ const api: AgentsDockAPI = {
     markRead: (sessionId, seq) => ipcRenderer.invoke('sessions:read', sessionId, seq),
     markUnread: sessionId => ipcRenderer.invoke('sessions:unread', sessionId),
     acknowledgeEmergency: (sessionId, alertId) => ipcRenderer.invoke('sessions:emergency:acknowledge', sessionId, alertId),
+    dismissEmergencyAlerts: (sessionId, throughAlertId) => ipcRenderer.invoke('sessions:emergency:dismiss-all', sessionId, throughAlertId),
     importHistory: (sessionId, force) => ipcRenderer.invoke('sessions:import-history', sessionId, force),
     listLocal: () => ipcRenderer.invoke('sessions:list-local'),
     bulkImport: items => ipcRenderer.invoke('sessions:bulk-import', items)
