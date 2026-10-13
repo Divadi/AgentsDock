@@ -1,5 +1,22 @@
 # Public development log
 
+## 2026-10-12 — Complete scoped 1.0.10 checks; await npm validation
+
+- All four desktop packages for source `4f0a5c25`, build 1251 passed native
+  verification. All 11 scoped Mac upgrade/recovery journeys and both Linux
+  rollback/retry journeys passed with the exact signed inputs. Retain the
+  original reports and their untested boundaries; see
+  [the scoped release record](CANDIDATE_REPLAY.md#stable-1010-scoped-results-and-approved-publication-limits).
+- Publication was approved with populated provider-history migration,
+  active/queued upgrades, logout/reboot survival and native Windows updater
+  checks still unvalidated. Canonical desktop and legacy server draft notes
+  disclose these limits. Windows remains explicitly unsigned.
+- The paired npm workflow accepted the signed runtime upload, but npm still
+  reported `validating` when the bounded public-registry check expired. The
+  CLI upload and public desktop/server bridge publication have not run. Existing
+  public versions and working local services remain unchanged; never interpret
+  the upload acknowledgment as an installable or completed release.
+
 ## 2026-10-12 — Preserve final testing limits in mirrored release notes
 
 - Before either desktop publication, copy the final canonical notes to a

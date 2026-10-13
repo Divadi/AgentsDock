@@ -49,6 +49,39 @@ original report ZIPs match their Actions digests and source/runtime/CLI pins.
 This closes the beta.6 immediate-stop/start failure for the new 1.0.10 pair,
 not the CLI report's explicit untested product boundaries.
 
+### Stable 1.0.10 scoped results and approved publication limits
+
+The sealed candidate uses receipt
+`25d4ac327b2b82540cb1bc83d38c8d900f6f46501c874663446f4003d4ccfad2`
+and bundle
+`e2b9a139c8dbf86b3445e77d59e49471e89f9826f30bbe51d1d620abdb75ef3d`.
+The complete four-platform desktop asset-set seal is
+`ff944031ebd114fca66d96c70e432d68c94fe1b6576be972ec983a487a286548`;
+the Mac-only rehearsal subset has a different inventory and is not a substitute.
+
+- [macOS replay 38340427963](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38340427963),
+  through attempt 3: all 11 fresh, legacy/stable/beta upgrade and recovery
+  journeys passed. Failed Apple network validation calls were rerun with the
+  same packages and inputs. Original report archives from the relevant attempts
+  were downloaded and checked against their Actions digests.
+- [Linux rollback 38340430483](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38340430483),
+  attempt 1: both installation-root modes passed the induced candidate-health
+  failure, healthy-baseline rollback and exact-target retry checks. This proves
+  the observed identity/token/synthetic-state retention, not populated history.
+- [desktop verification 38345348135](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38345348135),
+  attempt 1: macOS, Windows x64, Linux x64 and Linux ARM64 all verified the same
+  complete asset seal. Its original receipt archive matches Actions SHA-256
+  `ea2f03cf122ae169faea798bde46f17f9427f13710fdf34cccec54851fc9b715`.
+  This was verification-only, not publication.
+
+The release owner explicitly approved publication with these disclosed untested
+boundaries: populated provider-history migration, active/queued work during
+upgrade, logout/reboot service survival, and the native Windows updater. Windows
+remains unsigned under the existing distribution policy. Preserve the reports'
+original `publicationEligible: false`, `releaseAcceptance: false`, blocked checks
+and other scoped observations; authorization does not turn them into test passes.
+This record does not claim that any package or download is publicly available.
+
 ## 1.0.10-beta.3 harness preparation only
 
 The exact `1.0.10-beta.3` candidate may use the same independently pinned

@@ -30,6 +30,23 @@ Full app/update acceptance and the separate short-package Trusted Publisher
 remain required; source tests and an existing-version registry check do not
 prove either. No stable publication is recorded by this preparation section.
 
+### 1.0.10 publication attempt
+
+[Paired publication 38346314422](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38346314422)
+accepted the exact runtime upload through OIDC, but exhausted its bounded
+read-only registry verification window. At the subsequent 2026-10-13 UTC
+check, npm's authenticated lifecycle API reported `validating` and the public
+registry did not contain `@agentsdock/server@1.0.10`. The CLI upload had not run;
+neither `latest` tag had advanced. This is not a completed matched publication.
+
+The short package's separate GitHub Trusted Publisher is configured for this
+repository, `server-npm-publish.yml` and `npm-release`; its first OIDC publication
+still needs verification. Do not re-upload while validation is pending. Once
+the exact runtime becomes public, rerun the failed job with its unchanged
+accepted pins so it verifies and skips the existing runtime before publishing
+the CLI. Only proceed to desktop publication after both packages and the signed
+legacy server bridge have been verified publicly.
+
 ## Historical beta preparation
 
 This document describes release preparation, not a publication receipt. As of
