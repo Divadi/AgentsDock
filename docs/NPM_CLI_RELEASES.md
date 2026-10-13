@@ -6,9 +6,29 @@ committed source snapshot and one public version; the CLI dependency must be
 `"@agentsdock/server": "VERSION"`, never a range or floating tag. The desktop
 continues to pin the signed runtime descriptor, not a floating npm channel.
 
+## 1.0.11-beta.1 preparation
+
+The new development candidate is `1.0.11-beta.1` on `release/1.0.11-beta.1`,
+integrating main through `2b666a9f` into the frozen 1.0.10 release line. The
+stable candidate below remains a separate immutable publication. Do not reuse
+its archives, signatures, native build allocation or acceptance receipts.
+
+This beta includes the streaming transcript reader in the runtime inventory.
+Its complete installer has a separate exact-version pin in
+`product_server_acceptance.py`; the historical pins remain unchanged. Source
+validation is not native acceptance. Before staging or publishing, commit the
+reviewed source, recheck the native build reservation and both registry tags,
+then prepare a newly signed matched runtime/CLI/desktop set. Preserve npm
+`latest` and use only the beta channel for this candidate. Do not race the
+unfinished 1.0.10 paired publication or silently substitute a beta `latest`
+baseline for a stable one.
+
+New-beta real-app, exact-package lifecycle and update acceptance remain pending.
+No public 1.0.11 release is recorded by this preparation section.
+
 ## Stable 1.0.10 preparation
 
-The current candidate is `1.0.10` on `release/1.0.10`, based on the reviewed
+The separately frozen stable candidate is `1.0.10` on `release/1.0.10`, based on the reviewed
 beta.6 source plus release-blocking fixes. Build new versioned artifacts from
 its final committed source; never relabel or replace beta.6 archives. The older
 beta preparation details below are retained as historical context, not the
@@ -79,6 +99,89 @@ preparation counter and all other reservations before assigning beta.6's build;
 never reuse another run's allocation or restore main's older build formula.
 Do not reuse beta.5 tarballs, signatures, checksums or acceptance receipts for
 beta.6. These instructions are not an artifact or acceptance receipt.
+## Operating releases from another computer
+
+The operator computer can be a controller, not the signing host. Use a canonical
+checkout and authenticated GitHub CLI (or the GitHub Actions UI). GitHub-hosted
+jobs consume protected environment secrets; the operator need not download the
+Developer ID private key, Apple API key, server signing key or npm OIDC token.
+Local source checks additionally need the repository's pinned Node/pnpm and
+Python tooling. Local native builds are a separate optional setup, not a
+prerequisite for dispatching hosted builds.
+
+Keep the identities and responsibilities separate:
+
+| Responsibility | Required access |
+| --- | --- |
+| Review/push release source, dispatch jobs, inspect results | Repository write access and any required environment/review approval |
+| Canonical desktop and mirror publication from CI | Dedicated `AGENTSDOCK_RELEASE_TOKEN` stored in `direct-production`, with Contents write on both repositories and Workflows write when the target differs in workflow files |
+| Configure environment secrets/protection or grant repository access | Repository administrator; do not give the release token secret-administration privileges |
+| First short CLI publication and package trust configuration | An authorized npm account, its browser/2FA approval and package settings access; GitHub login is not npm login |
+| Routine paired npm publication | Each package's own Trusted Publisher for `server-npm-publish.yml` / `npm-release`; no local npm session or long-lived npm token |
+
+An operator who dispatches the canonical CI workflow does not also need mirror
+write access on their personal GitHub login. A local mirror publish helper does.
+Keep the existing server trust key in AgentsServer and dispatch its signing
+workflow; a source export alone must never publish a second bridge.
+
+After credentials are provisioned, register and run
+`release-credentials-preflight.yml` from a reviewed `main` or `release/*` commit,
+with `source_sha` equal to the exact dispatched commit. This manual protected
+job reads release access metadata, signs/verifies a disposable native probe
+with the existing Developer ID, and authenticates a read-only notarization
+history request. It creates no release, submits no notarization, publishes no
+package, installs no service and uploads no private diagnostics. It reports
+missing checks as failures, not an overall readiness pass.
+
+The disposable signing keychain is on the hosted user's search list only while
+signing and verifying the probe: `codesign --keychain` selects an identity but
+still needs the search list to resolve its certificate chain. The original list
+is restored in a `finally` block on success or failure; cleanup verifies it again.
+The user's default keychain is never replaced.
+
+The GitHub metadata check does not prove actual release-write permission. The
+probe does not establish a full Electron build, notarization submission, public
+publication, migration or reboot acceptance. A separately authorized hosted
+native build/private draft and exact-artifact verification remain required.
+`artifacts_only=true` skips the hosted Mac signing build and a successful
+`verification_only=true` run checks existing signed packages, not the secrets
+that would build a new one. The desktop workflows now retain the audited
+build-number epochs and the canonical draft's verification-only replay; see
+[the desktop release procedure](DIRECT_RELEASES.md#public-release-automation).
+This does not import all release-line product fixes or the draft unified
+product-release pipeline. Review the selected source's actual capabilities.
+Never rebuild an existing immutable release just to test credentials. The new
+preflight must first be registered on main through review before GitHub can
+dispatch it on a selected reviewed branch.
+
+### Completing permanent operator access
+
+A green credential preflight completes only the credential gate. To establish
+repeatable release capability from an operator's own computer:
+
+1. Reconcile the intended source and release helpers; choose a new, unused
+   version and its audited native build reservation. Do not rebuild a frozen
+   candidate or bypass a failed native lifecycle check.
+2. With explicit build/upload authorization, prepare and sign the immutable
+   runtime/CLI pair and desktop candidate using the existing protected hosted
+   workflows. Accept their native installation, lifecycle, update and rollback
+   journeys at their actual platform boundaries.
+3. With publication authorization, publish/verify the accepted runtime, then
+   have the npm account holder bootstrap the short CLI from its accepted exact
+   archive. Configure that package's separate Trusted Publisher as described
+   below. A successful `npm whoami` is not proof of package ownership.
+4. Validate the new trust with a subsequent accepted, authorized new-version CI
+   publication. Replaying an already-published version skips `npm publish`, so
+   it does not prove OIDC trust or activate a newly configured publisher.
+5. Verify desktop publication to both repositories, exact registry downloads,
+   public update feeds and a genuine installed update journey. Record source,
+   versions, checksums and actual workflow results; do not equate green source
+   tests with a completed public release.
+
+After bootstrap and successful trust validation, routine releases use GitHub
+dispatch plus the protected credentials. No personal mirror-write permission,
+local signing keys or repeated npm login is required. Renew expiring repository
+credentials and retain normal review, acceptance and publication approvals.
 
 ## Prepare the immutable pair
 
@@ -230,6 +333,13 @@ Configure the **agentsdock package's own** npm Trusted Publisher:
 - Workflow filename: `server-npm-publish.yml` (filename only)
 - Environment: `npm-release`
 - Allow direct `npm publish`, not only staging. Dist-tag editing is unnecessary.
+
+Create the configuration when its first accepted CI publication is ready:
+[npm requires its first successful publish within two days](https://docs.npmjs.com/trusted-publishers/#trusted-publisher-configuration-expiry).
+If that window expires, delete the expired configuration and recreate it when
+ready. Do not publish an unaccepted version to beat the deadline, or assume a
+no-op replay of the bootstrap version activates trust. The later successful CI
+publication must publish a new, accepted immutable version.
 
 Preserve the existing scoped publisher, server trust key and Apple identities.
 No new Apple credential or server key is required for this integration. See

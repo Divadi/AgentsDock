@@ -87,6 +87,12 @@ function AppShellContent() {
   const [setupDismissed, setSetupDismissed] = useState(true)
   const setupNextMode = useRef<'edit-active' | null>(null)
   const [servers, setServers] = useState<'manage' | 'add' | 'edit-active' | null>(null)
+  const [incomingPairingLink, setIncomingPairingLink] = useState<string | null>(null)
+  const [pairingLink, setPairingLink] = useState<string | null>(null)
+  const pairingActive = useRef(false)
+  const pairingActiveChanged = useCallback((active: boolean) => { pairingActive.current = active }, [])
+  const initialDeepLink = useRef<Promise<string | null> | null>(null)
+  const initialDeepLinkHandled = useRef(false)
   const quickChatInFlight = useRef(false)
   const [options, setOptions] = useState(false)
   const [search, setSearch] = useState(false)
@@ -117,6 +123,7 @@ function AppShellContent() {
     serverVersion: profile.serverVersion,
   })), [profiles])
   const showServerSetup = shouldPresentServerSetup({ initialized, connected, serverConfigured, serverURL, setupDismissed })
+    && !incomingPairingLink && !pairingLink
   const canCancelPendingServerUpdate = pendingServerUpdate?.profileId === activeProfileId
     && pendingServerUpdate.profileGeneration === profileGeneration
     && pendingServerUpdate.canCancel
@@ -255,13 +262,47 @@ function AppShellContent() {
     return () => subscription.remove()
   }, [closeMobileChat, compact, mobileChatOpen])
   useEffect(() => {
+    let disposed = false
     const openDeepLink = ({ url }: { url: string }) => {
+      if (/^agentsdock:\/\/connect(?:[/?#]|$)/i.test(url)) {
+        if (pairingActive.current) return
+        setIncomingPairingLink(url)
+        return
+      }
       if (/:\/\/terminal(?:[/?#]|$)/i.test(url)) openInspectorAction('terminal')
     }
-    const subscription = Linking.addEventListener('url', openDeepLink)
-    void Linking.getInitialURL().then(url => { if (url) openDeepLink({ url }) })
-    return () => subscription.remove()
+    const subscription = Linking.addEventListener('url', event => {
+      initialDeepLinkHandled.current = true
+      initialDeepLink.current = null
+      openDeepLink(event)
+    })
+    if (!initialDeepLinkHandled.current) {
+      initialDeepLink.current ??= Linking.getInitialURL().catch(() => null)
+      void initialDeepLink.current.then(url => {
+        if (disposed || initialDeepLinkHandled.current) return
+        initialDeepLinkHandled.current = true
+        initialDeepLink.current = null
+        if (url) openDeepLink({ url })
+      })
+    }
+    return () => { disposed = true; subscription.remove() }
   }, [openInspectorAction])
+  useEffect(() => {
+    if (!initialized || !incomingPairingLink) return
+    // Keep an in-progress editor/inspector intact; present after it closes.
+    if (teamNetwork || options || search || digest || jobEditor || processes || tmux || mcpSessionId || terminal || reviewRun) return
+    // Never replace an in-progress scan/confirmation with an unsolicited link.
+    if (pairingLink) { setIncomingPairingLink(null); return }
+    setSetupDismissed(true)
+    setSettings(false)
+    const timer = setTimeout(() => {
+      setSetupDismissed(true)
+      setPairingLink(incomingPairingLink)
+      setIncomingPairingLink(null)
+      setServers(current => current ?? 'manage')
+    }, Platform.OS === 'ios' ? IOS_INSPECTOR_HANDOFF_FALLBACK_MS : 0)
+    return () => clearTimeout(timer)
+  }, [initialized, incomingPairingLink, pairingLink, teamNetwork, options, search, digest, jobEditor, processes, tmux, mcpSessionId, terminal, reviewRun])
   const finishSetupDismissal = useCallback(() => {
     const nextMode = setupNextMode.current
     setupNextMode.current = null
@@ -369,11 +410,14 @@ function AppShellContent() {
     <ServerProfilesSheet
       key={`servers:${servers ?? 'closed'}`}
       visible={servers != null}
+      pairingLink={pairingLink}
+      onPairingConsumed={() => setPairingLink(null)}
+      onPairingActiveChange={pairingActiveChanged}
       initialMode={servers ?? 'manage'}
       profiles={serverProfileItems}
       activeProfileId={activeProfileId}
       switchingProfileId={switchingProfileId}
-      onClose={closeServers}
+      onClose={() => { setPairingLink(null); closeServers() }}
       onSwitchProfile={switchServer}
       onTestConnection={async input => {
         try {

@@ -169,6 +169,15 @@ must be supplied again. Do not put them in source, chat, release assets or logs.
 | `APPLE_API_ISSUER` | App Store Connect issuer ID |
 | `AGENTSDOCK_RELEASE_TOKEN` | Fine-grained token with Contents write access to AgentsDock and AgentsDock-Releases |
 
+The dedicated token also needs Workflows write when a release target changes
+workflow files relative to the default branch. Its owner must already have the
+required repository access; a token cannot elevate that owner's permissions.
+Operators may dispatch hosted release jobs without copying these secrets to
+their own computers. Use the non-publishing credential preflight and operator
+checklist in [the npm release procedure](NPM_CLI_RELEASES.md#operating-releases-from-another-computer).
+Secret-name presence, artifact-only preparation and verification-only success
+do not establish that hosted Mac signing or public publishing is configured.
+
 For file-backed values, the CLI can send encoded bytes directly without printing
 them or placing the value in command history:
 

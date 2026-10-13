@@ -355,6 +355,10 @@ export interface AgentsDockAPI {
     switch(profileId: string, force?: boolean): Promise<ProfileBootstrapPayload>
     refresh(profileId: string, profileGeneration: number): Promise<ProfileBootstrapPayload>
     testConnection(input: TestServerConnectionInput): Promise<Health>
+    copyToken(profileId: string): Promise<void>
+    tokenPreview(profileId: string): Promise<string>
+    connectionQr(profileId: string): Promise<import('./server-connection-link').ServerConnectionQr>
+    saveConnectionQr(profileId: string, revision: number): Promise<boolean>
     restartStatus(scope: WorkspaceProfileScope): Promise<ServerRestartStatus>
     restart(
       scope: WorkspaceProfileScope,
@@ -432,6 +436,7 @@ export interface AgentsDockAPI {
   }
   codex: {
     auth(scope: CodexServerSettingsScope): Promise<CodexAuthStatus>
+    reloadAuth(scope: CodexServerSettingsScope): Promise<CodexAuthStatus>
     provider(scope: CodexServerSettingsScope): Promise<CodexProviderConfiguration>
     providerModels(scope: CodexServerSettingsScope, sessionId?: string): Promise<CodexProviderModels>
     testProvider(scope: CodexServerSettingsScope, input: CodexProviderInput): Promise<CodexProviderTestResult>

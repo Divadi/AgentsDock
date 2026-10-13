@@ -12,7 +12,7 @@ import './CodexAuthSettings.css'
 import './ProviderConnectionSettings.css'
 import { NativeProviderSignIn } from './NativeProviderSignIn'
 
-type AuthFailure = 'admin' | 'update' | 'connection' | 'readFailed'
+type AuthFailure = 'admin' | 'update' | 'connection' | 'readFailed' | 'reloadUnavailable'
 type ProviderFailure = 'providerAdmin' | 'providerUpdate' | 'providerBusy' | 'providerInvalid' | 'providerConnection' | 'providerFailed'
 
 function providerFailure(reason: unknown): ProviderFailure {
@@ -30,6 +30,7 @@ function authFailure(reason: unknown): AuthFailure {
   if (/CODEX_AUTH_ADMIN|\b(?:401|403)\b|unauthori[sz]ed|forbidden/i.test(message)) return 'admin'
   if (/CODEX_AUTH_UPDATE|\b(?:404|405|501)\b|not found|not implemented|method not allowed/i.test(message)) return 'update'
   if (/CODEX_AUTH_CONNECTION/i.test(message)) return 'connection'
+  if (/CODEX_AUTH_BUSY/i.test(message)) return 'reloadUnavailable'
   return 'readFailed'
 }
 
@@ -154,6 +155,29 @@ export function CodexAuthSettings({ connected, profileId, profileGeneration, ser
 
   const scopeMatches = statusScope?.profileId === profileId && statusScope?.profileGeneration === profileGeneration
   const currentStatus = connected && scopeMatches ? status : null
+  async function reloadNativeLogin() {
+    if (!connected || !profileId || loading || saving) return
+    if (!currentStatus?.login_reload_available || typeof window.agentsDock.codex?.reloadAuth !== 'function') {
+      // Older servers retain a read-only account recheck. Never emulate a
+      // missing reload API with the catalog's legacy side-effectful GET.
+      setReload(value => value + 1)
+      return
+    }
+    const scope = { profileId, profileGeneration }
+    const request = ++requestRef.current
+    setLoading(true)
+    setError(null)
+    try {
+      const next = await window.agentsDock.codex.reloadAuth(scope)
+      if (!ownsRequest(request, scope)) return
+      setStatus(next)
+      setStatusScope(scope)
+    } catch (reason) {
+      if (ownsRequest(request, scope)) setError(authFailure(reason))
+    } finally {
+      if (ownsRequest(request, scope)) setLoading(false)
+    }
+  }
   // Endpoint configuration has its own authorization and readiness checks.
   // A failed normal-account read must not strand the endpoint recovery flow.
   const canOpenSettings = connected && profileId != null && !saving
@@ -300,14 +324,15 @@ export function CodexAuthSettings({ connected, profileId, profileGeneration, ser
         <div><strong>{t('codexAuth.title')}</strong>{serverTitle && <small>{serverTitle}</small>}</div>
         <div className="codex-auth-settings-actions">
           <button type="button" className="quiet-button" disabled={!connected || !profileId || loading || saving}
-            onClick={() => setReload(value => value + 1)}>
-            {loading ? <LoaderCircle className="spin" size={14} /> : <RefreshCw size={14} />}{t('codexAuth.recheck')}
+            onClick={() => { void reloadNativeLogin() }}>
+            {loading ? <LoaderCircle className="spin" size={14} /> : <RefreshCw size={14} />}{t(currentStatus?.login_reload_available ? 'codexAuth.reloadLogin' : 'codexAuth.recheck')}
           </button>
         </div>
       </div>
       <small>{!connected || !profileId ? t('codexAuth.connect') : loading ? t('codexAuth.loading')
         : currentStatus?.available === false ? t('codexAuth.nativeRequired') : currentStatus ? account : t('codexAuth.unknown')}</small>
       {!nativeSignedIn && !loading && <NativeProviderSignIn backend="codex" disabled={!connected} />}
+      {currentStatus?.login_reload_available && <small>{t(currentStatus.login_reload_pending ? 'codexAuth.reloadPending' : 'codexAuth.reloadHelp')}</small>}
       {error && <small className="codex-auth-settings-error" role="alert">{t(`codexAuth.${error}`)}</small>}
     </div>
   </section>

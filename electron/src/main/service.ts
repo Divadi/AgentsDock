@@ -2,7 +2,9 @@ import { blockedGoalReport } from '../shared/blocked-goal'
 import type { ProviderUsageScope, ProviderUsageSnapshot, UsageBackend } from '../shared/provider-usage'
 import { customModelBackend, customModelInput, type CustomModelBackend, type CustomModelInput } from '../shared/custom-models'
 import { cliAccountBackend, type CLIAccountBackend, connectionRequest, type ConnectionBackend, type ConnectionAction, type ProviderConnectionRequest, type ProviderConnectionReply } from '../shared/provider-connections'
-import { app, BrowserWindow, dialog, nativeImage, Notification, shell } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, nativeImage, Notification, shell } from 'electron'
+import QRCode from 'qrcode'
+import { localOnlyServerUrl, serverConnectionLink, type ServerConnectionQr } from '../shared/server-connection-link'
 import { discoverLocalServers, type DiscoveredLocalServer } from './local-server-discovery'
 import { applyOpenCodeSessionEvent } from '../shared/opencode'
 import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
@@ -495,7 +497,15 @@ export class AppService {
     this.clipboardTempRoot = options.clipboardTempRoot ?? app.getPath('temp')
     this.portTunnels.setChangeListener?.(ports => this.emitForwardedPorts(ports))
     appLog('startup', 'local cache ready')
-    this.clientFactory = options.clientFactory ?? ((serverUrl, accessToken) => new AgentServerClient(serverUrl, accessToken))
+    this.clientFactory = options.clientFactory ?? ((serverUrl, accessToken) => {
+      // One durable identity per desktop data directory, shared by server aliases.
+      let id = this.cache.preference<string>('desktop', 'emptyChatClientId:v1', '')
+      if (!id) {
+        id = randomUUID()
+        this.cache.putPreference('desktop', 'emptyChatClientId:v1', id)
+      }
+      return new AgentServerClient(serverUrl, accessToken, { placeholderClientId: id })
+    })
     this.onServerReachable = options.onServerReachable
     this.onServerUnavailable = options.onServerUnavailable
     this.serverRestartReconnectTimeoutMs = options.serverRestartReconnectTimeoutMs ?? SERVER_RESTART_RECONNECT_TIMEOUT_MS
@@ -1836,6 +1846,63 @@ export class AppService {
     return this.loadCachedBootstrap(this.requireProfileScope(profileId, profileGeneration))
   }
 
+  async copyServerToken(profileId: string): Promise<void> {
+    const { token, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    assertCurrent()
+    // Keep the credential in the main process; IPC returns no secret to the renderer.
+    clipboard.writeText(token)
+  }
+
+  async serverTokenPreview(profileId: string): Promise<string> {
+    const { token, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    assertCurrent()
+    // Mask before crossing IPC. Never reveal a whole short credential or its length.
+    const prefixLength = token.length > 8 ? 4 : 0
+    return `${token.slice(0, prefixLength)}••••••••`
+  }
+
+  private async serverCredentialForSharing(profileId: string) {
+    if (typeof profileId !== 'string' || !profileId.trim()) throw new Error('Choose a saved server first.')
+    this.requireProfileNotRemoving(profileId)
+    const shutdownEpoch = this.shutdownEpoch
+    const revision = this.settings.connectionRevision(profileId)
+    const profile = this.settings.getProfile(profileId)!
+    const assertCurrent = () => {
+      this.requireProfileNotRemoving(profileId)
+      if (this.shutdownEpoch !== shutdownEpoch || this.settings.connectionRevision(profileId) !== revision) throw staleProfileError()
+    }
+    const token = await this.settings.accessTokenForConnectionAsync(profileId)
+    assertCurrent()
+    if (!token) throw new Error('This server has no saved access token.')
+    return { token, profile, revision, assertCurrent }
+  }
+
+  async serverConnectionQr(profileId: string): Promise<ServerConnectionQr> {
+    const { token, profile, revision, assertCurrent } = await this.serverCredentialForSharing(profileId)
+    const dataUrl = await QRCode.toDataURL(serverConnectionLink({ serverUrl: profile.serverUrl, accessToken: token,
+      name: profile.name, serverIdentity: profile.serverIdentity ?? null }), { width: 512, margin: 4, errorCorrectionLevel: 'M' })
+    assertCurrent()
+    return { dataUrl, serverUrl: profile.serverUrl, revision, localOnly: localOnlyServerUrl(profile.serverUrl) }
+  }
+
+  async saveServerConnectionQr(profileId: string, revision: number): Promise<boolean> {
+    const epoch = this.shutdownEpoch
+    const assertCurrent = () => {
+      this.requireProfileNotRemoving(profileId)
+      if (this.shutdownEpoch !== epoch || this.settings.connectionRevision(profileId) !== revision) throw staleProfileError()
+    }
+    assertCurrent()
+    const image = await this.serverConnectionQr(profileId)
+    assertCurrent()
+    const result = await dialog.showSaveDialog({ defaultPath: 'AgentsDock-server-connection.png',
+      filters: [{ name: 'PNG', extensions: ['png'] }] })
+    if (result.canceled || !result.filePath) return false
+    assertCurrent()
+    // The image contains a credential. Never log it or the payload, and restrict new files.
+    await writeFile(result.filePath, Buffer.from(image.dataUrl.split(',')[1], 'base64'), { mode: 0o600 })
+    return true
+  }
+
   async testServerConnection(input: TestServerConnectionInput): Promise<Health> {
     const shutdownEpoch = this.shutdownEpoch
     const profile = input.profileId ? this.settings.getProfile(input.profileId) : null
@@ -2306,11 +2373,11 @@ export class AppService {
     this.emitRuntime(scope, catalog)
   }
 
-  async codexAuth(expected: CodexServerSettingsScope): Promise<CodexAuthStatus> {
+  async codexAuth(expected: CodexServerSettingsScope, reloadLogin = false): Promise<CodexAuthStatus> {
     const scope = this.requireProfileScope(expected?.profileId, expected?.profileGeneration)
     await this.ensureValidatedScope(scope)
     this.assertCurrentScope(scope)
-    const result = await scope.client.codexAuth()
+    const result = reloadLogin ? await scope.client.codexAuth(true) : await scope.client.codexAuth()
     this.assertCurrentScope(scope)
     return result
   }

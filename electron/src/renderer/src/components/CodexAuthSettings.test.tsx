@@ -70,6 +70,37 @@ it('restores an unconnected Codex URL draft after closing without retaining the 
 })
 
 describe('Codex · Native account settings', () => {
+  it('mounts passively and reloads sign-in only after an explicit click', async () => {
+    const status = { ...snapshot('chatgpt'), login_reload_available: true }
+    const reloadAuth = vi.fn().mockResolvedValue({ ...status, login_reload_pending: true })
+    const api = bridge(vi.fn().mockResolvedValue(status), undefined, { reloadAuth })
+    const mounted = render(<CodexAuthSettings {...props} />)
+    const button = await screen.findByRole('button', { name: 'Reload sign-in' })
+    expect(api.read).toHaveBeenCalledOnce()
+    expect(reloadAuth).not.toHaveBeenCalled()
+    fireEvent.click(button)
+    await waitFor(() => expect(reloadAuth).toHaveBeenCalledExactlyOnceWith({ profileId: 'studio', profileGeneration: 1 }))
+    await screen.findByText(/New sign-in requested/)
+    expect(api.read).toHaveBeenCalledOnce()
+    mounted.rerender(<CodexAuthSettings {...props} profileId="other" profileGeneration={2} />)
+    await waitFor(() => expect(api.read).toHaveBeenCalledTimes(2))
+    expect(reloadAuth).toHaveBeenCalledOnce()
+    expect(screen.queryByText(/New sign-in requested/)).not.toBeInTheDocument()
+  })
+
+  it('does not apply a late sign-in reload to another server', async () => {
+    const status = { ...snapshot('chatgpt'), login_reload_available: true }
+    let finish!: (value: CodexAuthStatus) => void
+    const reloadAuth = vi.fn(() => new Promise<CodexAuthStatus>(resolve => { finish = resolve }))
+    const api = bridge(vi.fn().mockResolvedValue(status), undefined, { reloadAuth })
+    const mounted = render(<CodexAuthSettings {...props} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Reload sign-in' }))
+    mounted.rerender(<CodexAuthSettings {...props} profileId="other" profileGeneration={2} />)
+    await waitFor(() => expect(api.read).toHaveBeenCalledTimes(2))
+    await act(async () => finish({ ...status, login_reload_pending: true }))
+    expect(screen.queryByText(/New sign-in requested/)).not.toBeInTheDocument()
+  })
+
   it('shows the existing account read-only and has one separate endpoint action', async () => {
     const api = bridge(vi.fn().mockResolvedValue(snapshot('chatgpt')))
     render(<CodexAuthSettings {...props} />)

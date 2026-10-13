@@ -221,6 +221,10 @@ export function registerIpc(
   handle('servers:switch', (profileId, force) => service.switchServer(profileId, force))
   handle('servers:refresh', (profileId, profileGeneration) => service.refreshServer(profileId, profileGeneration))
   handle('servers:test-connection', input => service.testServerConnection(input))
+  handle('servers:copy-token', profileId => service.copyServerToken(profileId))
+  handle('servers:token-preview', profileId => service.serverTokenPreview(profileId))
+  handle('servers:connection-qr', profileId => service.serverConnectionQr(profileId))
+  handle('servers:save-connection-qr', (profileId, revision) => service.saveServerConnectionQr(profileId, revision))
   handle('servers:restart-status', scope => service.serverRestartStatus(scope))
   handle('servers:restart', (scope, expectedServerInstanceId, forceConfirmation) => forceConfirmation === undefined
     ? service.restartServer(scope, expectedServerInstanceId)
@@ -290,6 +294,7 @@ export function registerIpc(
   handle('custom-models:read', (scope, backend, sessionId) => service.customModels(scope, backend, undefined, sessionId))
   handle('custom-models:save', (scope, backend, input) => service.customModels(scope, backend, input))
   handle('codex:auth:get', scope => service.codexAuth(scope))
+  handle('codex:auth:reload', scope => service.codexAuth(scope, true))
   handle('codex:provider:get', scope => service.codexProvider(scope))
   handle('codex:provider:models', (scope, sessionId) => service.codexProviderModels(scope, sessionId))
   handle('codex:provider:test', (scope, input) => service.testCodexProvider(scope, input))

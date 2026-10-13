@@ -12,7 +12,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const REGISTRY = 'https://registry.npmjs.org'
 const RECEIPT = 'agentsdock-cli-receipt.json'
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-beta\.([1-9]\d*))?$/
-const FILES = ['package.json', 'cli.cjs', 'postinstall.cjs', 'README.md', 'LICENSE', 'NOTICE']
+const FILES = ['package.json', 'cli.cjs', 'postinstall.cjs', 'pair.cjs', 'qr-renderer.cjs', 'QR-NOTICES.txt', 'README.md', 'LICENSE', 'NOTICE']
 const MAX_CLI = 4 * 1024 * 1024
 const digest = (bytes, algorithm = 'sha256', encoding = 'hex') => createHash(algorithm).update(bytes).digest(encoding)
 const integrity = bytes => `sha512-${digest(bytes, 'sha512', 'base64')}`
@@ -64,7 +64,7 @@ with tarfile.open(fileobj=io.BytesIO(data), mode="r:") as archive:
             raise ValueError("CLI archive member has unsafe permissions or size")
         result[member.name] = base64.b64encode(archive.extractfile(member).read()).decode("ascii")
 if set(result) != expected:
-    raise ValueError("CLI archive does not contain the exact six-file allowlist")
+    raise ValueError("CLI archive does not contain the exact reviewed file allowlist")
 print(json.dumps(result))
 `
   try {

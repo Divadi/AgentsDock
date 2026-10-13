@@ -168,6 +168,10 @@ const api: AgentsDockAPI = {
     switch: (profileId, force) => ipcRenderer.invoke('servers:switch', profileId, force),
     refresh: (profileId, profileGeneration) => ipcRenderer.invoke('servers:refresh', profileId, profileGeneration),
     testConnection: input => ipcRenderer.invoke('servers:test-connection', input),
+    copyToken: profileId => ipcRenderer.invoke('servers:copy-token', profileId),
+    tokenPreview: profileId => ipcRenderer.invoke('servers:token-preview', profileId),
+    connectionQr: profileId => ipcRenderer.invoke('servers:connection-qr', profileId),
+    saveConnectionQr: (profileId, revision) => ipcRenderer.invoke('servers:save-connection-qr', profileId, revision),
     restartStatus: scope => ipcRenderer.invoke('servers:restart-status', scope),
     restart: (scope, expectedServerInstanceId, forceConfirmation) => forceConfirmation
       ? ipcRenderer.invoke('servers:restart', scope, expectedServerInstanceId, forceConfirmation)
@@ -243,6 +247,7 @@ const api: AgentsDockAPI = {
   codex: {
     serverGoals: () => ipcRenderer.invoke('codex:server-goals:get'),
     auth: scope => ipcRenderer.invoke('codex:auth:get', scope),
+    reloadAuth: scope => ipcRenderer.invoke('codex:auth:reload', scope),
     provider: scope => ipcRenderer.invoke('codex:provider:get', scope),
     providerModels: (scope, sessionId) => ipcRenderer.invoke('codex:provider:models', scope, sessionId),
     testProvider: (scope, input) => ipcRenderer.invoke('codex:provider:test', scope, input),

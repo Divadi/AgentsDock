@@ -3924,3 +3924,42 @@ describe('pinned message identity lookup', () => {
     })
   })
 })
+
+describe('recoverable empty chat transport', () => {
+  it('uses the same desktop identity for listing and dismissal without ordinary Delete', async () => {
+    const calls: Array<{ method: string; path: string }> = []
+    await withLocalHTTPServer((request, response) => {
+      calls.push({ method: request.method!, path: request.url! })
+      response.setHeader('Content-Type', 'application/json')
+      response.end(JSON.stringify(request.method === 'GET' ? { sessions: [] } : { dismissed: true }))
+    }, async baseURL => {
+      const client = new AgentServerClient(baseURL, 'test-token', { placeholderClientId: 'desktop-client-one' })
+      await client.sessions()
+      expect(await client.discardEmptySession('empty', 'revision')).toBe(true)
+      client.dispose()
+    })
+    expect(calls).toEqual([
+      { method: 'GET', path: '/api/sessions?summary=true&placeholder_client_id=desktop-client-one' },
+      { method: 'POST', path: '/api/sessions/empty/dismiss-empty?expected_updated_at=revision&placeholder_client_id=desktop-client-one' }
+    ])
+  })
+  it('preserves the chat when no durable desktop identity is available', async () => {
+    const client = new AgentServerClient('http://unused.invalid', '')
+    expect(await client.discardEmptySession('empty', 'revision')).toBe(false)
+    client.dispose()
+  })
+  it('does not fall back to destructive cleanup on an older server', async () => {
+    const paths: string[] = []
+    await withLocalHTTPServer((request, response) => {
+      paths.push(request.url!)
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ detail: 'Not Found' }))
+    }, async baseURL => {
+      const client = new AgentServerClient(baseURL, 'test-token', { placeholderClientId: 'desktop-client-one' })
+      await expect(client.discardEmptySession('empty', 'revision')).rejects.toMatchObject({ status: 404 })
+      client.dispose()
+    })
+    expect(paths).toHaveLength(1)
+    expect(paths[0]).toContain('/dismiss-empty?')
+  })
+})

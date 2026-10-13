@@ -85,6 +85,16 @@ test('the workflow CLI emits only an exact reservation and rejects reuse on the 
   }
 })
 
+test('the next preparation follows the frozen beta.6 reservation without reusing its build', () => {
+  assert.equal(validateDesktopBuildNumber('1250', '33'), '1250')
+  assert.equal(validateDesktopBuildNumber('1251', '34'), '1251')
+  assert.throws(() => validateDesktopBuildNumber('1219', '34'), /exactly 1251/)
+  assert.throws(() => validateDesktopBuildNumber('1250', '34'), /exactly 1251/)
+  const draft = readFileSync(new URL('../../.github/workflows/direct-desktop-release-draft.yml', import.meta.url), 'utf8')
+  assert.match(draft, /23\+ use 1239 \+ \(run - 22\)/)
+  assert.doesNotMatch(draft, /exactly 1185 \+ public workflow run number/)
+})
+
 test('platform stamps share the preparation reservation and publication only replays the seal', () => {
   const draft = readFileSync(new URL('../../.github/workflows/direct-desktop-release-draft.yml', import.meta.url), 'utf8')
   const publish = readFileSync(new URL('../../.github/workflows/direct-desktop-release-publish.yml', import.meta.url), 'utf8')

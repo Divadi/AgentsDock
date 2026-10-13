@@ -1,5 +1,493 @@
 # Public development log
 
+## 2026-10-13 — Prepare the 1.0.11 beta integration
+
+- Start `release/1.0.11-beta.1` from the frozen 1.0.10 release line and merge
+  main through `2b666a9f`. Include streaming native-history import, the Files
+  inspector, simplified server settings and connection sharing, recoverable
+  empty chats, and provider/permission inheritance for new chats.
+- Preserve release-line native writer handoff, pending provider selection,
+  mailbox-only delivery authority, CLI service PATH and stop/start fixes.
+  Combine observational catalog refresh and attributed login-reload diagnostics
+  with those existing ownership protections rather than restoring older code.
+- Keep the new transcript reader in every runtime manifest and compile check.
+  Pin the new installer separately for this exact beta; historical installer
+  hashes and accepted 1.0.10 artifacts remain unchanged.
+- Local checks: 5,266 Electron tests passed (six skipped), eight build/license
+  checks passed, TypeScript and production compilation passed; 407 release/CLI
+  checks and 196 Python release-tooling checks passed. Targeted import,
+  provenance, login, cross-chat, cleanup, goal, instance and restart regressions
+  passed after resolving the runtime inventory ordering mismatch.
+- Availability: source preparation only. New-beta signed packages, hosted
+  native lifecycle/update checks and real-app feature acceptance are pending.
+  These source checks do not establish a public release or native provider
+  resume acceptance. No mobile package is built by this preparation.
+
+## 2026-10-12 — Validate large-history imports for merge
+
+- Recheck import, incremental synchronization, Claude/Codex provenance, recent
+  history repair, fork boundaries and runtime manifests: 402 of 406 checks
+  passed on the development filesystem. The remaining four also fail on
+  unchanged main because their fixtures require preserved inode identities or
+  pre-1980 timestamps. All four passed using native temporary storage; the full
+  15-case recent-history suite passed there as well. Production identity checks
+  and test assertions remain unchanged.
+- All 11 npm/legacy package checks passed, including actual disposable archive
+  creation and offline npm installation. Python compilation, shell syntax and
+  diff checks passed.
+- Repeat authenticated imports for Claude and Codex confirmed explicit
+  single-record limits, observed byte counts and correct record offsets.
+  Rejected imports created no chats and preserved native source bytes, existing
+  chats, server identity and credentials; temporary fixtures were removed.
+- Native desktop UI and actual provider resume acceptance remain unverified.
+  No desktop or server release publication is included in this change.
+
+## 2026-10-12 — Explain native import resource limits
+
+- Identify single-record text/metadata, field/scalar size, nesting, value-count,
+  scan-record-count and timeout failures separately. Include observed amounts
+  and limits, plus scan-relative record position and source byte offset.
+- Explain that retained-byte accounting includes overhead and is distinct from
+  total conversation disk size. Observed sizes are lower bounds because reading
+  stops at exhaustion; do not expose transcript content in diagnostics.
+- Preserve the import API's error contract, failure semantics and source bytes.
+  All 97 focused reader/import/sync checks passed, including real parser errors
+  reaching both providers' bulk-import responses without creating a chat.
+  Changed Python compilation and diff checks passed.
+  Live authenticated Claude and Codex imports of disposable 33 MiB text records
+  returned the specific 32 MiB accounting limit and correct record offsets.
+  Failed imports created no chats, left native fixture bytes unchanged, and
+  preserved pre-existing chats, server identity and credentials. Fixtures were
+  removed after verification.
+  Native desktop acceptance remains pending while computer control is unavailable.
+
+## 2026-10-12 — Stream large native history payloads
+
+- Replace whole-record JSON loading for native imports, sync and native proof
+  reads with bounded-memory projection. Opaque image/tool payloads remain in
+  the unchanged provider transcript; message text and provenance are preserved.
+- Remove the native import file-size cutoff and raw media-record cap. Retain
+  explicit text/metadata, JSON structure, record-count and work budgets. Hash
+  original bytes in chunks and keep file-identity/offset checks; a processing
+  failure cannot become a successful partial import.
+- Include the shared reader in both server package formats, installation,
+  deployment and staged import/compilation checks.
+- Isolated-reader measurements: approximately 281 MiB peak RSS with the former
+  parser versus 23 MiB with streaming for the same 64 MiB image record; a
+  300 MiB record used approximately 24 MiB. These are fixture measurements,
+  not the running server's total memory or a guaranteed upper bound.
+- Validation: 267 of 269 import/sync/provenance/package checks passed; the two
+  remaining failures reproduce on unmodified main (candidate ordering and
+  malformed-line native proof). Another 93 legacy-proof/deferral/fork checks
+  passed. The memory-growth regression passed in separate reader processes.
+  Changed Python and installer/deployment shell syntax checks passed.
+- Native desktop acceptance is pending because computer control is unavailable;
+  no native-provider resume or desktop UI acceptance is claimed.
+- Final focused checks passed all 30 cases after reviewing blank/malformed and
+  non-object JSON distinctions, including bounded-memory growth and native fork
+  checkpoint behavior. Live authenticated import accepted a 300 MiB Claude image
+  record and a 64 MiB Codex tool record that the preceding runtime rejected.
+  Appending 40 MiB records, reopen-triggered synchronization and repeated reads
+  preserved order without duplicates. Excessive retained text still failed
+  explicitly. Original transcript bytes, pre-existing chat IDs/titles, server
+  identity and credentials were preserved; disposable test data was removed.
+
+## 2026-10-12 — Accept larger native transcript records
+
+- Raise the Claude/Codex JSONL record bound from 4 MiB to 32 MiB across import,
+  cursor synchronization, fork scans and native history proof readers. Include
+  the actual bound in import errors. Embedded media and tool output no longer
+  fail solely because one record exceeds the former 4 MiB bound.
+- Preserve total-file, scan, displayed-text and aggregate proof budgets. Separate
+  the existing proof-text cap from the larger raw-record cap; original provider
+  history remains read-only.
+- Validation: 250 of 252 targeted regression checks passed, including nine new
+  boundary, synchronization and provenance cases. The two existing failures
+  (candidate ordering and malformed-line native proof) also reproduce against
+  unmodified main. Native desktop acceptance remains pending because computer
+  control is unavailable.
+- Live authenticated server checks reproduced the former rejection for separate
+  5 MiB Claude image and Codex tool fixtures, then passed import, reopen-triggered
+  incremental synchronization and repeated reads without duplicates after the
+  update. Over-limit input still failed explicitly. Fixture source bytes and
+  pre-existing chat identities/titles, server identity and credentials were
+  preserved; only disposable test chats and transcripts were removed. These
+  HTTP checks do not establish native-provider resume or desktop UI acceptance.
+
+## 2026-10-12 — Verify the consolidated Files inspector for merge
+
+- Integrate current main and preserve its release-tooling changes. Update the
+  old Explorer-column style regression to require the editor's full-width layout.
+- Validation: 230 of 231 focused checks passed initially; the sole failure was
+  the obsolete layout expectation, and all 13 style checks passed after updating
+  it. Both previously timing-sensitive directory checks passed this time.
+  TypeScript, production compilation and eight package/license checks passed.
+- The first hosted desktop run passed 5,138 checks but hit the second-page
+  reveal fixture's one-second DOM polling limit. Await its mocked page responses
+  and React commits before checking the rendered target; retain the selected-row
+  and exact paging-offset assertions without changing production deadlines.
+  All three focused pagination/reveal checks passed after that fixture change.
+- The user reported the local app looks good and authorized the PR and merge.
+  Agent-operated native acceptance remains pending because computer control is
+  disabled. The local app remains the previously verified package; no runtime
+  behavior changed during this merge preparation. No server update is required.
+
+## 2026-10-11 — Show Files when opening a file
+
+- Opening or selecting a workspace, attachment or image/PDF file tab now opens
+  the right panel and selects Files, including when the panel was closed or
+  showing Details/Review. The choice is remembered for subsequent reopening.
+- Apply the same behavior in split chats. Reject stale notifications from a
+  previous chat, working directory or server connection. Cancelling the picker
+  or rejecting a file before opening a tab leaves the panel unchanged.
+- Validation: all 56 focused app/file-opening checks passed. The broader
+  194-case run passed 191; a separate rerun passed its large-file timeout case.
+  Two remaining large-directory timing failures also reproduced against the
+  preceding source, so broader editor acceptance retains that limitation.
+  TypeScript and production compilation passed.
+- Native desktop acceptance is pending because computer control is disabled;
+  component fixtures use mocked IPC. No server changes are required.
+  Local package: version 0.2.0/build 85, source `b771f38f`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
+
+## 2026-10-11 — Consolidate workspace browsing in Files
+
+- Move the editor Explorer into the right-hand Files tab. Reuse its new
+  file/folder, refresh, open beside, copy path, download, rename and delete
+  operations, retaining dirty-buffer and revision checks. The editor no longer
+  reserves a second tree column or Explorer resize handle.
+- Remember the last Details/Files choice across panel and app reopening. Review
+  remains transient. Split-chat browsing follows the focused chat without
+  covering either conversation; opening a file activates the same editor.
+- Preserve paged results on folder errors, allow retry, reject changed roots,
+  and prevent background folder loads from resetting a quick-open selection.
+- Validation: 223 focused component/style/localization checks passed (the final
+  editor rerun passed all 138 cases), plus eight compilation/license checks.
+  TypeScript and production compilation passed.
+- Native desktop acceptance remains pending because computer control is
+  disabled. Component tests use mocked IPC and cannot establish live server
+  authorization or actual desktop appearance. No server API change is required.
+  Local package: version 0.2.0/build 85, source `ec572e80`. Bundle audit, strict
+  ad-hoc signature verification and all 25 compiled-code asset comparisons
+  passed; the local app was gracefully restarted. Isolated user data and
+  disabled automatic updates are retained.
+
+## 2026-10-11 — Browse workspace files from chat details
+
+- Add Details / Files tabs to the chat inspector, retaining Review when present.
+  Files shows the server-side working directory, expandable folders, explicit
+  pagination and refresh, and opens selected files in the existing editor.
+- Load only the root and folders requested by the user. Clear directory state
+  when the chat, server generation or working directory changes; ignore stale
+  responses. Preserve existing authenticated workspace access and symlink rules.
+- Validation: 172 focused checks passed, including component fixtures for
+  browsing, errors/retry, paging, stale responses, English/Chinese labels and
+  the Files-to-editor handoff. TypeScript and production compilation passed.
+  The full desktop run had 5,125 passes and five skips; its only failure was an
+  existing clipboard-permission fixture under umask 077, which passed with its
+  expected umask 022; all 421 service checks passed on that rerun. All eight
+  compilation-output/license checks passed.
+  Native desktop acceptance is pending because computer control is unavailable;
+  mocked IPC checks do not establish the real app/server journey. Availability:
+  local desktop package, version 0.2.0/build 85, packaged source `61265aca`.
+  Bundle audit, strict ad-hoc signature verification and packaged-renderer byte
+  comparison passed. The package uses isolated app data with automatic updates
+  disabled. No server API change or restart is required.
+
+## 2026-10-11 — Reconcile hosted desktop release readiness
+
+- Bring the release line's audited native build-number epochs into the maintained
+  workflow, retaining every historical run/rerun reservation and avoiding stale
+  build-number reuse after local builds.
+- Add pinned canonical-draft verification without publication. The read-only
+  helper reuses all four native verification jobs, rejects changed source or
+  checksum seals, and emits a receipt only for matching successful results.
+  Normal publication keeps its existing protected credential and mirror guards.
+- Include the desktop release regressions in source CI and document permanent
+  operator setup, one-time short-CLI bootstrap and npm's initial trust-validation
+  deadline. Credential checks remain separate from candidate acceptance.
+- Validation: 72 focused checks passed on Node 24; all 17 release-script JavaScript
+  test files also passed on the local Node runtime. Workflow YAML and changed
+  script syntax passed. A real read-only check verified the frozen beta.6 draft's
+  metadata, checksum seal and signed server descriptor; no native assets were
+  rebuilt and this does not establish full native or update acceptance.
+- Availability: source tooling only. Hosted candidate builds, real native
+  acceptance, first CLI publication and OIDC publication remain separate gates.
+  No release, registry package, running server or signing identity changed.
+
+## 2026-10-11 — Integrate connection pairing with matched npm releases
+
+- Include the pairing command, bundled QR renderer and third-party notices in
+  the publication verifier's exact file allowlist. Preserve source-byte binding,
+  file-mode checks and rejection of extra files; include all three new files in
+  tamper-rejection fixtures.
+- Preserve the latest main release-pipeline checks when integrating this branch.
+  Desktop QR sharing stays commented out. No package publication or deployment
+  is part of this source integration.
+- Update restart regression journeys to expand the active server card before
+  exercising its controls; preserve safe/force confirmation and recovery checks.
+  Keep the server-settings light background explicitly transparent. All 116
+  related restart and light-theme checks pass.
+- Allow two asynchronous test fixtures to reach their intended cancellation and
+  private-revision audit checkpoints despite full-suite scheduling pauses.
+  Retain the real SQLite/threaded-probe paths, all assertions and production
+  deadlines; no tests are skipped.
+
+## 2026-10-11 — Temporarily hide desktop QR sharing
+
+- Comment out the Show QR code button and its section heading in Server settings.
+  Keep the QR component and underlying sharing implementation for re-enabling
+  later. Token preview/copy and other server controls remain available.
+- Validation: 31 focused settings/component checks, TypeScript, production
+  compilation, local bundle audits and strict ad-hoc signature checks passed.
+  Retained QR tests exercise its component directly while the entry is hidden.
+  Actual-app visual acceptance remains pending because computer control is blocked.
+  Availability: local desktop package (0.2.0, build 85), automatic updates disabled.
+  No server update is needed.
+
+## 2026-10-11 — Inline token-copy confirmation
+
+- Confirm a successful token copy by replacing the button's copy icon with a
+  checkmark, keeping its Copy label and the card height unchanged. Remove the
+  separate success line; failed copies still show a retryable error. Editing or
+  folding the card clears the prior confirmation.
+- Validation: 31 focused server-settings tests, TypeScript, production compilation,
+  bundle audits and strict ad-hoc signature checks passed. Actual-app visual
+  acceptance remains pending because computer control is blocked. Availability:
+  local desktop package (0.2.0, build 85), automatic updates disabled. No server
+  update is needed.
+
+## 2026-10-11 — Masked token row in server settings
+
+- Show the first four token characters followed by masking dots in each expanded
+  server card, with a Copy button at the end that copies the complete credential.
+  Short tokens remain fully masked; missing tokens disable copying.
+- Mask the preview in the main process before IPC. Read only on expansion or
+  after a token edit, discard stale results, and keep profile listing free of
+  credentials. Preview errors never display credential-store error details.
+- Validation: 215 targeted component, IPC, preload, credential-lifecycle and
+  localization checks passed, together with TypeScript and production compilation.
+  Fixtures cover stale credential reads, short-token masking, inactive profiles,
+  edits, reopening and missing credentials. Actual-app visual/clipboard acceptance
+  remains pending because computer control is blocked. Local bundle audits and
+  strict ad-hoc signature verification passed (0.2.0, build 85; automatic updates
+  disabled). This desktop-only local package requires no server update.
+
+## 2026-10-11 — Give server settings a clearer layout
+
+- Keep the server name and URL together in the collapsed header, with connection
+  status alongside them. Expanded cards show version and identity on separate
+  labeled rows, with wrapping for long addresses and identifiers.
+- Group Copy token and Show QR code under Connect another device. Separate
+  Use/Edit from the red Remove action, with more spacing and wrapping. Remove
+  the duplicate status/identity block beside the active server's restart control.
+- Validation: 118 targeted component/localization tests, TypeScript, production
+  compilation, bundle audits and strict ad-hoc signature checks passed. Tests
+  use mocked IPC; actual-app visual acceptance is pending because computer
+  control is blocked. Availability: local desktop test package (0.2.0, build 85),
+  automatic updates disabled; no server update is needed for this layout change.
+
+## 2026-10-11 — Collapsible server settings cards
+
+- Match the My Agents settings layout with server cards collapsed by default.
+  Keep each name, connection status and active selection visible; place address,
+  identity/version, edit/remove/use, token copy and QR actions inside the card.
+  The active server's health/restart controls also live inside its card.
+- Put Add server above the cards. Keep new-connection editing at the top and
+  existing-connection editing inside its owning card. Folding preserves drafts,
+  dismisses credential-bearing QR panels and resets removal confirmation.
+  A newly saved server expands so a failed activation remains actionable.
+- Validation: 118 related component/localization tests, final focused settings
+  checks, TypeScript, production compilation, local bundle audit and strict
+  ad-hoc signature checks passed. Component IPC is mocked;
+  the actual-app visual/client-server workflow remains pending because computer
+  control is blocked. This is a local desktop change with no service restart or
+  public publication.
+
+## 2026-10-11 — Remove subagent concurrency from Server settings
+
+- Remove the Codex subagent-limit form from desktop Server settings. Opening
+  the page no longer reads or offers to change this per-chat default through
+  the server administration API.
+- Validation: all 163 related settings/goal/server-management component tests,
+  TypeScript, production compilation, local bundle audit and strict ad-hoc
+  signature checks passed. Native visual acceptance remains pending because
+  computer-control policy blocks the desktop app. Availability: local test
+  package only; no server update is required for this UI removal.
+
+## 2026-10-11 — Make persistent goals available without a global toggle
+
+- Remove the persistent-goals switch from desktop Server settings. Goal creation,
+  pause, resume and limits remain per-chat controls.
+- Updated servers ignore the retired environment/config opt-out. Preserve the
+  authenticated legacy status route as non-configurable; enabling is read-only
+  and disabling returns 409 without restarting providers or changing goal state.
+  Existing paused goals stay paused and unrelated shared settings are preserved.
+- Validation: 151 desktop component tests, TypeScript, production compilation,
+  local bundle audit and strict ad-hoc signature checks passed. Fifty isolated
+  server tests passed, including actual ASGI routes with synthetic credentials,
+  stale disabled settings, rejected legacy writes and unchanged goal/subagent
+  state. Native App visual/goal acceptance remains pending because computer
+  control is blocked. Availability: local desktop package and server source;
+  existing services were not restarted or deployed.
+
+## 2026-10-11 — Simplify saved-server actions
+
+- Remove the up/down ordering buttons from desktop Settings → Server and
+  their unused component handler. Keep the saved list order and the remaining
+  connection-management actions.
+- Validation: all 26 existing server-settings component tests, TypeScript,
+  production compilation, local bundle audit and strict ad-hoc signature checks
+  passed. Actual-app visual acceptance remains pending because computer-control
+  policy blocks the desktop app. Availability: local test package only.
+
+## 2026-10-11 — CLI and mobile QR connection pairing
+
+- Add `agentsdock pair [NAME]` / `qrcode` with binding-aware Tailscale/LAN
+  selection, authenticated health and identity checks, terminal QR output, private
+  PNG export and an explicit link-output option. Local-only and ambiguous network
+  selections require explicit choices. Existing services are never restarted.
+- Bundle the QR renderer with its licenses so short-CLI installation remains
+  offline-capable and keeps the exact same-version server dependency.
+- Add mobile camera/image scanning and connection deep links. Users review the
+  address, then connect and save through existing identity validation and secure
+  token storage. Matching server identities are reused; failed authentication or
+  an identity mismatch cannot replace a saved server. Preserve the legacy scheme.
+- Validation: CLI, offline packaging, 97 instance tests, cross-client payload
+  tests, mobile component/profile/setup checks and TypeScript; generated native
+  permission/deep-link configuration; a packaged CLI QR independently decoded and
+  authenticated against the selected live test server. Component native modules
+  are mocked. Simulator UI control is blocked by computer policy; actual native
+  scan/import, persistence/reopen, deep-link presentation, and physical-phone
+  LAN/Tailscale acceptance remain pending. This is local development, not a public
+  npm/mobile release. The iOS simulator Release build and isolated simulator
+  installation passed; the QR fixture was imported for manual image-scan testing.
+
+## 2026-10-11 — Desktop saved-server token copy and connection QR
+
+- Add per-server Settings actions for native clipboard token copying and locally
+  generated, saveable QR images, including inactive/offline saved profiles.
+  Copying never returns the token through IPC. Generation/saving checks the
+  selected credential revision; profile metadata stays credential-free.
+- Define a versioned connection-link contract and document the separate mobile
+  import work. Show local-only address and credential-sharing explanations;
+  generating a QR does not change network binding or grant restricted chat access.
+- Validation: focused service/IPC/preload/component/format checks, TypeScript
+  and production compilation; native offscreen copy and QR display; real macOS
+  clipboard and local-server authenticated health; independent Vision QR decode.
+  Native save-picker interaction was blocked by computer-control policy. Picker,
+  theme/layout and mobile end-to-end acceptance remain pending. No server source
+  change, service restart or public publication is included.
+## 2026-10-11 — Preserve certificate-chain lookup in the hosted signing probe
+
+- Include the disposable keychain in the hosted search list only while signing
+  and verifying the probe, matching macOS certificate-chain lookup requirements.
+- Restore the exact original list on success and failure without replacing the
+  default keychain. Add executable isolated regression checks for that boundary;
+  no credential values or private signing output are exposed.
+
+## 2026-10-11 — Identify hosted signing-preflight failure stages safely
+
+- Add fixed public checkpoint labels to the non-publishing Developer ID probe
+  so operators can distinguish certificate import, identity discovery, signing
+  and verification failures without exposing credentials or raw command output.
+- Preserve the protected hosted-runner guards, disposable-keychain cleanup and
+  all release acceptance requirements. A failed probe remains a failed check.
+
+## 2026-10-11 — Make release operation independent of the operator computer
+
+- Reconcile paired npm release tooling with current main while preserving the
+  frozen release branches. Include the native harness implementation as well as
+  its registered workflow, stronger split-default removal/state checks and safe
+  bounded failure identifiers. Keep failed product boundaries failed.
+- Add a manual protected credential preflight for existing GitHub release
+  access, Developer ID probe signing and read-only Apple API authentication.
+  It does not publish, submit notarization, build a product, install a service,
+  upload private diagnostics or replace signing identities. Hosted execution
+  remains pending; structural tests are not credential validation.
+- Document operator versus administrator/npm-owner responsibilities, exact
+  source selection, package-specific trust and the limitations of artifact-only
+  or verification-only runs. The scoped beta.6 runtime is public; the short CLI
+  and matched desktop publication remain incomplete. Preserve stable defaults.
+- Focused pipeline/harness/packaging source checks pass. No new candidate was
+  built and no existing signed artifact, service, credential or public release
+  was changed by this tooling update. See [the operator checklist](NPM_CLI_RELEASES.md#operating-releases-from-another-computer).
+
+## 2026-10-11 — Inherit new-chat settings from the open conversation
+
+- Both quick creation and the new-chat chooser prefer the focused conversation's
+  agent, CLI/custom connection, model, reasoning and provider-specific permissions.
+  Saved defaults apply only without an eligible open conversation, remain scoped
+  to the server, and accept older records without permission fields. Instructions,
+  native session identity, credentials and jobs are not copied.
+- Unavailable inherited agents/connections require an explicit choice instead of
+  silently switching providers. Late preference reads cannot cross server scopes.
+- Verification: 729 focused desktop tests, typecheck and production compilation
+  passed. Isolated native offscreen Electron reproduced stale model inheritance
+  with the old renderer, then exercised the new renderer via actual mouse/keyboard
+  input and production IPC/HTTP against an authenticated test service. Codex,
+  Claude and Cursor creation preserved server-side settings; a new Codex chat
+  completed a live provider turn. Unavailable OpenCode opened the chooser;
+  cancel/reopen and explicit provider selection worked. The test used isolated
+  in-memory credential storage, not the user's desktop profile.
+- Pre-merge review also covered a Claude-only availability fixture: initialization
+  cannot silently replace an unavailable inherited provider, including after
+  cancel/reopen. The native offscreen app checked the chooser against a controlled
+  catalog and created the explicitly selected Claude chat through real IPC/HTTP.
+  User testing accepted the primary inheritance workflow.
+- OpenCode availability and custom-endpoint propagation are covered by regression
+  fixtures, not live authenticated OpenCode/custom-provider runs. This is a local
+  desktop change; no public release, mobile change or primary-server update.
+
+## 2026-10-11 — Separate catalog refresh from Codex sign-in reload
+
+- Automatic reconnect/model discovery and Recheck CLIs no longer request an
+  opaque-login handoff. Genuine native login revisions are still detected;
+  custom endpoint managers and background-work ownership remain unchanged.
+- Add a native-admin-only sign-in reload POST and wire the existing Codex CLI
+  account action to it, with English/Chinese copy and truthful pending status.
+  Account reads and page mounts remain passive; unsupported older servers keep
+  a read-only Recheck. Profile-generation fencing applies to explicit reload.
+- Log handoff source, reason and coalesced waiting/release outcomes without
+  credentials, account identity, revision digests or command content.
+- Validation: 67 focused server HTTP/auth/lifecycle tests and 527 desktop
+  transport/service/component/preload tests passed; desktop typecheck and
+  production build passed. Production desktop transport against an isolated
+  installed service passed account read/reload, browser/bearer rejection,
+  repeated catalog refreshes and two real Codex turns on the same native thread.
+  User testing reported no issue with the refresh/reconnect workflow. Live
+  keychain/background-training and implementer App-click acceptance of the new
+  explicit reload action remain pending; computer control was unavailable.
+  No public release or upgrade of existing primary services is included.
+
+## 2026-10-11 — Clean unused chats on desktop startup and explicit refresh
+
+- Recognize unused `New chat` rows without a device-local creation marker,
+  including legacy placeholders and blanks whose model/settings changed.
+  Check again after the initial online refresh when startup used an old cache;
+  do not run cleanup on ordinary background refresh or when leaving a chat.
+- Persist conditional, desktop-scoped dismissals on the server. Keep the empty
+  record recoverable so a different/offline desktop's local draft remains usable.
+  Subsequent changes make the row visible again. Explicit Delete is unchanged.
+- Flush and protect local drafts/references/uploads before requesting cleanup;
+  the server repeats its history, provider, queue, job and terminal checks under
+  its lifecycle fence. New clients use a distinct endpoint, so an older server
+  cannot interpret recovery-safe cleanup as permanent deletion.
+- Verification: reproduced the old missing-marker behavior in an isolated
+  offscreen native Electron app, then exercised the compiled app against an
+  authenticated test server through the real IPC/HTTP boundary. Startup and
+  sidebar refresh removed legacy/model-edited blanks; typed drafts and uploaded
+  files survived. Two independent desktop profiles and server/app restarts
+  preserved offline drafts and per-client cleanup. No model inference was used;
+  chats/files were disposable API fixtures and typing/refresh used real UI input.
+- Verification build: desktop source metadata `0.2.0` / 85 and server source
+  `1.0.7-beta.11`, based on main `4de6e80b`. All 805 focused desktop and 28 server
+  regressions, TypeScript and production compilation pass. Test fixtures/services
+  are isolated; no primary installation changed.
+  Availability: local source and compiled test app only; not published or merged.
+
 ## 2026-10-12 — Complete scoped 1.0.10 checks; await npm validation
 
 - All four desktop packages for source `4f0a5c25`, build 1251 passed native
@@ -1321,6 +1809,32 @@
   The designated local test server runs `1.0.10-beta.2.opencode.70af1129` with
   authenticated health and installed module/source parity verified. The primary
   server is unchanged. No artifacts are published and merge remains pending.
+
+## 2026-10-07 — Prepare matched npm runtime and short CLI publication
+
+- Extend the manual npm release workflow to prepare both `@agentsdock/server`
+  and `agentsdock` from one committed source/version. Validate the accepted CLI
+  receipt and all packaged files against Git, the exact scoped dependency and
+  the existing signed runtime descriptor before publication. Stage CLI bytes in
+  their own immutable two-asset private draft; do not modify runtime/app bundles.
+- Publish and verify the runtime before the CLI; verify public resolution
+  metadata and downloaded bytes for both. Preserve explicit stable baselines
+  during beta publication. Matching retries skip existing uploads, while
+  conflicting bytes/tags fail closed. Missing first-package ownership/trust is
+  reported as incomplete publication, not a matched-release success.
+- Add a manually dispatched disposable macOS/Linux native CLI acceptance
+  workflow and bounded reports. It exercises genuine first-global postinstall,
+  repeat-install preservation, commands, service lifecycle and cache retirement.
+  Known split-default service binding refusals remain failed checks, not bypasses.
+- Validation: 190 JavaScript and 142 Python checks pass, including actual offline
+  npm packaging/install tests, CLI/postinstall behavior, publication guards,
+  instance-manager fixtures and native harness safeguards. Changed workflows
+  pass actionlint. Real fresh native-service, split-default lifecycle/removal,
+  interactive setup and logout/reboot acceptance remain pending; mocked lifecycle
+  checks and safe existing-state no-op installs do not establish those results.
+- Preparation only: no new beta build, npm upload, release publication, signing
+  identity change or existing-service modification. The short command remains
+  unpublished. See [the matched npm release procedure](NPM_CLI_RELEASES.md).
 
 ## 2026-10-07 — Remember custom API drafts and clarify connection fields
 

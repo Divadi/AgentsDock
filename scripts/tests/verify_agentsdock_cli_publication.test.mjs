@@ -23,7 +23,9 @@ function fixture(t, { version = '1.0.10-beta.2', packageChanges = {}, sourceChan
   const { publicKey, privateKey } = generateKeyPairSync('ed25519')
   writeFileSync(join(sourceRoot, 'server/release-public-key.pem'), publicKey.export({ format: 'pem', type: 'spki' }))
   writeFileSync(join(sourceRoot, 'server/VERSION'), version + '\n')
-  const sourceFiles = { 'cli.cjs': '#!/usr/bin/env node\n// fixture CLI\n', 'postinstall.cjs': '// fixture reviewed hook\n', 'README.md': 'Fixture CLI\n', LICENSE: 'Fixture license\n', NOTICE: 'Fixture notice\n' }
+  const sourceFiles = { 'cli.cjs': '#!/usr/bin/env node\n// fixture CLI\n', 'postinstall.cjs': '// fixture reviewed hook\n',
+    'pair.cjs': '// fixture pairing command\n', 'qr-renderer.cjs': '// fixture bundled renderer\n', 'QR-NOTICES.txt': 'Fixture QR attribution\n',
+    'README.md': 'Fixture CLI\n', LICENSE: 'Fixture license\n', NOTICE: 'Fixture notice\n' }
   for (const [name, bytes] of Object.entries(sourceFiles)) writeFileSync(join(['LICENSE', 'NOTICE'].includes(name) ? sourceRoot : source, name), bytes)
   for (const name of ['verify_agentsdock_cli_publication.mjs', 'verify_npm_publication.mjs', 'stage_coordinated_release.mjs']) {
     copyFileSync(new URL(`../${name}`, import.meta.url), join(sourceRoot, 'scripts', name))
@@ -166,6 +168,9 @@ test('rejects an unreviewed hook or extra metadata even when committed source ag
 
 test('rejects changed source files, added files, duplicates, links and wrong modes', t => {
   for (const mutateArchive of [
+    ...['pair.cjs', 'qr-renderer.cjs', 'QR-NOTICES.txt'].map(name => members => {
+      members.find(member => member.name === `package/${name}`).bytes = Buffer.from('changed pairing payload').toString('base64')
+    }),
     members => { members[1].bytes = Buffer.from('changed CLI').toString('base64') },
     members => { members.push({ ...members[1], name: 'package/.env' }) },
     members => { members.push(members[1]) },
