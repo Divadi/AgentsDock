@@ -9660,6 +9660,11 @@ def reversed_jsonl_events(
                 for event, _, _ in jsonl_records(
                     source, end=stop, project=False, require_newline=False,
                     retained_fields=retained_fields, deadline=float("inf"),
+                    # This is a server-owned journal, not a native import.
+                    # A tool payload can legitimately contain many values.
+                    # Keep retained metadata bounded; scan omitted values in
+                    # linear time without the importer's value-count ceiling.
+                    max_nodes=None, max_depth=512,
                 ):
                     return event
                 return None

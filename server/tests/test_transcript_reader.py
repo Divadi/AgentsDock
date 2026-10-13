@@ -24,6 +24,23 @@ class StreamingTranscriptTests(unittest.TestCase):
         with self.assertRaises(reader.TranscriptBudgetExceeded):
             self.parse(raw, project=False, max_retained_bytes=512)
 
+    def test_journal_projection_uses_separate_limits_without_relaxing_native_import(self):
+        raw = b'{"seq":3,"output":[' + b'0,' * 200 + b'0],"type":"tool_finished"}\n'
+        with self.assertRaisesRegex(reader.TranscriptBudgetExceeded, 'value-count'):
+            self.parse(raw, max_nodes=100)
+        value = self.parse(raw, project=False, retained_fields=frozenset({"seq", "type"}), max_nodes=None)[0][0]
+        self.assertEqual(value, {"seq": 3, "output": None, "type": "tool_finished"})
+        nested = b'{"seq":4,"output":' + b'[' * 100 + b'0' + b']' * 100 + b'}\n'
+        with self.assertRaisesRegex(reader.TranscriptBudgetExceeded, 'nesting'):
+            self.parse(nested)
+        projected = self.parse(nested, project=False, retained_fields=frozenset({"seq"}), max_nodes=None, max_depth=512)[0][0]
+        self.assertEqual(projected, {"seq":4, "output":None})
+
+    def test_discarded_object_keys_do_not_exhaust_retained_metadata_budget(self):
+        raw = json.dumps({"seq":1,"output":{str(i):"value" for i in range(2000)}}).encode()+b'\n'
+        result = self.parse(raw, project=False, retained_fields=frozenset({"seq"}), max_retained_bytes=512, max_nodes=None)[0][0]
+        self.assertEqual(result, {"seq":1,"output":None})
+
     def test_chunk_boundaries_preserve_json_strings_and_duplicate_keys(self):
         raw = b'{"text":"first","text":"Chinese \\u4e2d \\ud83d\\ude00 \\\" \\\\ /\\n","role":"user","x":[1,-2.5e+3,true,false,null,{"a":""}]}\n'
         for size in (1,2,3,7,64,65536):

@@ -186,6 +186,69 @@ class EmergencyAlertServerTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(second["acknowledged"])
         self.assertFalse(agent_server.active_emergency_alerts(agent_server.STORE.sessions["source"]))
 
+    async def test_ack_skips_large_structured_tool_payload_without_import_budgets(self):
+        raised = await self.raise_alert("request.structured.0001", "Structured history")
+        path = agent_server.events_path("source")
+        seq = agent_server.EVENT_SEQ_CACHE["source"] + 1
+        with path.open("ab") as stream:
+            stream.write((f'{{"seq":{seq},"type":"tool_finished","output":[').encode())
+            stream.write(b'0,' * 260000)
+            stream.write(b'0]}\n')
+        agent_server.EVENT_SEQ_CACHE["source"] = seq
+        result = await agent_server.acknowledge_session_emergency("source", agent_server.AcknowledgeEmergencyRequest(
+            expected_alert_id=raised["alert"]["id"]))
+        self.assertTrue(result["acknowledged"])
+
+    async def test_parallel_http_acknowledgements_commit_exactly_once(self):
+        import httpx
+        raised = await self.raise_alert("request.parallel.0001", "Parallel acknowledgement")
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=agent_server.app),
+                base_url="http://127.0.0.1", headers={"X-AgentsDock-Token": "server-token"}) as client:
+            path = "/api/sessions/source/emergency/acknowledge"
+            body = {"expected_alert_id": raised["alert"]["id"]}
+            responses = await asyncio.gather(*(client.post(path, json=body) for _ in range(8)))
+            self.assertTrue(all(r.status_code == 200 for r in responses))
+            self.assertEqual(sum(r.json()["acknowledged"] for r in responses), 1)
+        self.assertEqual(sum(r["type"] == "emergency_alert_acknowledged" for r in self.event_records()), 1)
+        self.assertFalse(agent_server.active_emergency_alerts(agent_server.STORE.sessions["source"]))
+
+    async def test_http_ack_requires_auth_and_exact_alert_and_chat(self):
+        import httpx
+        raised = await self.raise_alert("request.http-auth.0001", "Authorization")
+        original = agent_server.events_path("source").read_bytes()
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=agent_server.app), base_url="http://127.0.0.1") as client:
+            body = {"expected_alert_id": raised["alert"]["id"]}
+            denied = await client.post("/api/sessions/source/emergency/acknowledge", json=body)
+            self.assertIn(denied.status_code, (401, 403))
+            client.headers["X-AgentsDock-Token"] = "server-token"
+            wrong_chat = await client.post("/api/sessions/other/emergency/acknowledge", json=body)
+            self.assertEqual(wrong_chat.status_code, 409)
+            wrong_alert = await client.post("/api/sessions/source/emergency/acknowledge", json={"expected_alert_id": "emergency_" + "f" * 32})
+            self.assertEqual(wrong_alert.status_code, 409)
+        self.assertEqual(agent_server.events_path("source").read_bytes(), original)
+
+    async def test_http_recovery_state_and_admission_agree_without_losing_history(self):
+        import httpx
+        original = agent_server.events_path("source").read_bytes() if agent_server.events_path("source").exists() else b""
+        async def failed(error):
+            raise error("private cause must not be sent to clients")
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=agent_server.app),
+                base_url="http://127.0.0.1", headers={"X-AgentsDock-Token": "server-token"}) as client:
+            for error in (TimeoutError, OSError):
+                task = asyncio.create_task(failed(error))
+                await asyncio.gather(task, return_exceptions=True)
+                with patch.object(agent_server, "QUEUE_RECOVERY_TASK", task):
+                    health = await client.get("/api/health")
+                    self.assertEqual(health.status_code, 200)
+                    self.assertEqual(health.json()["chat_readiness"]["state"], "failed")
+                    for _ in range(3):
+                        response = await client.post("/api/sessions/source/turns", json={"prompt": "Must not start"})
+                        self.assertEqual(response.status_code, 503)
+                        self.assertIn("did not complete", response.json()["detail"])
+                        self.assertNotIn("private cause", response.text)
+        actual = agent_server.events_path("source").read_bytes() if agent_server.events_path("source").exists() else b""
+        self.assertEqual(actual, original)
+
     async def test_projection_does_not_hold_global_store_lock_during_disk_scan(self):
         started, release = threading.Event(), threading.Event()
         original = agent_server.emergency_lifecycle_events_after
