@@ -2,6 +2,21 @@
 
 ## 2026-10-13 — Distinguish failed chat recovery and stream emergency receipts
 
+- Expanded acceptance found and fixed a structured-payload regression: emergency
+  journal projection no longer inherits native-import value-count limits or
+  charges discarded object keys as retained metadata. Import defaults remain
+  unchanged. The new regression failed before the correction.
+- Additional validation passed 195 recovery/alert checks, 203 update/rollback
+  checks, 99 overlapping import/admission checks and 487 desktop service/update
+  checks. Native Electron also exercised Send and Refresh against an isolated
+  failed-recovery HTTP server: the draft survived, the error was explicit, and
+  server selection remained available. The 256 MiB HTTP fixture repeated at
+  1.58 seconds. Repeating the real provider/UI acknowledgement after deployment,
+  reopening the test app, and continuing the same conversation also passed.
+  Test-instance identity, token and existing chats were preserved; disposable
+  test data was cleaned up. See [the test matrix](RECOVERY_READINESS_TESTING.md)
+  for boundaries.
+
 - Completed queue-recovery timeouts now report failure instead of indefinitely
   claiming recovery is in progress. Admission stays closed on failure, and
   disconnecting a request cannot cancel shared queue restoration.
