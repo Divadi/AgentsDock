@@ -109,13 +109,15 @@ the original server-generated wake identity and full input hash. The provider's
 `user.text` label alone does not mean a server-authored cron/wake was a new human
 message. Genuine same-text input in an unrelated turn remains visible.
 
-The reader still bounds individual records (4 MiB), retained proof keys/targets,
+The reader still bounds individual records (32 MiB), retained proof keys/targets,
 and elapsed work (30 seconds by default). Callers can supply a cooperative
 cancellation callback or an absolute monotonic deadline. Regular-file identity,
 size and modification time must remain unchanged throughout each read; altered,
 malformed, unavailable or incomplete evidence cannot produce a partial proof.
-These changes are confined to native Codex replay proof; the separate legacy
-goal/Claude readers and their budgets are unchanged.
+The native record bound matches import and incremental synchronization, including
+Claude proof reads, so a large media/tool record cannot pass import and then fail
+solely because a later proof reader has a smaller record cap. Text used for proof
+retains its separate 4 Mi-character cap; aggregate proof budgets are unchanged.
 
 `CodexNativeHistoryProofUnavailable` distinguishes incomplete work from a
 completed negative result. Import callers must defer the whole batch without

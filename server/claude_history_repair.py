@@ -28,7 +28,9 @@ from claude_sdk_client import CLAUDE_SDK_LITERAL_MESSAGE_PREFIX
 
 MAX_BYTES = 96 * 1024 * 1024
 MAX_EVENTS_BYTES = 32 * 1024 * 1024
-MAX_LINE_BYTES = 4 * 1024 * 1024
+# Match the native import record limit, without expanding retained text/proof.
+MAX_LINE_BYTES = 32 * 1024 * 1024
+MAX_TEXT_CHARS = 4 * 1024 * 1024
 MAX_RECORDS = 100_000
 MAX_KEYS = 20_000
 MAX_TARGETS = 4_000
@@ -106,7 +108,7 @@ def _target(event: dict) -> tuple[int, str, str] | None:
         event.get("type") != "turn_started" or event.get("imported") is not True
         or event.get("backend") != "claude" or type(seq) is not int or seq <= 0
         or not isinstance(run, str) or not run.startswith("import_")
-        or not isinstance(prompt, str) or len(prompt) > MAX_LINE_BYTES
+        or not isinstance(prompt, str) or len(prompt) > MAX_TEXT_CHARS
     ):
         return None
     return seq, run, _text_key(prompt)
@@ -118,7 +120,7 @@ def _assistant_target(event: dict) -> tuple | None:
     if (event.get("type") not in ("assistant_text", "reasoning_summary")
             or event.get("imported") is not True or event.get("backend") != "claude"
             or type(seq) is not int or seq <= 0 or not isinstance(run, str) or not run.startswith("import_")
-            or not isinstance(text, str) or not text.strip() or len(text) > MAX_LINE_BYTES
+            or not isinstance(text, str) or not text.strip() or len(text) > MAX_TEXT_CHARS
             or not isinstance(origin, dict) or origin.get("provider") != "claude"
             or origin.get("kind") not in (None, "assistant")
             or event.get("provider_user_authored") is True
@@ -173,7 +175,7 @@ class _AssistantReplays:
             return None
         display = self.normalize_assistant(text)
         return (_text_key(display) if isinstance(display, str) and display.strip()
-                and len(display) <= MAX_LINE_BYTES else None)
+                and len(display) <= MAX_TEXT_CHARS else None)
 
     def event(self, event: dict) -> None:
         target = _assistant_target(event)
@@ -193,7 +195,7 @@ class _AssistantReplays:
                     and (event.get("phase") in ("commentary", "final_answer")
                          or (kind == "assistant_text" and event.get("phase") is None))
                     and isinstance(event.get("text"), str) and event["text"].strip()
-                    and len(event["text"]) <= MAX_LINE_BYTES):
+                    and len(event["text"]) <= MAX_TEXT_CHARS):
                 self.native.append((event, _text_key(event["text"].strip())))
         if sum(map(len, (self.starts, self.ends, self.owners, self.native, self.candidates))) > MAX_TARGETS:
             raise _Unproven()
@@ -260,7 +262,7 @@ class _AssistantReplays:
                              and block.get("type") == "text" and isinstance(block.get("text"), str))
         else:
             return
-        if text.strip() and len(text) <= MAX_LINE_BYTES:
+        if text.strip() and len(text) <= MAX_TEXT_CHARS:
             digest = _text_key(text.strip())
             self.sources.setdefault((identity, digest), []).append(offset)
             self.source_display[(identity, digest)] = self.display_key(text)
@@ -440,7 +442,7 @@ class _AsyncDeliveryInputs:
                 or any(event.get(key) for key in ("clientUserMessageId", "clientId", "client_user_message_id", "client_id"))):
             return
         full, display = self.normalize_full_user(event), self.normalize_user(event)
-        match = _ASYNC_WRAPPER.fullmatch(full.strip()) if isinstance(full, str) and len(full) <= MAX_LINE_BYTES else None
+        match = _ASYNC_WRAPPER.fullmatch(full.strip()) if isinstance(full, str) and len(full) <= MAX_TEXT_CHARS else None
         timestamp = _timestamp(identity[2])
         if match and isinstance(display, str) and display and timestamp is not None:
             self.sources.setdefault((match[1], _text_key(match[2]), len(match[2]), int(timestamp)), []).append(
@@ -519,7 +521,7 @@ class _MailboxWakeInputs(_AsyncDeliveryInputs):
             return
         full, display = self.normalize_full_user(event), self.normalize_user(event)
         timestamp = _timestamp(identity[2])
-        if (isinstance(full, str) and full and len(full) <= MAX_LINE_BYTES
+        if (isinstance(full, str) and full and len(full) <= MAX_TEXT_CHARS
                 and _text_key(full) in self.wake_hashes
                 and isinstance(display, str) and display and timestamp is not None):
             self.sources.setdefault(_text_key(full), []).append(

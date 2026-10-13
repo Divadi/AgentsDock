@@ -34,7 +34,9 @@ _PROVIDER_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 _NATIVE_LEADING_DECORATION_RE = re.compile(
     r"(?m)^[ \t]*(?:(?::[A-Za-z0-9_+\-]+:|[\U0001F300-\U0001FAFF\u2600-\u27BF]\ufe0f?)[ \t]*)+"
 )
-NATIVE_PROOF_LINE_BYTES = 4 * 1024 * 1024
+# Match the native import record limit; public text/key budgets stay unchanged.
+NATIVE_PROOF_LINE_BYTES = 32 * 1024 * 1024
+NATIVE_PROOF_TEXT_CHARS = 4 * 1024 * 1024
 NATIVE_PROOF_SECONDS = 30.0
 _COMPACTION_PREFIX = (
     "Another language model started to solve this problem and produced a summary of its thinking process. "
@@ -70,7 +72,7 @@ class CodexCompactionSummaryTracker:
                 and isinstance(metadata, dict) and metadata.get("content_item_kinds") == ["unknown"]
                 and isinstance(content, list) and len(content) == 1 and isinstance(content[0], dict)
                 and content[0].get("type") == "output_text" and isinstance(content[0].get("text"), str)
-                and 0 < len(content[0]["text"]) <= NATIVE_PROOF_LINE_BYTES):
+                and 0 < len(content[0]["text"]) <= NATIVE_PROOF_TEXT_CHARS):
                 self.pending = {"origin": origin, "text": content[0]["text"], "response_id": None}
             return None
         pending = self.pending
@@ -638,7 +640,7 @@ _ASYNC_DELIVERY_WRAPPER = re.compile(
 
 def _async_delivery_body(text: str) -> tuple[str, str, int] | None:
     """Parse one complete legacy wire shape; text alone never proves delivery."""
-    if len(text) > NATIVE_PROOF_LINE_BYTES:
+    if len(text) > NATIVE_PROOF_TEXT_CHARS:
         return None
     match = _ASYNC_DELIVERY_WRAPPER.fullmatch(text)
     if not match:
@@ -698,7 +700,7 @@ class _AsyncDeliveryIndex:
         if isinstance(run, str) and 0 < len(run) <= 256 and not run.startswith("import_"):
             if event_type == "turn_started":
                 body = event.get("prompt")
-                if isinstance(body, str) and 0 < len(body) <= NATIVE_PROOF_LINE_BYTES and not _runtime_human_provenance(event):
+                if isinstance(body, str) and 0 < len(body) <= NATIVE_PROOF_TEXT_CHARS and not _runtime_human_provenance(event):
                     record.update(body_key=_text_key(body), body_chars=len(body))
                 self.starts.setdefault(run, []).append(record)
                 self.count += 1

@@ -1297,7 +1297,9 @@ MAX_IMPORTED_TEXT_CHARS = int(agentsdock_setting("HISTORY_IMPORT_TEXT_CHARS", "1
 MAX_LOCAL_SESSION_LIST_ITEMS = 500
 MAX_LOCAL_SESSION_SCAN_FILES = 10_000
 MAX_LOCAL_TRANSCRIPT_BYTES = 256 * 1024 * 1024
-MAX_LOCAL_TRANSCRIPT_LINE_BYTES = 4 * 1024 * 1024
+# Native records can contain base64 media. Keep this in sync with the bounded
+# Claude/Codex proof readers (covered by test_large_transcript_import).
+MAX_LOCAL_TRANSCRIPT_LINE_BYTES = 32 * 1024 * 1024
 MAX_LOCAL_TRANSCRIPT_SCAN_LINES = 250_000
 MAX_CODEX_SESSION_INDEX_BYTES = 16 * 1024 * 1024
 MAX_CODEX_SESSION_INDEX_LINES = 100_000
@@ -46191,7 +46193,10 @@ def bounded_jsonl_events(path: Path, *, preserve_invalid: bool = False) -> Itera
             if consumed > MAX_LOCAL_TRANSCRIPT_BYTES:
                 raise ValueError("transcript changed while it was being imported")
             if len(raw_line) > MAX_LOCAL_TRANSCRIPT_LINE_BYTES:
-                raise ValueError(f"transcript line {line_number} exceeds the import limit")
+                raise ValueError(
+                    f"transcript line {line_number} exceeds the "
+                    f"{MAX_LOCAL_TRANSCRIPT_LINE_BYTES / (1024 * 1024):g} MiB per-record import limit"
+                )
             if not raw_line.strip():
                 continue
             try:
@@ -46243,7 +46248,8 @@ def bounded_jsonl_records_range(
             remaining -= len(raw_line)
             if len(raw_line) > MAX_LOCAL_TRANSCRIPT_LINE_BYTES:
                 raise ValueError(
-                    f"transcript cursor line {line_number} exceeds the import limit"
+                    f"transcript cursor line {line_number} exceeds the "
+                    f"{MAX_LOCAL_TRANSCRIPT_LINE_BYTES / (1024 * 1024):g} MiB per-record import limit"
                 )
             if not raw_line.endswith(b"\n"):
                 raise ValueError("transcript cursor does not end on a complete line")
@@ -48959,7 +48965,10 @@ def provider_history_source_snapshot(
                 complete_size += len(complete)
                 pending = pending[newline + 1:]
             if len(pending) > MAX_LOCAL_TRANSCRIPT_LINE_BYTES:
-                raise ValueError("incomplete transcript line exceeds the import limit")
+                raise ValueError(
+                    "incomplete transcript line exceeds the "
+                    f"{MAX_LOCAL_TRANSCRIPT_LINE_BYTES / (1024 * 1024):g} MiB per-record import limit"
+                )
         finished = os.fstat(stream.fileno())
         if (
             int(finished.st_dev),

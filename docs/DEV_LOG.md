@@ -1,5 +1,20 @@
 # Public development log
 
+## 2026-10-12 — Accept larger native transcript records
+
+- Raise the Claude/Codex JSONL record bound from 4 MiB to 32 MiB across import,
+  cursor synchronization, fork scans and native history proof readers. Include
+  the actual bound in import errors. Embedded media and tool output no longer
+  fail solely because one record exceeds the former 4 MiB bound.
+- Preserve total-file, scan, displayed-text and aggregate proof budgets. Separate
+  the existing proof-text cap from the larger raw-record cap; original provider
+  history remains read-only.
+- Validation: 250 of 252 targeted regression checks passed, including nine new
+  boundary, synchronization and provenance cases. The two existing failures
+  (candidate ordering and malformed-line native proof) also reproduce against
+  unmodified main. Native desktop acceptance remains pending because computer
+  control is unavailable; live server verification is recorded separately.
+
 ## 2026-10-12 — Verify the consolidated Files inspector for merge
 
 - Integrate current main and preserve its release-tooling changes. Update the
