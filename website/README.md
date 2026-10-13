@@ -11,6 +11,15 @@ npm run dev
 
 Open `http://localhost:4175`.
 
+## Website languages
+
+English pages live at the site root, Simplified Chinese at `zh/`, and
+Traditional Chinese at `zh-TW/`. Keep each localized page's language menu,
+canonical URL, reciprocal `en` / `zh-Hans` / `zh-Hant` alternate links, and
+`sitemap.xml` entries in sync. Shared assets and analytics remain at the root.
+Traditional Chinese copy uses Taiwan terminology; edit the static text directly.
+The website languages are independent of languages supported by the clients.
+
 ## Publish a desktop release
 
 1. Upload the signed macOS DMG and Linux AppImage into `website/releases/`, or replace their URLs with your release-hosting URLs.

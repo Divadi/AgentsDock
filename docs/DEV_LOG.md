@@ -22,6 +22,22 @@ painful to rediscover later.
   active server and push the latest server repository/code to GitHub so app and
   server contract versions do not drift.
 
+## 2026-10-13 - Publish the Traditional Chinese website
+
+- Added `website/zh-TW/` with the same 24 pages as Simplified Chinese, using
+  Taiwan terminology for server setup, clients, chat features, and reference
+  documentation. CLI commands and shared screenshots remain unchanged.
+- Added three-language page menus, localized dynamic navigation and download
+  labels, canonical URLs, reciprocal `en` / `zh-Hans` / `zh-Hant` metadata,
+  and Traditional Chinese sitemap entries.
+- Kept website language separate from the app language setting. Shared
+  analytics retain `link_click` and `section_dwell` events with localized paths.
+- Browser checks passed for every Traditional Chinese page on desktop and
+  mobile viewports, cross-language switching, mobile navigation, FAQ search,
+  terminal output colors, and local analytics event payloads. The reviewed
+  version is approved for publication through the website branch and mirror
+  sync.
+
 ## 2026-10-13 - Publish the reviewed website documentation
 
 - Grouped English and Chinese feature guides into Chat, Workspace, and

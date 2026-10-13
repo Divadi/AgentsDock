@@ -28,23 +28,23 @@ function releaseVersion(release) {
   return (release?.tag_name || '').replace(/^v/, '')
 }
 
-function isChineseReleaseLabel(label) {
-  return /^版本|^桌面/.test((label?.textContent || '').trim())
-}
-
 function setDesktopVersionLabel(release) {
   const version = releaseVersion(release)
   const label = document.querySelector('#release-version')
   if (!label || !version) return
 
+  const language = (document.documentElement.lang || '').toLowerCase()
+  const isChinese = language.startsWith('zh')
+  const isTraditional = language === 'zh-hant' || language === 'zh-tw'
+
   if (release.prerelease) {
-    label.textContent = isChineseReleaseLabel(label)
-      ? `桌面预览版 ${version}`
+    label.textContent = isChinese
+      ? `${isTraditional ? '桌面預覽版' : '桌面预览版'} ${version}`
       : `Desktop preview ${version}`
     return
   }
 
-  label.textContent = isChineseReleaseLabel(label)
+  label.textContent = isChinese
     ? `桌面版 ${version}`
     : `Desktop ${version}`
 }
