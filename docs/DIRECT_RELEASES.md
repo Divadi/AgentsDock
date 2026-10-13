@@ -82,6 +82,10 @@ and its legacy mirror. Coordinated releases also require the exact npm archive
 and matching signed legacy server bridge to be available, with identical runtime
 contents and executable permissions.
 
+Before publication, final canonical release notes (including documented testing
+limits) are copied to a still-draft legacy mirror and read back. This does not
+replace artifacts, move source tags, or rewrite already-published mirror notes.
+
 New releases containing the short `agentsdock` command also prepare and verify
 both npm packages before desktop publication. Follow the
 [matched npm CLI release procedure](NPM_CLI_RELEASES.md), including first-package

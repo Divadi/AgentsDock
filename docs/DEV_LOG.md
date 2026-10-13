@@ -1,5 +1,15 @@
 # Public development log
 
+## 2026-10-12 — Preserve final testing limits in mirrored release notes
+
+- Before either desktop publication, copy the final canonical notes to a
+  still-draft legacy mirror, then read back its notes and revalidate its sealed
+  assets and provenance. Explicitly retain the draft's intended tag during the
+  notes update; do not edit already-published mirror notes or any package bytes.
+- All 349 release-tooling tests pass, including fail-closed note-copy checks,
+  immutable asset/source checks and idempotent publication retries. These are
+  release-tooling checks, not additional app or upgrade acceptance.
+
 ## 2026-10-12 — Verify stable 1.0.10 CLI and prepare exact upgrade rehearsal
 
 - Freeze new matched packages at source `4f0a5c25a95574f21b0505320a03edcbfb877765`.
