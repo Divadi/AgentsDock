@@ -36,9 +36,11 @@ export function replayBaselineMetadata(baselineVersion, candidateVersion, candid
   need(difference >= 0 && a[difference] < b[difference], 'Replay baseline must be strictly older than the candidate.')
   const beta = baselineVersion.includes('-beta.')
   need(!beta || (candidate && (candidateVersion === '1.0.9' && baselineVersion === '1.0.8-beta.5'
-    || BETA1101_CANDIDATE_VERSIONS.includes(candidateVersion) && baselineVersion === '1.0.10-beta.1')),
+    || (BETA1101_CANDIDATE_VERSIONS.includes(candidateVersion) || candidateVersion === '1.0.10') && baselineVersion === '1.0.10-beta.1')),
     'Beta desktop baseline requires an exact reviewed candidate journey.')
   if (candidate && candidateVersion === '1.0.9') need(['1.0.6', '1.0.8-beta.5'].includes(baselineVersion),
+    'Stable candidate requires an independently pinned desktop baseline.')
+  if (candidate && candidateVersion === '1.0.10') need(['1.0.6', '1.0.9', '1.0.10-beta.1'].includes(baselineVersion),
     'Stable candidate requires an independently pinned desktop baseline.')
   return { track: beta ? 'beta' : 'stable', metadata: `${beta ? 'beta' : 'latest'}-mac.yml`, prerelease: beta }
 }
@@ -428,6 +430,10 @@ async function createReplay({ receiptPath, acceptedReceiptSha256, preparationRun
       baselineVersion === '1.0.6' ? 'stable108' : 'beta1085', baselineDesktopDirectory, receipt.version)
     if (candidate && BETA1101_CANDIDATE_VERSIONS.includes(receipt.version) && baselineVersion === '1.0.10-beta.1') {
       await verifyBaselineDesktop('beta1101', baselineDesktopDirectory, receipt.version)
+    }
+    if (candidate && receipt.version === '1.0.10') {
+      if (baselineVersion === '1.0.6') await verifyBaselineDesktop('stable108', baselineDesktopDirectory, '1.0.9')
+      else await verifyBaselineDesktop(baselineVersion === '1.0.9' ? 'stable109' : 'beta1101', baselineDesktopDirectory, receipt.version)
     }
     const bytes = await regular(join(baselineDesktopDirectory, 'SHA256SUMS'))
     const lines = bytes.toString('utf8').trimEnd().split('\n')

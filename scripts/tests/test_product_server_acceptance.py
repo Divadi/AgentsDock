@@ -30,7 +30,7 @@ SPEC.loader.exec_module(MOD)
 class NativeServerAcceptanceUnitTests(unittest.TestCase):
     @staticmethod
     def npm_baseline_identity(profile):
-        return {"version": MOD.NPM_BASELINE_VERSIONS[profile], "track": "stable" if profile == "stable108" else "beta",
+        return {"version": MOD.NPM_BASELINE_VERSIONS[profile], "track": "stable" if profile in {"stable108", "stable109"} else "beta",
                 "sourceSha": "b" * 40, "manifestSha256": "c" * 64, "signatureSha256": "d" * 64,
                 "archiveSha256": "e" * 64, "archiveBytes": 123}
 
@@ -94,16 +94,17 @@ class NativeServerAcceptanceUnitTests(unittest.TestCase):
     def test_beta1101_baseline_arguments_are_exact_beta2_through_beta6_mac_candidates_only(self):
         self.assertEqual(MOD.NPM_BASELINE_TARGETS, {
             "stable108": ("1.0.9",), "beta1085": ("1.0.9",),
-            "beta1101": ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6"),
+            "beta1101": ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6", "1.0.10"),
+            "stable109": ("1.0.10",),
         })
         args = argparse.Namespace(operation="bootstrap", kind="npm-baseline", candidate=True, candidate_server_linux=False,
                                   baseline_profile="beta1101", baseline_npm_directory=Path("/runner/baseline"),
                                   legacy_root_mode="0755")
         with patch.object(MOD.sys, "platform", "darwin"), patch.dict(os.environ, {"RUNNER_TEMP": "/runner"}):
-            for version in ("1.0.9", "1.0.10-beta.1", "1.0.10-beta.7", "1.0.10",
+            for version in ("1.0.9", "1.0.10-beta.1", "1.0.10-beta.7", "1.0.11",
                             "1.0.10-beta.3+local", "1.0.10-beta.4+local", "1.0.10-beta.5+local", "1.0.10-beta.6+local"):
                 with self.assertRaises(RuntimeError): MOD.validate_baseline_arguments(args, {"version": version})
-            for version in ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6"):
+            for version in ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6", "1.0.10"):
                 MOD.validate_baseline_arguments(args, {"version": version})
                 for change in ({"candidate": False}, {"candidate_server_linux": True}, {"staging_failure_fixture": True},
                                {"baseline_profile": "beta1085"}, {"baseline_npm_directory": Path("/outside")},
@@ -112,6 +113,21 @@ class NativeServerAcceptanceUnitTests(unittest.TestCase):
                         MOD.validate_baseline_arguments(argparse.Namespace(**{**vars(args), **change}), {"version": version})
                 with patch.object(MOD.sys, "platform", "linux"), self.assertRaises(RuntimeError):
                     MOD.validate_baseline_arguments(args, {"version": version})
+
+    def test_stable109_baseline_scope_is_exact_mac_stable110_only(self):
+        args = argparse.Namespace(operation="bootstrap", kind="npm-baseline", candidate=True, candidate_server_linux=False,
+                                  baseline_profile="stable109", baseline_npm_directory=Path("/runner/baseline"),
+                                  legacy_root_mode="0755")
+        with patch.object(MOD.sys, "platform", "darwin"), patch.dict(os.environ, {"RUNNER_TEMP": "/runner"}):
+            MOD.validate_baseline_arguments(args, {"version": "1.0.10"})
+            for version in ("1.0.9", "1.0.10-beta.6", "1.0.10+local", "1.0.11"):
+                with self.assertRaises(RuntimeError): MOD.validate_baseline_arguments(args, {"version": version})
+            for change in ({"candidate": False}, {"candidate_server_linux": True}, {"staging_failure_fixture": True},
+                           {"baseline_npm_directory": Path("/outside")}, {"baseline_archive": Path("/legacy.tgz")}):
+                with self.assertRaises(RuntimeError):
+                    MOD.validate_baseline_arguments(argparse.Namespace(**{**vars(args), **change}), {"version": "1.0.10"})
+            with patch.object(MOD.sys, "platform", "linux"), self.assertRaises(RuntimeError):
+                MOD.validate_baseline_arguments(args, {"version": "1.0.10"})
 
     def test_npm_baseline_installation_policy_does_not_relax_candidate_or_other_files(self):
         original = MOD.installed_runtime_mode
@@ -129,7 +145,10 @@ class NativeServerAcceptanceUnitTests(unittest.TestCase):
         member.name = "package/server/instances.sh"
         with MOD.npm_baseline_installation_policy("1.0.8-beta.5"):
             self.assertEqual(MOD.installed_runtime_mode(member, installer), 0o644)
-        with self.assertRaises(RuntimeError), MOD.npm_baseline_installation_policy("1.0.9"):
+        with MOD.npm_baseline_installation_policy("1.0.9"):
+            self.assertEqual(MOD.installed_runtime_mode(member, installer), 0o644)
+        self.assertIs(MOD.installed_runtime_mode, original)
+        with self.assertRaises(RuntimeError), MOD.npm_baseline_installation_policy("1.0.10"):
             self.fail("Candidate mode policy must not be changed.")
         with self.assertRaisesRegex(RuntimeError, "fixture error"):
             with MOD.npm_baseline_installation_policy("1.0.8"):
@@ -1359,7 +1378,7 @@ class NativeServerAcceptanceUnitTests(unittest.TestCase):
         self.assertEqual(MOD.STABLE109_ROOT_NORMALIZING_INSTALLER_SHA256,
                          "52b6212d6bd00fdf2b071cbd5ec8f01ea16aa43df58f77352dadca17ee96ffc4")
         self.assertEqual(MOD.BETA1101_ROOT_NORMALIZING_INSTALLER_SHA256, MOD.sha((MOD.ROOT / "server/install.sh").read_bytes()))
-        for version in ("1.0.8-beta.5", "1.0.9", "1.0.9-beta.1", "1.0.10", "1.0.10-beta.7"):
+        for version in ("1.0.8-beta.5", "1.0.9", "1.0.9-beta.1", "1.0.11", "1.0.10-beta.7"):
             with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
                 args, _, receipt, *_ = self.staging_case(Path(temporary).resolve(), version)
                 with self.assertRaisesRegex(RuntimeError, "not the reviewed exact implementation"):
@@ -1369,7 +1388,7 @@ class NativeServerAcceptanceUnitTests(unittest.TestCase):
                 args, _, receipt, *_ = self.staging_case(Path(temporary).resolve(), version)
                 with self.assertRaisesRegex(RuntimeError, "exact accepted source/version"):
                     MOD.root_normalization_contract(args.bundle, receipt)
-        for version in ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6"):
+        for version in ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6", "1.0.10"):
             with self.subTest(version=version), tempfile.TemporaryDirectory() as temporary:
                 args, _, receipt, *_ = self.staging_case(Path(temporary).resolve(), version)
                 self.assertEqual(MOD.root_normalization_contract(args.bundle, receipt), MOD.BETA1101_ROOT_NORMALIZING_INSTALLER_SHA256)

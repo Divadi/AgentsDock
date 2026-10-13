@@ -57,9 +57,10 @@ STABLE109_ROOT_NORMALIZING_INSTALLER_SHA256 = "52b6212d6bd00fdf2b071cbd5ec8f01ea
 # Reviewed 1.0.10-beta.1 adds only codex_response_stream.py to the runtime
 # inventory and compile/import checks; installer permission logic is unchanged.
 BETA1101_ROOT_NORMALIZING_INSTALLER_SHA256 = "51a6ae6f242476ae4f19712b95ecbaba212b2256e3928d389d8f617a6c367ed7"
-NPM_BASELINE_VERSIONS = {"stable108": "1.0.8", "beta1085": "1.0.8-beta.5", "beta1101": "1.0.10-beta.1"}
+NPM_BASELINE_VERSIONS = {"stable108": "1.0.8", "beta1085": "1.0.8-beta.5", "beta1101": "1.0.10-beta.1", "stable109": "1.0.9"}
 NPM_BASELINE_TARGETS = {"stable108": ("1.0.9",), "beta1085": ("1.0.9",),
-                        "beta1101": ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6")}
+                        "beta1101": ("1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6", "1.0.10"),
+                        "stable109": ("1.0.10",)}
 ROLLBACK_STAGES = {"preflight", "start-request", "observe-rollback", "rollback-proof", "preservation",
                    "retry-request", "retry-health", "retry-completion", "retry-verification"}
 
@@ -1434,8 +1435,8 @@ def root_normalization_contract(bundle: Path, receipt: dict) -> str:
                  "Root-normalization package must contain one bounded installer.")
             with package.extractfile(members[0]) as stream:
                 installers.append(stream.read(2 * 1024 * 1024 + 1))
-    # Frozen beta.2 through beta.5 and reviewed beta.6 retain the complete beta.1 installer.
-    expected_hash = (BETA1101_ROOT_NORMALIZING_INSTALLER_SHA256 if version in {"1.0.10-beta.1", "1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6"}
+    # These reviewed candidates, including stable 1.0.10, retain the complete beta.1 installer.
+    expected_hash = (BETA1101_ROOT_NORMALIZING_INSTALLER_SHA256 if version in {"1.0.10-beta.1", "1.0.10-beta.2", "1.0.10-beta.3", "1.0.10-beta.4", "1.0.10-beta.5", "1.0.10-beta.6", "1.0.10"}
                      else STABLE109_ROOT_NORMALIZING_INSTALLER_SHA256 if version == "1.0.9"
                      else ROOT_NORMALIZING_INSTALLER_SHA256)
     need(installers[0] == installers[1] == read_regular(ROOT / "server/install.sh", 2 * 1024 * 1024)
@@ -1963,7 +1964,7 @@ def verify_npm_baseline(profile: str, directory: Path, candidate_version: str) -
     expected_keys = {"version", "track", "sourceSha", "manifestSha256", "signatureSha256", "archiveSha256", "archiveBytes"}
     need(isinstance(identity, dict) and set(identity) == expected_keys
          and identity.get("version") == NPM_BASELINE_VERSIONS[profile]
-         and identity.get("track") == ("stable" if profile == "stable108" else "beta")
+         and identity.get("track") == ("stable" if profile in {"stable108", "stable109"} else "beta")
          and isinstance(identity.get("sourceSha"), str) and re.fullmatch(r"[a-f0-9]{40}", identity["sourceSha"])
          and all(isinstance(identity.get(key), str) and re.fullmatch(r"[a-f0-9]{64}", identity[key])
                  for key in ("manifestSha256", "signatureSha256", "archiveSha256"))

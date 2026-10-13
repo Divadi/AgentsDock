@@ -68,6 +68,18 @@ test('exact beta.1 to beta.2 through beta.6 journeys retain Beta without switchi
   assert.equal(parseDesktopAcceptanceArguments([...valid, '--baseline-profile', 'beta1101'])['baseline-profile'], 'beta1101')
 })
 
+test('stable 1.0.10 retains both stable and beta subscriptions on exact incumbent profiles', () => {
+  assert.deepEqual(desktopJourney('1.0.10', '1.0.9', 'stable109'),
+    {initialTrack: 'stable', installedTrack: 'stable', switchToBeta: false})
+  assert.deepEqual(desktopJourney('1.0.10', '1.0.10-beta.1', 'beta1101'),
+    {initialTrack: 'beta', installedTrack: 'beta', switchToBeta: false})
+  for (const args of [['1.0.10', '1.0.8', 'stable109'], ['1.0.10', '1.0.10-beta.6', 'beta1101'],
+    ['1.0.10-beta.6', '1.0.9', 'stable109'], ['1.0.11', '1.0.9', 'stable109']]) {
+    assert.throws(() => desktopJourney(...args))
+  }
+  assert.equal(parseDesktopAcceptanceArguments([...valid, '--baseline-profile', 'stable109'])['baseline-profile'], 'stable109')
+})
+
 test('stable candidate discovery requires exact downloaded stable version', () => {
   const status = {track: 'stable', state: 'downloaded', availableVersion: '1.0.9', checkedAt: '2026-09-30T00:00:00Z'}
   assert.equal(assertStableDiscovery(status, '1.0.9').availableVersion, '1.0.9')

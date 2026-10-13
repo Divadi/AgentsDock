@@ -1,5 +1,27 @@
 # Public development log
 
+## 2026-10-12 — Verify stable 1.0.10 CLI and prepare exact upgrade rehearsal
+
+- Freeze new matched packages at source `4f0a5c25a95574f21b0505320a03edcbfb877765`.
+  Source CI passes, and all eight server test shards pass for the unchanged
+  server tree. Signed npm and legacy archives have identical runtime contents;
+  the signed npm archive also matches the independently prepared unsigned bytes.
+- Exact-pair native run [38338066117](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38338066117)
+  passes on macOS and Linux. Both original report archives and their provenance
+  were checked. Immediate named stop/start produces fresh stable authenticated
+  health without affecting the default instance. First-global setup, repeated
+  installation, lifecycle, prefix/cache independence and synthetic-state
+  retention checks pass; untested product boundaries remain in the reports.
+- Extend only the non-publishing rehearsal harness to exact stable `1.0.10`,
+  independently pinning public desktop/server `1.0.9` and retaining the reviewed
+  beta.1 promotion journey. Both installation-root modes, strict signatures,
+  immutable packages, source ancestry and runner boundaries remain enforced.
+  Offline receipt sealing accepts the same clean harness-only descendant delta;
+  it does not spoof a hosted runner or confer production acceptance.
+- The desktop build reservation is 1251. Desktop/update checks, npm publication,
+  public desktop/legacy release and the short CLI's Trusted Publisher validation
+  remain pending. No working local server was deployed or restarted.
+
 ## 2026-10-12 — Prepare stable 1.0.10 and close CLI release blockers
 
 - Prepare a newly versioned matched desktop, server and short CLI from the

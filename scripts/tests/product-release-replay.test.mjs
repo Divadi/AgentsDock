@@ -146,6 +146,32 @@ test('reviewed stable candidate exposes exact stable routes but stays publicatio
   assert.throws(() => validateCandidateReceipt({...f.value, version: '1.0.10'}))
 })
 
+test('stable 1.0.10 replay remains nonpublishing and checks both independently sealed incumbents', async t => {
+  const f = scopedFixture(t, '1.0.10'), replay = await createCandidateReplay(f.options)
+  assert.equal(replay.identity.track, 'stable')
+  assert.equal(replay.identity.publicationEligible, false)
+  assert(replay.inventory().some(item => item.url.endsWith('/latest/download/latest-mac.yml')))
+  const baselineDesktopDirectory = join(f.root, 'stable-baseline')
+  mkdirSync(baselineDesktopDirectory)
+  writeFileSync(join(baselineDesktopDirectory, 'SHA256SUMS'), 'substituted baseline manifest')
+  for (const baselineVersion of ['1.0.6', '1.0.9', '1.0.10-beta.1']) {
+    await assert.rejects(() => createCandidateReplay({...f.options, baselineDesktopDirectory, baselineVersion}), /independently pinned bytes/)
+  }
+  await assert.rejects(() => createProductReplay(f.options), /candidate/)
+  assert.throws(() => validateCandidateReceipt({...f.value, publicationEligible: true}))
+})
+
+test('stable 1.0.10 allows only reviewed older stable and beta promotion routes', () => {
+  for (const previous of ['1.0.6', '1.0.9']) assert.deepEqual(replayBaselineMetadata(previous, '1.0.10', true),
+    {track: 'stable', metadata: 'latest-mac.yml', prerelease: false})
+  assert.deepEqual(replayBaselineMetadata('1.0.10-beta.1', '1.0.10', true),
+    {track: 'beta', metadata: 'beta-mac.yml', prerelease: true})
+  for (const previous of ['1.0.8', '1.0.10-beta.4', '1.0.10-beta.6', '1.0.10', '1.0.11', '1.0.9+local']) {
+    assert.throws(() => replayBaselineMetadata(previous, '1.0.10', true))
+  }
+  assert.throws(() => replayBaselineMetadata('1.0.10-beta.1', '1.0.10', false))
+})
+
 test('baseline routing keeps beta metadata and strict version order confined to exact reviewed journeys', () => {
   assert.deepEqual(replayBaselineMetadata('1.0.8-beta.5', '1.0.9', true),
     {track: 'beta', metadata: 'beta-mac.yml', prerelease: true})

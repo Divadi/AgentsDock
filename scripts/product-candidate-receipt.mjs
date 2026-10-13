@@ -19,9 +19,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // Stable support is deliberately scoped to this reviewed release, not an
 // authorization to turn arbitrary stable packages into production acceptance.
 export function candidateTrack(version) {
-  if (version === '1.0.9') return 'stable'
+  if (version === '1.0.9' || version === '1.0.10') return 'stable'
   assert(typeof version === 'string' && /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)-beta\.[1-9]\d*$/.test(version),
-    'Candidate rehearsal requires a numbered beta or the reviewed stable 1.0.9')
+    'Candidate rehearsal requires a numbered beta or reviewed stable 1.0.9/1.0.10')
   return 'beta'
 }
 
@@ -69,12 +69,32 @@ export const BETA1101_BASELINE = Object.freeze({
 })
 
 export function candidateBaselineProfile(name, candidateVersion) {
+  if (candidateVersion === '1.0.10') {
+    assert(Object.hasOwn(STABLE110_BASELINES, name), 'Unknown stable 1.0.10 baseline profile')
+    return STABLE110_BASELINES[name]
+  }
   if (name === 'beta1101') {
     assert(BETA1101_CANDIDATE_VERSIONS.includes(candidateVersion), 'Beta.1 baseline requires an exact reviewed beta.2, beta.3, beta.4, beta.5 or beta.6 candidate')
     return BETA1101_BASELINE
   }
   return stableBaselineProfile(name, candidateVersion)
 }
+
+// Independently downloaded public 1.0.9 bytes; these are incumbent pins, never
+// substituted for candidate identity. The beta.1 promotion reuses its existing
+// exact baseline without expanding historical beta candidate admission.
+export const STABLE110_BASELINES = Object.freeze({
+  stable109: Object.freeze({ desktop: Object.freeze({ version: '1.0.9', buildNumber: '1243', track: 'stable', repository: 'AgentsDock',
+    sourceSha: '33c21482170010108830aef8009831d5d1da624c',
+    checksumSha256: '8b5c44b5872392f89cd43b9996ba658c2d364c541748b0cb05f2801258f2be5c',
+    zipSha256: '4d5125a374a1e20ea15a4aa42d9d5c2eb36a7f8ed46ab694500c0ba5e38eeeb9',
+    metadataSha256: 'c9ff3b5239465355138a2f7e21f3ede18ebc2b00d30bf14a332ffa2b408d262e' }), subscription: 'stable',
+    server: Object.freeze({ version: '1.0.9', track: 'stable', sourceSha: '33c21482170010108830aef8009831d5d1da624c',
+      manifestSha256: '58cffd8372f495f18dcf77d1aff0c8240543548e3b1fa984d35c8993e024df1d',
+      signatureSha256: '8c620b91e45687102ef5e67aa239297578dc8110f9576aa1d45ebb0b733e4fc5',
+      archiveSha256: '33ca47b105e8d2e8256df6b5c199e0e95972f9228399d8944e32c2e910de8ab8', archiveBytes: 3726608 }) }),
+  beta1101: BETA1101_BASELINE,
+})
 
 export async function verifyBaselineServer(name, directory, candidateVersion) {
   const expected = candidateBaselineProfile(name, candidateVersion).server
@@ -242,6 +262,19 @@ function assertCandidateCheckoutWithRunner(identity, { env = process.env, execut
   assertCandidateSource(identity)
   assert(env.GITHUB_WORKFLOW_REF === `ZhengyiLuo/AgentsDock/.github/workflows/ci.yml@refs/heads/${identity.sourceRef}`,
     'Candidate harness must run on the receipt\'s reviewed release branch')
+  return assertCandidateTree(identity, { execute, repositoryDirectory, expectedHarnessSha: env.GITHUB_SHA })
+}
+
+// Offline sealing creates a test-only receipt, never installs services or grants
+// publication eligibility. A reviewed harness-only descendant may seal unchanged
+// packages; the same clean-tree, ancestry and path fences used by native replay
+// apply without pretending a developer checkout is a GitHub-hosted runner.
+export function assertCandidateSealCheckout(identity, options = {}) {
+  return assertCandidateTree(identity, options)
+}
+
+function assertCandidateTree(identity, { execute = execFileSync, repositoryDirectory = ROOT, expectedHarnessSha } = {}) {
+  assertCandidateSource(identity)
   const directory = resolve(repositoryDirectory)
   // The TLS listener binds as root, then drops privileges. Trust only this
   // explicit checkout for read-only git queries, never global safe.directory=*.
@@ -249,7 +282,8 @@ function assertCandidateCheckoutWithRunner(identity, { env = process.env, execut
     encoding: 'utf8', timeout: 30000, maxBuffer: 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe']
   })
   const harnessSourceSha = git('rev-parse', '--verify', 'HEAD').trim()
-  assert(harnessSourceSha === env.GITHUB_SHA, 'Candidate harness HEAD must equal the truthful workflow GITHUB_SHA')
+  if (expectedHarnessSha !== undefined) assert(harnessSourceSha === expectedHarnessSha,
+    'Candidate harness HEAD must equal the truthful workflow GITHUB_SHA')
   assert(git('rev-parse', '--verify', '--end-of-options', `${identity.sourceSha}^{commit}`).trim() === identity.sourceSha,
     'Candidate artifact source commit is not present locally')
   try { git('merge-base', '--is-ancestor', identity.sourceSha, harnessSourceSha) }
@@ -338,8 +372,7 @@ async function main() {
     console.log(JSON.stringify(receipt))
   } else if (operation === 'seal') {
     assert(args.length === 3, 'Usage: product-candidate-receipt.mjs seal SERVER_DIR DESKTOP_DIR RECEIPT (identity via explicit environment)')
-    assert(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim() === process.env.SOURCE_SHA, 'Seal requires the pinned source checkout')
-    execFileSync('git', ['diff', '--quiet', 'HEAD'], { stdio: 'pipe' })
+    assertCandidateSealCheckout({ sourceSha: process.env.SOURCE_SHA, sourceRef: process.env.SOURCE_REF })
     const result = await sealCandidate({ serverDirectory: args[0], desktopDirectory: args[1], destination: args[2],
       sourceSha: process.env.SOURCE_SHA, sourceRef: process.env.SOURCE_REF, version: process.env.RELEASE_VERSION,
       buildNumber: process.env.BUILD_NUMBER, exportSha: process.env.EXPORT_SHA,

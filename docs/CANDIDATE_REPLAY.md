@@ -7,6 +7,48 @@ All candidate receipts and observations remain `publicationEligible: false`;
 observations also remain `releaseAcceptance: false`. A successful job does not
 turn blocked or unobserved scenarios into full release acceptance.
 
+## Stable 1.0.10 rehearsal preparation
+
+The new exact stable candidate is packaged from
+`4f0a5c25a95574f21b0505320a03edcbfb877765`, with native build reservation 1251.
+This harness-only descendant does not rebuild or change its signed packages.
+Its stable matrix preserves the legacy/fresh/recovery cases and adds both
+`0755` and `0750` journeys for these exact incumbent profiles:
+
+- `stable109`: public signed desktop/server `1.0.9`, desktop build 1243, keeps
+  the Stable subscription before and after the upgrade.
+- `beta1101`: the independently pinned public beta.1 desktop/server below,
+  keeps the Beta subscription while receiving stable `1.0.10`.
+
+The public 1.0.9 source is `33c21482170010108830aef8009831d5d1da624c`.
+Its downloaded ZIP, metadata, checksum inventory and signed runtime were
+independently checked before adding these incumbent pins:
+
+| Baseline input | SHA-256 |
+| --- | --- |
+| Desktop `SHA256SUMS` | `8b5c44b5872392f89cd43b9996ba658c2d364c541748b0cb05f2801258f2be5c` |
+| Mac ZIP | `4d5125a374a1e20ea15a4aa42d9d5c2eb36a7f8ed46ab694500c0ba5e38eeeb9` |
+| `latest-mac.yml` | `c9ff3b5239465355138a2f7e21f3ede18ebc2b00d30bf14a332ffa2b408d262e` |
+| Npm descriptor | `58cffd8372f495f18dcf77d1aff0c8240543548e3b1fa984d35c8993e024df1d` |
+| Npm signature | `8c620b91e45687102ef5e67aa239297578dc8110f9576aa1d45ebb0b733e4fc5` |
+| Npm archive, 3,726,608 bytes | `33ca47b105e8d2e8256df6b5c199e0e95972f9228399d8944e32c2e910de8ab8` |
+
+Stable 1.0.10 retains the entire beta.1 installer pinned below. The replay
+still verifies its whole file, signed source, exact package bytes, hosted runner,
+descendant harness allowlist and immutable input receipt. Admission is limited
+to this exact stable version; no generic stable, floating baseline, beta.4 or
+beta.6 upgrade claim is added. These are scoped non-publishing tests, not a
+production acceptance receipt. Genuine provider-history migration, busy/queued
+work, reboot and native Windows updater checks remain separate.
+
+The separate exact-pair CLI native run
+[38338066117](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38338066117)
+passed on macOS and Linux, including immediate named stop/start, fresh stable
+authenticated health, default isolation and synthetic-state retention. Both
+original report ZIPs match their Actions digests and source/runtime/CLI pins.
+This closes the beta.6 immediate-stop/start failure for the new 1.0.10 pair,
+not the CLI report's explicit untested product boundaries.
+
 ## 1.0.10-beta.3 harness preparation only
 
 The exact `1.0.10-beta.3` candidate may use the same independently pinned

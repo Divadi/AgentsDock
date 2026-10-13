@@ -5,15 +5,16 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
-import { assertCandidateCheckout, assertCandidateServerCheckout, assertCandidateRunner, assertCandidateServerRunner,
+import { assertCandidateCheckout, assertCandidateServerCheckout, assertCandidateSealCheckout, assertCandidateRunner, assertCandidateServerRunner,
   CANDIDATE_HARNESS_PATHS, CANDIDATE_PREREQUISITE_TEST_EXCEPTION, candidateAssets, candidateTrack, stableBaselineProfile, STABLE_BASELINES,
   candidateBaselineProfile, BETA1101_BASELINE, BETA1101_CANDIDATE_VERSIONS, verifyBaselineDesktop, verifyBaselineServer } from '../product-candidate-receipt.mjs'
 import {STABLE_IDENTITY} from '../product_no_downgrade_desktop.mjs'
 
-test('only reviewed stable 1.0.9 extends the nonpublishing beta candidate contract', () => {
+test('only reviewed stable 1.0.9 and 1.0.10 extend the nonpublishing beta candidate contract', () => {
   assert.equal(candidateTrack('1.0.9'), 'stable')
+  assert.equal(candidateTrack('1.0.10'), 'stable')
   assert.equal(candidateTrack('1.0.8-beta.5'), 'beta')
-  for (const version of ['1.0.8', '1.0.10', '1.0.9-rc.1', '1.0.9+local', '1.0.9-beta.0']) assert.throws(() => candidateTrack(version))
+  for (const version of ['1.0.8', '1.0.11', '1.0.10+local', '1.0.9-rc.1', '1.0.9+local', '1.0.9-beta.0']) assert.throws(() => candidateTrack(version))
   assert(candidateAssets('1.0.9', 'stable').includes('latest-mac.yml'))
   assert(!candidateAssets('1.0.9', 'stable').includes('beta-mac.yml'))
 })
@@ -53,7 +54,7 @@ test('beta.1 baseline is independently pinned to build 1245 and exactly scoped t
   assert.equal(beta.server.archiveSha256, '050ddc103670df77b3fe31236cd119c71d7b933e0948b7cf85f92afe2ce2056b')
   assert.equal(beta.server.archiveBytes, 3727576)
   assert(Object.isFrozen(beta) && Object.isFrozen(beta.server) && Object.isFrozen(beta.desktop))
-  for (const version of ['1.0.9', '1.0.10', '1.0.10-beta.1', '1.0.10-beta.7',
+  for (const version of ['1.0.9', '1.0.11', '1.0.10-beta.1', '1.0.10-beta.7',
     '1.0.10-beta.2+local', '1.0.10-beta.3+local', '1.0.10-beta.4+local', '1.0.10-beta.5+local', '1.0.10-beta.6+local']) {
     assert.throws(() => candidateBaselineProfile('beta1101', version))
   }
@@ -63,13 +64,32 @@ test('beta.1 baseline is independently pinned to build 1245 and exactly scoped t
   }
 })
 
+test('stable 1.0.10 has independently pinned stable 1.0.9 and beta.1 promotion baselines only', () => {
+  const stable = candidateBaselineProfile('stable109', '1.0.10')
+  assert.equal(stable.desktop.version, '1.0.9')
+  assert.equal(stable.desktop.buildNumber, '1243')
+  assert.equal(stable.server.version, '1.0.9')
+  assert.equal(stable.server.sourceSha, '33c21482170010108830aef8009831d5d1da624c')
+  assert.equal(stable.desktop.sourceSha, stable.server.sourceSha)
+  assert.equal(stable.desktop.zipSha256, '4d5125a374a1e20ea15a4aa42d9d5c2eb36a7f8ed46ab694500c0ba5e38eeeb9')
+  assert.equal(stable.server.manifestSha256, '58cffd8372f495f18dcf77d1aff0c8240543548e3b1fa984d35c8993e024df1d')
+  assert.equal(stable.server.archiveBytes, 3726608)
+  assert.equal(stable.subscription, 'stable')
+  assert.equal(candidateBaselineProfile('beta1101', '1.0.10'), BETA1101_BASELINE)
+  assert(Object.isFrozen(stable) && Object.isFrozen(stable.server) && Object.isFrozen(stable.desktop))
+  for (const name of ['stable108', 'beta1085', 'unknown']) assert.throws(() => candidateBaselineProfile(name, '1.0.10'))
+  for (const version of ['1.0.9', '1.0.10-beta.6', '1.0.10+local', '1.0.11']) {
+    assert.throws(() => candidateBaselineProfile('stable109', version))
+  }
+})
+
 test('independent baseline verification rejects substituted bytes before trusting metadata', async t => {
   const directory = mkdtempSync(join(tmpdir(), 'baseline-pins-unit-'))
   t.after(() => rmSync(directory, {recursive: true, force: true}))
   writeFileSync(join(directory, 'agents-server-npm-manifest.json'), '{}')
   writeFileSync(join(directory, 'agents-server-npm-manifest.sig'), Buffer.alloc(64))
   writeFileSync(join(directory, 'SHA256SUMS'), 'synthetic untrusted manifest')
-  for (const [profile, version] of [['stable108', '1.0.9'], ['beta1085', '1.0.9'],
+  for (const [profile, version] of [['stable108', '1.0.9'], ['beta1085', '1.0.9'], ['stable109', '1.0.10'], ['beta1101', '1.0.10'],
     ['beta1101', '1.0.10-beta.2'], ['beta1101', '1.0.10-beta.3'], ['beta1101', '1.0.10-beta.4'], ['beta1101', '1.0.10-beta.5'], ['beta1101', '1.0.10-beta.6']]) {
     await assert.rejects(() => verifyBaselineServer(profile, directory, version), /independently pinned/)
     await assert.rejects(() => verifyBaselineDesktop(profile, directory, version), /independently pinned/)
@@ -101,6 +121,22 @@ function fixture(t, initialFiles = {}) {
   const check = (env = environment(), value = identity) => assertCandidateCheckout(value, { env, platform: 'darwin', repositoryDirectory: root })
   return { root, git, put, identity, environment, check }
 }
+
+test('offline candidate sealing requires the same clean exact-source or harness-only descendant tree', t => {
+  const f = fixture(t)
+  const check = identity => assertCandidateSealCheckout(identity ?? f.identity, {repositoryDirectory: f.root})
+  assert.equal(check().harnessSourceSha, f.identity.sourceSha)
+  f.put('scripts/product-candidate-receipt.mjs', 'reviewed harness extension\n')
+  assert.throws(() => check(), /clean/)
+  f.git('add', '.'); f.git('commit', '-qm', 'harness only')
+  assert.notEqual(check().harnessSourceSha, f.identity.sourceSha)
+  assert.equal(check().publicationEligible, false)
+  f.put('server/runtime.py', 'changed payload\n')
+  f.git('add', '.'); f.git('commit', '-qm', 'payload change')
+  assert.throws(() => check(), /non-allowlisted/)
+  assert.throws(() => check({...f.identity, sourceSha: 'main'}), /full commit/)
+  assert.throws(() => check({...f.identity, sourceRef: 'main'}), /reviewed release branch/)
+})
 
 function reviewedTestBytes() {
   const exception = CANDIDATE_PREREQUISITE_TEST_EXCEPTION
@@ -342,7 +378,7 @@ test('exact stable and beta.2 through beta.6 matrices select independent npm bas
   const workflow = readFileSync(new URL('../../.github/workflows/ci.yml', import.meta.url), 'utf8')
   const inputs = readFileSync(new URL('../../.github/actions/product-candidate-inputs/action.yml', import.meta.url), 'utf8')
   const job = workflow.slice(workflow.indexOf('  candidate-native:'), workflow.indexOf('  candidate-no-downgrade:'))
-  assert.match(job, /baseline_profile: \$\{\{ fromJSON\(inputs\.candidate_tag == 'candidate-replay-v1\.0\.9' && '\["legacy","stable108","beta1085"\]' \|\| \(inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.2' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.3' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.4' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.5' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.6'\) && '\["legacy","beta1101"\]' \|\| '\["legacy"\]'\) \}\}/)
+  assert.match(job, /baseline_profile: \$\{\{ fromJSON\(inputs\.candidate_tag == 'candidate-replay-v1\.0\.10' && '\["legacy","stable109","beta1101"\]' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.9' && '\["legacy","stable108","beta1085"\]' \|\| \(inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.2' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.3' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.4' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.5' \|\| inputs\.candidate_tag == 'candidate-replay-v1\.0\.10-beta\.6'\) && '\["legacy","beta1101"\]' \|\| '\["legacy"\]'\) \}\}/)
   const negative = workflow.slice(workflow.indexOf('  candidate-no-downgrade:'))
   assert.match(negative, /startsWith\(inputs\.candidate_tag, 'candidate-replay-v1\.0\.8-beta\.'\)/)
   assert.match(job, /INSTALL_KIND=npm-baseline/)
@@ -365,6 +401,9 @@ test('candidate composite shell parses and profile gates reject out-of-scope sel
   const env = {PATH: process.env.PATH, CANDIDATE_TAG: 'candidate-replay-v1.0.9', BASELINE_PROFILE: 'stable108',
     EXECUTION_SCOPE: 'candidate', RECEIPT_SHA256: 'a'.repeat(64), BUNDLE_SHA256: 'b'.repeat(64)}
   for (const change of [{}, {BASELINE_PROFILE: 'beta1085'}, {BASELINE_PROFILE: 'legacy'},
+    {BASELINE_PROFILE: 'stable109', CANDIDATE_TAG: 'candidate-replay-v1.0.10'},
+    {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10'},
+    {BASELINE_PROFILE: 'legacy', CANDIDATE_TAG: 'candidate-replay-v1.0.10'},
     {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.2'},
     {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.3'},
     {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.4'},
@@ -374,6 +413,9 @@ test('candidate composite shell parses and profile gates reject out-of-scope sel
     assert.equal(spawnSync('/bin/bash', ['-c', gate], {env: {...env, ...change}}).status, 0)
   }
   for (const change of [{BASELINE_PROFILE: 'unknown'}, {CANDIDATE_TAG: 'candidate-replay-v1.0.8-beta.5'},
+    {BASELINE_PROFILE: 'stable109'}, {BASELINE_PROFILE: 'stable109', CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.6'},
+    {BASELINE_PROFILE: 'stable109', CANDIDATE_TAG: 'candidate-replay-v1.0.10', EXECUTION_SCOPE: 'candidate-server-linux'},
+    {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10', EXECUTION_SCOPE: 'candidate-server-linux'},
     {CANDIDATE_TAG: 'candidate-replay-v1.0.10'}, {EXECUTION_SCOPE: 'candidate-server-linux'}, {RECEIPT_SHA256: 'wrong'},
     {BASELINE_PROFILE: 'beta1101'}, {CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.2'},
     {BASELINE_PROFILE: 'beta1101', CANDIDATE_TAG: 'candidate-replay-v1.0.10-beta.7'},
@@ -456,11 +498,12 @@ test('the real manual input gate keeps npm-only validation and candidate replay 
     NPM_MANIFEST_SHA256: 'd'.repeat(64), NPM_SOURCE_SHA: 'a'.repeat(40) }
   const serverLinux = {...candidate, CANDIDATE_REPLAY: 'false', CANDIDATE_SERVER_ROLLBACK: 'true'}
   const run = env => spawnSync('/bin/bash', ['-e', '-c', script], { env, encoding: 'utf8' })
-  for (const env of [common, candidate, npm, serverLinux, {...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.9'}]) assert.equal(run(env).status, 0)
+  for (const env of [common, candidate, npm, serverLinux, {...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.9'},
+    {...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.10'}]) assert.equal(run(env).status, 0)
   for (const env of [{ ...candidate, NPM_NATIVE_VALIDATION: 'true' }, { ...npm, CANDIDATE_REPLAY: 'true' },
     { ...common, CANDIDATE_TAG: candidate.CANDIDATE_TAG }, { ...common, NPM_SOURCE_SHA: npm.NPM_SOURCE_SHA },
     { ...candidate, NPM_SOURCE_SHA: npm.NPM_SOURCE_SHA }, { ...candidate, CANDIDATE_RECEIPT_SHA256: '' },
-    { ...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.8' }, { ...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.10' },
+    { ...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.8' }, { ...candidate, CANDIDATE_TAG: 'candidate-replay-v1.0.11' },
     { ...candidate, GITHUB_EVENT_NAME: 'pull_request' },
     { ...candidate, GITHUB_REPOSITORY: 'fork/AgentsDock' }, { ...candidate, GITHUB_REF: 'refs/heads/main' },
     { ...candidate, GITHUB_WORKFLOW_REF: `${candidate.GITHUB_WORKFLOW_REF}-other` },
