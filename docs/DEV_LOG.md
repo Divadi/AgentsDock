@@ -1,5 +1,24 @@
 # Public development log
 
+## 2026-10-12 — Validate large-history imports for merge
+
+- Recheck import, incremental synchronization, Claude/Codex provenance, recent
+  history repair, fork boundaries and runtime manifests: 402 of 406 checks
+  passed on the development filesystem. The remaining four also fail on
+  unchanged main because their fixtures require preserved inode identities or
+  pre-1980 timestamps. All four passed using native temporary storage; the full
+  15-case recent-history suite passed there as well. Production identity checks
+  and test assertions remain unchanged.
+- All 11 npm/legacy package checks passed, including actual disposable archive
+  creation and offline npm installation. Python compilation, shell syntax and
+  diff checks passed.
+- Repeat authenticated imports for Claude and Codex confirmed explicit
+  single-record limits, observed byte counts and correct record offsets.
+  Rejected imports created no chats and preserved native source bytes, existing
+  chats, server identity and credentials; temporary fixtures were removed.
+- Native desktop UI and actual provider resume acceptance remain unverified.
+  No desktop or server release publication is included in this change.
+
 ## 2026-10-12 — Explain native import resource limits
 
 - Identify single-record text/metadata, field/scalar size, nesting, value-count,
