@@ -1,5 +1,20 @@
 # Public development log
 
+## 2026-10-13 — Recover server updates and preserve detached jobs
+
+- Linux execution workers now restart independently of detached background
+  jobs. Update admission checks the effective native service policy before
+  accepting a worker replacement that preserves those jobs.
+- Failed-update recovery accepts valid retained rollback releases. Activation
+  also supports an existing hotfix whose Python environment belongs to a
+  retained sibling release, without changing that environment or its links.
+- Focused update, handoff, durability and native-service suites passed with
+  platform-specific skips. Regression fixtures reproduced both recovery
+  failures before the fixes. A real isolated Linux service exercised automatic
+  restart and explicit stop/start, preserving a detached child's PID and start
+  time across both operations. Its worker was a fixture, not a model provider.
+- These changes do not publish a desktop or server release.
+
 ## 2026-10-12 — Validate large-history imports for merge
 
 - Recheck import, incremental synchronization, Claude/Codex provenance, recent
