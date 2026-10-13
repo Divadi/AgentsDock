@@ -13,7 +13,14 @@
   boundary, synchronization and provenance cases. The two existing failures
   (candidate ordering and malformed-line native proof) also reproduce against
   unmodified main. Native desktop acceptance remains pending because computer
-  control is unavailable; live server verification is recorded separately.
+  control is unavailable.
+- Live authenticated server checks reproduced the former rejection for separate
+  5 MiB Claude image and Codex tool fixtures, then passed import, reopen-triggered
+  incremental synchronization and repeated reads without duplicates after the
+  update. Over-limit input still failed explicitly. Fixture source bytes and
+  pre-existing chat identities/titles, server identity and credentials were
+  preserved; only disposable test chats and transcripts were removed. These
+  HTTP checks do not establish native-provider resume or desktop UI acceptance.
 
 ## 2026-10-12 — Verify the consolidated Files inspector for merge
 
