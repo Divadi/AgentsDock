@@ -6,7 +6,7 @@ const os = require('node:os')
 const path = require('node:path')
 const { EventEmitter } = require('node:events')
 const { PassThrough } = require('node:stream')
-const { postinstall, skipReason } = require('./postinstall.cjs')
+const { postinstall, skipReason, terminalPrint } = require('./postinstall.cjs')
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agentsdock-postinstall-'))
@@ -20,6 +20,7 @@ function fixture(t) {
   const context = { env: { npm_config_global: 'true', npm_config_prefix: prefix,
     npm_command: 'install', npm_lifecycle_event: 'postinstall' }, packageRoot,
     home: root, uid: 1000, platform: 'linux', load: () => runtime,
+    terminalPrint: () => false,
     print: value => output.push(value), launch: (...args) => {
       calls.push({ launch: args })
       const child = new EventEmitter()
@@ -47,6 +48,54 @@ test('direct global fresh installation invokes the exact runtime once and never 
   assert.deepEqual(f.calls[1].launch[2], { env: { HOME: f.root }, stdio: ['ignore', 'pipe', 'pipe'] })
   assert.match(f.output.at(-1), /ready at http:\/\/127.0.0.1:7850/)
   assert.doesNotMatch(f.output.join('\n'), /private-token|secret-stdout|secret-stderr|inherited-token/)
+})
+
+test('fresh setup shows URL and token only on the controlling terminal, never npm output', async t => {
+  const f = fixture(t), terminal = []
+  f.context.terminalPrint = value => { terminal.push(value); return true }
+  assert.equal(await postinstall(f.context), 0)
+  assert.match(terminal[0], /Setting up your first/)
+  assert.match(terminal[1], /Your new service is up!/)
+  assert.match(terminal[1], /URL:     http:\/\/127.0.0.1:7850/)
+  assert.match(terminal[1], /Access token \(default\):\nprivate-token\n/)
+  assert.match(terminal[1], /Keep this token private/)
+  assert.doesNotMatch(terminal.join('\n'), /secret-stdout|secret-stderr/)
+  assert.equal(f.output.length, 0)
+})
+
+test('terminal output failure falls back to a public summary, never the token', async t => {
+  const f = fixture(t)
+  assert.equal(await postinstall(f.context), 0)
+  assert.match(f.output.at(-1), /ready at http/)
+  assert.doesNotMatch(f.output.join('\n'), /private-token/)
+})
+
+test('controlling terminal writer requires a tty, handles partial writes and closes on failure', () => {
+  for (const mode of ['ok', 'not-tty', 'no-terminal', 'write-error', 'zero-write']) {
+    let closed = false, written = '', opened = false
+    const io = {
+      openSync: (name, flags) => {
+        assert.equal(name, '/dev/tty')
+        assert.ok(flags & fs.constants.O_NONBLOCK)
+        if (mode === 'no-terminal') throw new Error('no controlling terminal')
+        opened = true
+        return 17
+      },
+      isatty: fd => { assert.equal(fd, 17); return mode !== 'not-tty' },
+      writeSync: (fd, bytes, offset, length) => {
+        assert.equal(fd, 17)
+        if (mode === 'write-error') throw new Error('closed terminal')
+        if (mode === 'zero-write') return 0
+        const count = Math.min(3, length)
+        written += bytes.subarray(offset, offset + count).toString()
+        return count
+      },
+      closeSync: fd => { assert.equal(fd, 17); closed = true },
+    }
+    assert.equal(terminalPrint('private-token', io), mode === 'ok')
+    assert.equal(written, mode === 'ok' ? 'private-token' : '')
+    assert.equal(closed, opened)
+  }
 })
 
 test('existing installation/state is a successful no-op, not an automatic upgrade', async t => {
@@ -109,6 +158,8 @@ test('a concurrently detected installation remains a no-op without claiming a re
 
 test('setup spawn failure, signal termination and wrong-version receipt cannot report success', async t => {
   const f = fixture(t)
+  const terminal = []
+  f.context.terminalPrint = value => { terminal.push(value); return true }
   for (const result of ['spawn-error', 'signal', 'wrong-version']) {
     f.output.length = 0
     f.context.launch = () => {
@@ -127,6 +178,28 @@ test('setup spawn failure, signal termination and wrong-version receipt cannot r
     await assert.rejects(postinstall(f.context), error =>
       /Could not launch|did not complete/.test(error.message) && !error.message.includes('private'))
     assert.doesNotMatch(f.output.join('\n'), /ready|private-token/)
+    assert.doesNotMatch(terminal.join('\n'), /ready|private-token|Your new service is up/)
+  }
+})
+
+test('unsafe or missing token is never rendered as terminal control content', async t => {
+  const f = fixture(t)
+  for (const token of [null, '', '\u001b[2J', 'token\nextra-line', 'x'.repeat(4097)]) {
+    const terminal = []
+    const launch = () => {
+      const child = new EventEmitter()
+      child.stdout = new PassThrough(); child.stderr = new PassThrough()
+      queueMicrotask(() => {
+        child.stdout.write('AGENTSDOCK_SETUP_RESULT=' + JSON.stringify({server_url: 'http://127.0.0.1:7850',
+          server_version: f.runtime.version, access_token: token}) + '\n')
+        child.emit('close', 0)
+      })
+      return child
+    }
+    assert.equal(await postinstall({ ...f.context, launch,
+      terminalPrint: value => { terminal.push(value); return true } }), 0)
+    assert.doesNotMatch(terminal.join('\n'), /Access token \(default\):|\u001b|extra-line|xxxx/)
+    assert.match(terminal.at(-1), /agentsdock token default/)
   }
 })
 
