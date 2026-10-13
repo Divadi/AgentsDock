@@ -14,6 +14,7 @@ import hashlib
 import hmac
 import json
 import os
+import time
 from pathlib import Path
 import re
 import stat
@@ -26,9 +27,11 @@ from claude_goals import ClaudeGoalHistoryNormalizer, is_claude_synthetic_no_res
 from claude_sdk_client import CLAUDE_SDK_LITERAL_MESSAGE_PREFIX
 
 
+from transcript_reader import jsonl_records, scan_check, CHUNK_BYTES, SCAN_SECONDS
+
 MAX_BYTES = 96 * 1024 * 1024
 MAX_EVENTS_BYTES = 32 * 1024 * 1024
-# Match the native import record limit, without expanding retained text/proof.
+# Bound retained JSON; opaque provider payload bytes are streamed.
 MAX_LINE_BYTES = 32 * 1024 * 1024
 MAX_TEXT_CHARS = 4 * 1024 * 1024
 MAX_RECORDS = 100_000
@@ -75,24 +78,15 @@ def _records(path: Path, expected: tuple[int, int, int, int]):
         info = os.fstat(stream.fileno())
         if (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != expected:
             raise _Unproven()
-        count = 0
-        offset = 0
-        while offset < expected[2]:
-            line = stream.readline(min(MAX_LINE_BYTES + 1, expected[2] - offset))
-            if len(line) > MAX_LINE_BYTES or not line.endswith(b"\n"):
-                raise _Unproven()
-            count += 1
-            if count > MAX_RECORDS:
-                raise _Unproven()
-            offset += len(line)
-            event = json.loads(line)
-            if not isinstance(event, dict):
-                raise _Unproven()
-            yield event, offset, line
+        try:
+            yield from jsonl_records(stream, end=expected[2], strict=True,
+                max_records=MAX_RECORDS, max_retained_bytes=MAX_LINE_BYTES)
+        except ValueError as exc:
+            raise _Unproven() from exc
         final = os.fstat(stream.fileno())
         if (final.st_dev, final.st_ino, final.st_size, final.st_mtime_ns) != expected:
             raise _Unproven()
-    if _stamp(path) != expected:
+    if _regular_stamp(path) != expected:
         raise _Unproven()
 
 
@@ -633,29 +627,18 @@ def filter_native_claude_mailbox_wake_items(
                              "backend": "claude", "imported": True}
                 native.event(candidate)
                 assistant_targets[index] = _assistant_target(candidate)
-        if source_stamp[2] <= MAX_EVENTS_BYTES:
-            digest, verified = hashlib.sha256(), set()
-            for event, offset, line in _records(source, source_stamp):
-                digest.update(line)
-                if offset == start and hmac.compare_digest(digest.hexdigest(), previous):
-                    verified.add(start)
-                if offset == end and hmac.compare_digest(digest.hexdigest(), expected):
-                    verified.add(end)
-                if offset <= end:
-                    proof.source(event, offset)
-                    native.source(event, offset)
-            if end not in verified or start and start not in verified:
-                return items
-        else:
-            # Same bounded proof as historical semantic windows: the caller has
-            # just verified this checkpoint. Recheck file identity and every
-            # candidate's exact source UUID/full hash, without a prefix rescan.
-            window_start = max(0, end - MAX_EVENTS_BYTES)
-            if start < window_start:
-                return items
-            for event, offset in _bounded_records(source, source_stamp, window_start, end):
+        digest, verified = hashlib.sha256(), set()
+        for event, offset, line in _records(source, source_stamp):
+            line.update_hash(digest)
+            if offset == start and hmac.compare_digest(digest.hexdigest(), previous):
+                verified.add(start)
+            if offset == end and hmac.compare_digest(digest.hexdigest(), expected):
+                verified.add(end)
+            if offset <= end:
                 proof.source(event, offset)
                 native.source(event, offset)
+        if end not in verified or start and start not in verified:
+            return items
         eligible = {batch: (0, len(items) + 1, start, end)}
         targets, assistant_replays = proof.prove(eligible), native.prove(eligible)
         _assistants, owned_inputs = native.exact_owned_sources()
@@ -925,7 +908,7 @@ def _prove(session_id: str, provider_id: str, events: Path, root: Path,
         raise _Unproven()
     source = source.resolve(strict=True)
     source.relative_to(root.resolve(strict=True))
-    source_stamp = _stamp(source)
+    source_stamp = _regular_stamp(source)
     prefix_digests = {}
     eligible_batches = {}
     for run, (seq, checkpoint) in batches.items():
@@ -974,7 +957,7 @@ def _prove(session_id: str, provider_id: str, events: Path, root: Path,
                 scheduled_ranges.setdefault(key, []).append((run, start_time, end_time))
     scheduled_sources, scheduled_counts = {}, {}
     for event, offset, line in _records(source, source_stamp):
-        digest.update(line)
+        line.update_hash(digest)
         for wanted in prefix_digests.get(offset, ()):
             if hmac.compare_digest(digest.hexdigest(), wanted):
                 verified.add((offset, wanted))
@@ -1146,25 +1129,25 @@ def _bounded_records(path: Path, expected, start: int, end: int):
         if (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != expected:
             raise _Unproven()
         stream.seek(start)
+        deadline = time.monotonic() + SCAN_SECONDS
         if start:
             stream.seek(start - 1)
             if stream.read(1) != b"\n":
-                skipped = stream.readline(min(MAX_LINE_BYTES + 1, end - start))
-                if len(skipped) > MAX_LINE_BYTES or not skipped.endswith(b"\n"):
+                while stream.tell() < end:
+                    scan_check(deadline)
+                    skipped = stream.readline(min(CHUNK_BYTES, end - stream.tell()))
+                    if not skipped:
+                        raise _Unproven()
+                    if skipped.endswith(b"\n"):
+                        break
+                else:
                     raise _Unproven()
-        count = 0
-        while stream.tell() < end:
-            offset = stream.tell()
-            line = stream.readline(min(MAX_LINE_BYTES + 1, end - offset))
-            if len(line) > MAX_LINE_BYTES or not line.endswith(b"\n"):
-                raise _Unproven()
-            count += 1
-            if count > MAX_RECORDS:
-                raise _Unproven()
-            event = json.loads(line)
-            if not isinstance(event, dict):
-                raise _Unproven()
-            yield event, stream.tell()
+        try:
+            for event, offset, _raw in jsonl_records(stream, end=end, strict=True,
+                    deadline=deadline, max_records=MAX_RECORDS, max_retained_bytes=MAX_LINE_BYTES):
+                yield event, offset
+        except ValueError as exc:
+            raise _Unproven() from exc
         final = os.fstat(stream.fileno())
         if (final.st_dev, final.st_ino, final.st_size, final.st_mtime_ns) != expected:
             raise _Unproven()

@@ -1,28 +1,58 @@
 # Large native transcript records
 
-Claude and Codex imports accept individual JSONL records up to **32 MiB**,
-including the terminating newline. The former 4 MiB bound could reject a chat
-containing an embedded image or large tool response even when its visible
-conversation was short. A reported `line 91` is a physical transcript record,
-not the ninety-first chat message or the model context limit.
+Claude/Codex native history import and synchronization use a chunked JSONL
+projection. Source file size and an opaque media/tool field's size no longer
+have the former **256 MiB file / 32 MiB raw record** admission caps. A reported
+line number refers to a physical JSONL record, not a chat turn or model context.
 
-Initial import, cursor-based synchronization, native history proof readers and
-the existing fork readers use the same record bound. Source files remain
-read-only. Oversized records fail explicitly; they are not silently skipped to
-produce a successful but incomplete import.
+## What is streamed
 
-Other limits remain unchanged: the import file cap is 256 MiB, the scan cap is
-250,000 records, and existing displayed-text, message and aggregate proof
-budgets still apply. Proof text has a separate 4 Mi-character bound. This change
-does not increase model context, guarantee that every large transcript is
-importable, or remove memory/deadline protections.
+The reader validates JSON in 64 KiB chunks. Claude image/document Base64,
+image URLs, tool-result bodies/tool arguments, and Codex image/tool-output
+payloads are not materialized for the text history projection. They remain
+unchanged in the native provider file. Text, message type, timestamps, tool
+identity, flags, and ownership/turn metadata remain available to the existing
+history normalizers. Unknown fields and public message text are not silently
+truncated to make an import succeed.
 
-After the server containing this fix is installed, retry the original transcript
-in **Import chats**. No edit or truncation of the provider's original history is
-required for records within the new bound. A record larger than 32 MiB or a file
-over 256 MiB still requires a separate investigation.
+This does not add image rendering or copy media into AgentsDock attachments.
+Native resume still refers to the original provider session and its history.
 
-Regression coverage lives in `tests/test_large_transcript_import.py`, with
-additional large-media/tool provenance cases in the Claude and Codex history
-repair suites. It covers exact boundaries, partial lines, serialized cursors,
-repeated synchronization, surrounding messages and unchanged source bytes.
+Cursor snapshots hash fixed-size chunks without accumulating an unfinished
+record. Proof readers hash original byte ranges, not the projected JSON; source
+identity, exact offsets, hashes and final file-stability checks remain required.
+Import, delta sync and native fork-boundary reads use the shared reader. All
+runtime package/installer inventories include it.
+
+## Remaining resource protections
+
+This is bounded-memory processing, not a promise to accept every possible file:
+
+- Retained text/metadata per record has a 32 MiB accounting budget, including
+  a conservative object overhead charge. It is not a total process RSS limit.
+- JSON depth, node count, key/scalar sizes and record count are bounded.
+- Each streaming scan has a 60-second work deadline; native Codex proof retains
+  its stricter existing deadline/cancellation checks.
+- Displayed text, message count, retained proof keys and private event-ledger
+  budgets remain bounded. Legacy goal-proof aggregate budgets remain unchanged.
+- Budget exhaustion raises an explicit failure; it is never handled as an
+  ignorable malformed line or a successful partial import. Malformed native
+  lines retain their prior skip/lineage semantics.
+
+The server does not enforce one file-size threshold for the optimized import
+path. A huge textual message, pathological JSON, excessively many records or a
+very slow source can still exhaust a specific processing/proof budget.
+
+## Verification
+
+Disposable fixtures cover records larger than 32 MiB, files larger than 256 MiB,
+partial lines, serialized large offsets, repeat synchronization, exact raw-byte
+hashes, malformed skipped payloads, cancellation, and provenance filtering.
+See `tests/test_transcript_reader.py`, `tests/test_large_transcript_import.py`,
+and the Claude/Codex history repair suites.
+
+A macOS isolated-reader measurement found approximately 281 MiB peak RSS for
+the former whole-line JSON approach on a 64 MiB image record, versus 23 MiB for
+the streaming reader. A 300 MiB image record used approximately 24 MiB. These
+figures include the small reader process, not a running AgentsServer, and are
+fixture-specific measurements rather than universal memory guarantees.

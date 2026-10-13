@@ -134,7 +134,7 @@ class ClaudeHistoryRepairTests(unittest.TestCase):
 
     def test_large_source_media_does_not_disable_metadata_proof(self):
         self.fixture([
-            {"type": "file-history-snapshot", "snapshot": "x" * (5 * 1024 * 1024)},
+            {"type": "user", "message": {"content": [{"type": "image", "source": {"data": "x" * (40 * 1024 * 1024)}}]}},
             user_event("Generated wrapper", isMeta=True), user_event("Real question"),
         ])
         before = self.source.read_bytes(), self.events.read_bytes()

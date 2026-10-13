@@ -82,7 +82,7 @@ class CodexNativeHistoryRepairTests(unittest.TestCase):
             "internal_chat_message_metadata_passthrough": {"turn_id": "new-human-turn", "content_item_kinds": ["user.text"]}}})
         self.fixture(source_headers=[
             {"type": "session_meta", "payload": {"id": PROVIDER}},
-            {"type": "response_item", "payload": {"type": "function_call_output", "output": "x" * (5 * 1024 * 1024)}},
+            {"type": "response_item", "payload": {"type": "function_call_output", "output": "x" * (40 * 1024 * 1024)}},
         ])
         before = self.source.read_bytes(), self.events.read_bytes()
         self.prepare()

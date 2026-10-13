@@ -44,11 +44,10 @@ class LargeTranscriptImportTests(unittest.TestCase):
         value = self.path.stat()
         return {name: int(getattr(value, name)) for name in ("st_dev", "st_ino", "st_size", "st_mtime_ns")}
 
-    def test_readers_agree_without_expanding_text_or_total_file_budgets(self):
+    def test_readers_agree_on_retained_memory_and_proof_text_budgets(self):
         self.assertEqual(server.MAX_LOCAL_TRANSCRIPT_LINE_BYTES, 32 * MIB)
         self.assertEqual(claude.MAX_LINE_BYTES, server.MAX_LOCAL_TRANSCRIPT_LINE_BYTES)
         self.assertEqual(codex.NATIVE_PROOF_LINE_BYTES, server.MAX_LOCAL_TRANSCRIPT_LINE_BYTES)
-        self.assertEqual(server.MAX_LOCAL_TRANSCRIPT_BYTES, 256 * MIB)
         self.assertEqual(claude.MAX_TEXT_CHARS, 4 * MIB)
         self.assertEqual(codex.NATIVE_PROOF_TEXT_CHARS, 4 * MIB)
 
@@ -97,36 +96,58 @@ class LargeTranscriptImportTests(unittest.TestCase):
         self.assertEqual(complete["source_offset"], len(raw))
         self.assertEqual(complete["source_digest"], hashlib.sha256(raw).hexdigest())
 
-    def test_exact_32_mib_record_including_newline_is_accepted_by_every_reader(self):
-        prefix, suffix = b'{"type":"tool","padding":"', b'"}\n'
+    def test_64_mib_media_record_is_accepted_by_every_native_reader(self):
+        prefix, suffix = b'{"payload":{"output":"', b'"}}\n'
         with self.path.open("wb") as stream:
             stream.write(prefix)
-            stream.write(b"x" * (32 * MIB - len(prefix) - len(suffix)))
+            for _ in range(64):
+                stream.write(b"x" * MIB)
             stream.write(suffix)
+        size = self.path.stat().st_size
         self.assertEqual(sum(1 for _ in server.bounded_jsonl_events(self.path)), 1)
-        self.assertEqual(sum(1 for _ in server.bounded_jsonl_records_range(self.path, 0, 32 * MIB, expected_stat=self.stamp())), 1)
-        self.assertEqual(sum(1 for _ in claude._records(self.path, claude._stamp(self.path))), 1)
-        self.assertEqual(sum(1 for _ in codex._native_records(self.path, codex._native_stamp(self.path), codex._NativeReadBudget())), 1)
+        self.assertEqual(sum(1 for _ in server.bounded_jsonl_records_range(self.path, 0, size, expected_stat=self.stamp())), 1)
+        self.assertEqual(sum(1 for _ in claude._records(self.path, claude._regular_stamp(self.path))), 1)
+        self.assertEqual(sum(1 for _ in codex._native_records(self.path, codex._native_stamp(self.path), codex._NativeReadBudget(), provider_source=True)), 1)
         snapshot, _ = server.provider_history_source_snapshot(self.path, None)
-        self.assertEqual(snapshot["source_offset"], 32 * MIB)
+        self.assertEqual(snapshot["source_offset"], size)
+        with self.path.open("rb") as stream:
+            self.assertEqual(snapshot["source_digest"], hashlib.file_digest(stream, "sha256").hexdigest())
 
-    def test_one_byte_over_limit_is_rejected_without_hiding_following_records(self):
-        with self.path.open("wb") as stream:
-            stream.write(b"{}\n" * 90)
-            stream.write(b'"' + b"x" * (32 * MIB - 2) + b'"\n')
-            stream.write(encoded(message("claude", "Must not report a successful partial import")))
-        with self.assertRaisesRegex(ValueError, "line 91 exceeds the 32 MiB per-record import limit"):
-            list(server.bounded_jsonl_events(self.path))
-        with self.assertRaisesRegex(ValueError, "cursor line 91 exceeds the 32 MiB"):
-            list(server.bounded_jsonl_records_range(self.path, 0, self.path.stat().st_size, expected_stat=self.stamp()))
-        with self.assertRaises(claude._Unproven):
-            list(claude._records(self.path, claude._stamp(self.path)))
-        with self.assertRaises(codex._Unproven):
-            list(codex._native_records(self.path, codex._native_stamp(self.path), codex._NativeReadBudget()))
+    def test_retained_text_budget_fails_instead_of_silently_losing_messages(self):
+        self.path.write_bytes(encoded(message("claude", "x" * 4096)))
+        with patch.object(server, "MAX_LOCAL_TRANSCRIPT_LINE_BYTES", 1024):
+            with self.assertRaisesRegex(ValueError, "retained text/metadata"):
+                list(server.bounded_jsonl_events(self.path))
 
-    def test_total_file_cap_is_still_enforced_before_reading(self):
-        with self.path.open("wb") as stream:
-            stream.truncate(256 * MIB + 1)
-        with self.assertRaisesRegex(ValueError, "268435456-byte import limit"):
-            list(server.bounded_jsonl_events(self.path))
+    def test_file_above_old_total_cap_and_large_serialized_cursor_sync(self):
+        self.path.write_bytes(encoded(message("codex", "Before")))
+        sess = {"id": "large-cursor", "backend": "codex", "codex_thread_id": PROVIDER}
+        with patch.object(server, "provider_history_path", return_value=self.path):
+            _, first, cursor, _ = server.load_provider_history_with_cursor(sess, None, None)
+            with self.path.open("ab") as stream:
+                stream.write(b'{"payload":{"output":"')
+                for _ in range(260):
+                    stream.write(b"x" * MIB)
+                stream.write(b'"}}\n')
+                stream.write(encoded(message("codex", "After")))
+            _, delta, current, continued = server.load_provider_history_with_cursor(sess, None, cursor)
+            self.assertEqual([item["text"] for item in first], ["Before"])
+            self.assertEqual([item["text"] for item in delta], ["After"])
+            self.assertTrue(continued)
+            restored = server.normalized_history_sync_cursor({**sess, "_history_sync_cursor": json.loads(json.dumps(current))})
+            self.assertIsNotNone(restored)
+            _, repeated, final, _ = server.load_provider_history_with_cursor(sess, None, restored)
+            self.assertEqual(repeated, [])
+            self.assertEqual(final["source_offset"], self.path.stat().st_size)
+            with self.path.open("rb") as stream:
+                self.assertEqual(final["source_digest"], hashlib.file_digest(stream, "sha256").hexdigest())
 
+    def test_native_proof_keeps_distinction_between_bad_json_and_nonobject_json(self):
+        self.path.write_bytes(b'not-json\n')
+        self.assertEqual(list(codex._native_records(self.path, codex._native_stamp(self.path),
+            codex._NativeReadBudget(), provider_source=True))[0][0], {})
+        for raw in (b'[]\n', b'null\n', b'42\n'):
+            self.path.write_bytes(raw)
+            with self.assertRaises(codex._Unproven):
+                list(codex._native_records(self.path, codex._native_stamp(self.path),
+                    codex._NativeReadBudget(), provider_source=True))

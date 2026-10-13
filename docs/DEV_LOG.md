@@ -1,5 +1,28 @@
 # Public development log
 
+## 2026-10-12 — Stream large native history payloads
+
+- Replace whole-record JSON loading for native imports, sync and native proof
+  reads with bounded-memory projection. Opaque image/tool payloads remain in
+  the unchanged provider transcript; message text and provenance are preserved.
+- Remove the native import file-size cutoff and raw media-record cap. Retain
+  explicit text/metadata, JSON structure, record-count and work budgets. Hash
+  original bytes in chunks and keep file-identity/offset checks; a processing
+  failure cannot become a successful partial import.
+- Include the shared reader in both server package formats, installation,
+  deployment and staged import/compilation checks.
+- Isolated-reader measurements: approximately 281 MiB peak RSS with the former
+  parser versus 23 MiB with streaming for the same 64 MiB image record; a
+  300 MiB record used approximately 24 MiB. These are fixture measurements,
+  not the running server's total memory or a guaranteed upper bound.
+- Validation: 267 of 269 import/sync/provenance/package checks passed; the two
+  remaining failures reproduce on unmodified main (candidate ordering and
+  malformed-line native proof). Another 93 legacy-proof/deferral/fork checks
+  passed. The memory-growth regression passed in separate reader processes.
+  Changed Python and installer/deployment shell syntax checks passed.
+- Native desktop acceptance is pending because computer control is unavailable;
+  no native-provider resume or desktop UI acceptance is claimed.
+
 ## 2026-10-12 — Accept larger native transcript records
 
 - Raise the Claude/Codex JSONL record bound from 4 MiB to 32 MiB across import,

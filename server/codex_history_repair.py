@@ -26,6 +26,8 @@ from claude_history_repair import (
 )
 
 
+from transcript_reader import jsonl_records
+
 MAX_PRIOR_SOURCE_PATHS = 2
 MAX_AGGREGATE_SOURCE_BYTES = 96 * 1024 * 1024
 MAX_AGGREGATE_SOURCE_RECORDS = 100_000
@@ -34,7 +36,7 @@ _PROVIDER_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 _NATIVE_LEADING_DECORATION_RE = re.compile(
     r"(?m)^[ \t]*(?:(?::[A-Za-z0-9_+\-]+:|[\U0001F300-\U0001FAFF\u2600-\u27BF]\ufe0f?)[ \t]*)+"
 )
-# Match the native import record limit; public text/key budgets stay unchanged.
+# Bound retained JSON; opaque provider payload bytes are streamed.
 NATIVE_PROOF_LINE_BYTES = 32 * 1024 * 1024
 NATIVE_PROOF_TEXT_CHARS = 4 * 1024 * 1024
 NATIVE_PROOF_SECONDS = 30.0
@@ -176,24 +178,20 @@ def _native_records(path: Path, expected: tuple[int, int, int, int], budget: _Na
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != expected:
             raise _Unproven()
-        offset = 0
-        while offset < boundary:
+        def cancelled():
             budget.check()
-            line = stream.readline(min(NATIVE_PROOF_LINE_BYTES + 1, boundary - offset))
-            if not line or len(line) > NATIVE_PROOF_LINE_BYTES or not line.endswith(b"\n"):
-                raise _Unproven()
-            offset += len(line)
-            try:
-                record = json.loads(line)
-            except (ValueError, UnicodeDecodeError):
-                if not provider_source:
-                    raise
-                # The provider importer skips malformed records. Their exact
-                # bytes still participate in the checkpoint digest below.
-                record = {}
-            if not isinstance(record, dict):
-                raise _Unproven()
-            yield record, offset, line
+            return False
+        try:
+            for record, offset, raw in jsonl_records(stream, end=boundary,
+                    strict=not provider_source, project=provider_source,
+                    max_retained_bytes=NATIVE_PROOF_LINE_BYTES, cancelled=cancelled):
+                if record is None and not raw.malformed:
+                    raise _Unproven()  # Valid non-object JSON cannot substantiate native proof.
+                yield record or {}, offset, raw
+        except CodexNativeHistoryProofUnavailable:
+            raise
+        except ValueError as exc:
+            raise _Unproven() from exc
         info = os.fstat(stream.fileno())
         if (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) != expected:
             raise _Unproven()
@@ -422,7 +420,7 @@ def _prove_source(provider_id: str, source: Path, root: Path,
         elif event.get("type") == "session_meta":
             if not isinstance(payload, dict) or payload.get("id") != provider_id:
                 raise _Unproven()
-        digest.update(line)
+        line.update_hash(digest)
         for expected in wanted.get(offset, ()):
             if hmac.compare_digest(digest.hexdigest(), expected):
                 verified.add((offset, expected))
@@ -927,7 +925,7 @@ def _prove_native_source(thread: str, source: Path, root: Path, batches: dict, c
                 raise _Unproven()
             if parent is not None:
                 allowed_header_owners.add(parent)
-        digest.update(line)
+        line.update_hash(digest)
         for expected in wanted.get(offset, ()):
             if hmac.compare_digest(digest.hexdigest(), expected):
                 verified.add((offset, expected))
