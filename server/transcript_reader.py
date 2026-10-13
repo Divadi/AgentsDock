@@ -109,12 +109,13 @@ class RawRecord:
 
 
 class _RecordParser:
-    def __init__(self, stream, end, deadline, cancelled, project, maximum, budget_seconds):
+    def __init__(self, stream, end, deadline, cancelled, project, maximum, budget_seconds, retained_fields=None):
         self.stream, self.end = stream, end
         self.deadline, self.cancelled, self.project = deadline, cancelled, project
         self.buffer, self.index, self.final, self.complete = b'', 0, False, False
         self.retained, self.nodes, self.maximum = 0, 0, maximum
         self.budget_seconds = budget_seconds
+        self.retained_fields = retained_fields
 
     def fill(self):
         if self.index < len(self.buffer):
@@ -216,6 +217,8 @@ class _RecordParser:
                 'Single transcript record exceeds the JSON value-count limit: '
                 f'observed at least {self.nodes:,} values; limit {MAX_NODES:,}.')
         self.space()
+        if path and self.retained_fields is not None and path[0] not in self.retained_fields:
+            retain = False
         if self.project and opaque_path(path):
             retain = False
         if retain:
@@ -271,7 +274,7 @@ class _RecordParser:
 
 def jsonl_records(stream: BinaryIO, *, end: int, project=True, strict=False,
                   require_newline=True, max_records=250_000, deadline=None,
-                  cancelled=None, max_retained_bytes=MAX_RETAINED_BYTES):
+                  cancelled=None, max_retained_bytes=MAX_RETAINED_BYTES, retained_fields=None):
     """Yield (projected object or None, ending offset, RawRecord).
 
     Malformed provider lines may be represented by None, as before. Resource
@@ -291,7 +294,7 @@ def jsonl_records(stream: BinaryIO, *, end: int, project=True, strict=False,
                 'Transcript scan exceeds the record-count limit: '
                 f'observed at least {count:,} records; limit {max_records:,}. '
                 'This counts JSONL records, not chat messages.').at_record(count, start)
-        parser = _RecordParser(stream, end, deadline, cancelled, project, max_retained_bytes, budget_seconds)
+        parser = _RecordParser(stream, end, deadline, cancelled, project, max_retained_bytes, budget_seconds, retained_fields)
         blank = False
         malformed = False
         try:

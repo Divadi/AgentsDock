@@ -1,5 +1,24 @@
 # Public development log
 
+## 2026-10-13 — Distinguish failed chat recovery and stream emergency receipts
+
+- Completed queue-recovery timeouts now report failure instead of indefinitely
+  claiming recovery is in progress. Admission stays closed on failure, and
+  disconnecting a request cannot cancel shared queue restoration.
+- Health separately reports chat readiness. Desktop connection status remains
+  usable for recovery while warning about unavailable chat admission; a paired
+  update stays pending or failed until reported chat recovery succeeds. Older
+  servers without the field retain their existing behavior.
+- Emergency receipt scans now perform linear reads and retain only lifecycle
+  fields. Large unrelated records no longer cause repeated whole-line copying.
+  Projection reads release the global session lock and recheck sequence state
+  before applying, preserving acknowledgement idempotency and ordering.
+- A real loopback HTTP fixture with a 256 MiB unrelated record acknowledged in
+  about 1.6 seconds; the unchanged stable source timed out at 30 seconds. This is
+  a synthetic regression, not proof of a particular user's remote cause.
+- Validation and native desktop acceptance are in progress. No release is
+  published by this change.
+
 ## 2026-10-13 — Recover server updates and preserve detached jobs
 
 - Linux execution workers now restart independently of detached background

@@ -17,6 +17,13 @@ class StreamingTranscriptTests(unittest.TestCase):
     def parse(self, raw, **kwargs):
         return list(reader.jsonl_records(io.BytesIO(raw), end=len(raw), **kwargs))
 
+    def test_explicit_projection_discards_large_text_but_preserves_escaped_metadata(self):
+        raw = b'{"text":"' + b'x' * 4096 + b'","t\\u0079pe":"emergency_alert_acknowledged","seq":4}\n'
+        value = self.parse(raw, project=False, retained_fields=frozenset({"type", "seq"}), max_retained_bytes=512)[0][0]
+        self.assertEqual(value, {"text": None, "type": "emergency_alert_acknowledged", "seq": 4})
+        with self.assertRaises(reader.TranscriptBudgetExceeded):
+            self.parse(raw, project=False, max_retained_bytes=512)
+
     def test_chunk_boundaries_preserve_json_strings_and_duplicate_keys(self):
         raw = b'{"text":"first","text":"Chinese \\u4e2d \\ud83d\\ude00 \\\" \\\\ /\\n","role":"user","x":[1,-2.5e+3,true,false,null,{"a":""}]}\n'
         for size in (1,2,3,7,64,65536):
