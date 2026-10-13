@@ -1,5 +1,26 @@
 # Public development log
 
+## 2026-10-13 — Dismiss emergency alerts for a chat
+
+- The current chat's emergency banner now has one **Dismiss all** action.
+  It persists acknowledgements through the alert displayed at click time;
+  later alerts and other chats remain active, and historical alert rows stay
+  available. Individual acknowledgements remain available in the timeline.
+- The existing authenticated acknowledgement API accepts an exact durable
+  alert boundary and commits the batch together. Repeated requests and another
+  device acknowledging the boundary are harmless. Active work is untouched.
+- An isolated native offscreen Electron run reproduced the old one-at-a-time
+  behavior, then exercised the new UI through production IPC and authenticated
+  HTTP into a real disposable server. It checked persistence, reconnect,
+  another chat, a new alert during the request, failed request/retry, and
+  supported narrow layout. Component coverage checks localized labels. Alert creation was
+  synthetic; no model-provider request was needed or made.
+- Focused emergency API/CLI, desktop transport/store/component checks,
+  TypeScript checking and production compilation passed. A pre-existing
+  clipboard test assumes umask 022; its isolated rerun passed with that umask.
+- Availability: source only. This feature requires the paired app/server
+  change; no release or production restart is included.
+
 ## 2026-10-13 — Recover server updates and preserve detached jobs
 
 - Linux execution workers now restart independently of detached background

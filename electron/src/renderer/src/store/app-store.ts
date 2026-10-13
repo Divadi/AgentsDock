@@ -270,6 +270,7 @@ interface AppState {
   markRead(sessionId: string, force?: boolean): Promise<void>
   markUnread(sessionId: string): Promise<void>
   acknowledgeEmergency(sessionId: string, alertId: string): Promise<boolean>
+  dismissEmergencyAlerts(sessionId: string, throughAlertId: string): Promise<boolean>
   importHistory(sessionId: string): Promise<void>
   loadOlder(limit?: number): Promise<number>
   loadOlderForSession(sessionId: string, limit?: number): Promise<number>
@@ -2429,13 +2430,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       const updated = await window.agentsDock.sessions.acknowledgeEmergency(sessionId, alertId)
       if (!profileScopeMatches(scope, get())) return false
-      const [reconciled] = applyPendingSessionPatches([updated])
-      set(state => ({
-        sessions: state.sessions.map(candidate => candidate.id === sessionId ? reconciled : candidate),
-        snapshots: state.snapshots[sessionId]
-          ? { ...state.snapshots, [sessionId]: { ...state.snapshots[sessionId], session: reconciled } }
-          : state.snapshots
-      }))
+      set(state => applyEmergencyReceipt(state, sessionId, updated))
+      return true
+    } catch (error) {
+      if (profileScopeMatches(scope, get())) set({ error: errorMessage(error) })
+      return false
+    }
+  },
+  async dismissEmergencyAlerts(sessionId, throughAlertId) {
+    if (get().switchingProfileId) return false
+    const scope = captureProfileScope(get())
+    try {
+      const updated = await window.agentsDock.sessions.dismissEmergencyAlerts(sessionId, throughAlertId)
+      if (!profileScopeMatches(scope, get())) return false
+      set(state => applyEmergencyReceipt(state, sessionId, updated))
       return true
     } catch (error) {
       if (profileScopeMatches(scope, get())) set({ error: errorMessage(error) })
@@ -4166,6 +4174,21 @@ function mergeFiles(a: AgentFile[], b: AgentFile[]): AgentFile[] {
 }
 function mergeUploadPaths(a: NativeFileRef[], b: NativeFileRef[]): NativeFileRef[] {
   return [...new Map([...a, ...b].map(file => [file.path, file])).values()]
+}
+function applyEmergencyReceipt(state: AppState, sessionId: string, receipt: Session): Pick<AppState, 'sessions' | 'snapshots'> {
+  // Recheck at IPC completion: a newer emergency packet can already be rendered
+  // even when main correctly reconciled the earlier HTTP response.
+  let latest = receipt
+  for (const current of [state.sessions.find(session => session.id === sessionId), state.snapshots[sessionId]?.session]) {
+    if (current && (current.latest_event_seq ?? 0) > (latest.latest_event_seq ?? 0)) latest = current
+  }
+  const [reconciled] = applyPendingSessionPatches([latest])
+  return {
+    sessions: state.sessions.map(candidate => candidate.id === sessionId ? reconciled : candidate),
+    snapshots: state.snapshots[sessionId]
+      ? { ...state.snapshots, [sessionId]: { ...state.snapshots[sessionId], session: reconciled } }
+      : state.snapshots
+  }
 }
 function mergeReadStateReceipt(
   current: Session,

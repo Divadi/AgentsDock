@@ -5287,7 +5287,7 @@ describe('emergency alert store integration', () => {
     expect(useAppStore.getState().archivedCollapsed).toBe(false)
   })
 
-  it('reconciles acknowledgement success into both the session list and cached snapshot', async () => {
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s reconciles success into the session list and cached snapshot', async method => {
     const active = emergencySessionFor('ack-success')
     const acknowledged: Session = {
       ...active,
@@ -5297,14 +5297,14 @@ describe('emergency alert store integration', () => {
     const acknowledgeEmergency = vi.fn().mockResolvedValue(acknowledged)
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
-      value: { sessions: { acknowledgeEmergency } } as unknown as AgentsDockAPI
+      value: { sessions: { [method]: acknowledgeEmergency } } as unknown as AgentsDockAPI
     })
     useAppStore.setState({
       activeProfileId: 'local', profiles: [profileFor('local')], profileGeneration: 7, switchingProfileId: null,
       sessions: [active], snapshots: { [active.id]: { ...snapshot(active.id, []), session: active } }, error: null
     })
 
-    await expect(useAppStore.getState().acknowledgeEmergency(active.id, active.emergency_alert!.id)).resolves.toBe(true)
+    await expect(useAppStore.getState()[method](active.id, active.emergency_alert!.id)).resolves.toBe(true)
 
     expect(acknowledgeEmergency).toHaveBeenCalledWith(active.id, active.emergency_alert!.id)
     expect(useAppStore.getState().sessions[0]).toMatchObject({
@@ -5315,19 +5315,51 @@ describe('emergency alert store integration', () => {
     expect(useAppStore.getState().snapshots[active.id].session).toBe(useAppStore.getState().sessions[0])
   })
 
-  it('leaves the active alert intact when acknowledgement fails', async () => {
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s preserves a newer streamed alert before its delayed IPC receipt', async method => {
+    const active = { ...emergencySessionFor('ack-race'), latest_event_seq: 10 }
+    const response = deferred<Session>()
+    Object.defineProperty(window, 'agentsDock', { configurable: true,
+      value: { sessions: { [method]: vi.fn().mockReturnValue(response.promise) } } as unknown as AgentsDockAPI })
+    useAppStore.setState({ activeProfileId: 'local', profiles: [profileFor('local')], profileGeneration: 7,
+      switchingProfileId: null, sessions: [active], snapshots: { [active.id]: { ...snapshot(active.id, []), session: active } }, error: null })
+    const pending = useAppStore.getState()[method](active.id, active.emergency_alert!.id)
+    const newer: Session = { ...active, latest_event_seq: 21, title: 'Current title',
+      emergency_alert: { ...active.emergency_alert!, id: 'newer-alert' } }
+    useAppStore.setState({ sessions: [newer], snapshots: { [active.id]: { ...snapshot(active.id, []), session: newer } } })
+    response.resolve({ ...active, latest_event_seq: 20, emergency_alert: null, unacknowledged_emergency_count: 0 })
+    await expect(pending).resolves.toBe(true)
+    expect(useAppStore.getState().sessions[0]).toEqual(newer)
+    expect(useAppStore.getState().snapshots[active.id].session).toEqual(newer)
+  })
+
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s discards its delayed IPC receipt after a profile switch', async method => {
+    const active = emergencySessionFor('same-id')
+    const response = deferred<Session>()
+    Object.defineProperty(window, 'agentsDock', { configurable: true,
+      value: { sessions: { [method]: vi.fn().mockReturnValue(response.promise) } } as unknown as AgentsDockAPI })
+    useAppStore.setState({ activeProfileId: 'local', profiles: [profileFor('local')], profileGeneration: 7,
+      switchingProfileId: null, sessions: [active], snapshots: {}, error: null })
+    const pending = useAppStore.getState()[method](active.id, active.emergency_alert!.id)
+    const other = { ...active, title: 'Other server' }
+    useAppStore.setState({ activeProfileId: 'other', profileGeneration: 8, sessions: [other] })
+    response.resolve({ ...active, emergency_alert: null, unacknowledged_emergency_count: 0 })
+    await expect(pending).resolves.toBe(false)
+    expect(useAppStore.getState().sessions[0]).toBe(other)
+  })
+
+  it.each(['acknowledgeEmergency', 'dismissEmergencyAlerts'] as const)('%s leaves alerts intact when the request fails', async method => {
     const active = emergencySessionFor('ack-failure')
     const acknowledgeEmergency = vi.fn().mockRejectedValue(new Error('Acknowledgement was rejected'))
     Object.defineProperty(window, 'agentsDock', {
       configurable: true,
-      value: { sessions: { acknowledgeEmergency } } as unknown as AgentsDockAPI
+      value: { sessions: { [method]: acknowledgeEmergency } } as unknown as AgentsDockAPI
     })
     useAppStore.setState({
       activeProfileId: 'local', profiles: [profileFor('local')], profileGeneration: 8, switchingProfileId: null,
       sessions: [active], snapshots: { [active.id]: { ...snapshot(active.id, []), session: active } }, error: null
     })
 
-    await expect(useAppStore.getState().acknowledgeEmergency(active.id, active.emergency_alert!.id)).resolves.toBe(false)
+    await expect(useAppStore.getState()[method](active.id, active.emergency_alert!.id)).resolves.toBe(false)
 
     expect(acknowledgeEmergency).toHaveBeenCalledWith(active.id, active.emergency_alert!.id)
     expect(useAppStore.getState().sessions[0].emergency_alert).toEqual(active.emergency_alert)

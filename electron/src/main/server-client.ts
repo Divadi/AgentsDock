@@ -1115,9 +1115,28 @@ export class AgentServerClient {
   }
 
   async acknowledgeEmergency(sessionId: string, alertId: string): Promise<Session> {
-    const response = await this.post<unknown>(`/api/sessions/${encodeURIComponent(sessionId)}/emergency/acknowledge`, {
-      expected_alert_id: alertId
-    })
+    return this.acknowledgeEmergencyRequest(sessionId, { expected_alert_id: alertId })
+  }
+
+  async dismissEmergencyAlerts(sessionId: string, throughAlertId: string): Promise<Session> {
+    try {
+      return await this.acknowledgeEmergencyRequest(sessionId, { through_alert_id: throughAlertId })
+    } catch (error) {
+      const details = error instanceof ServerError && error.status === 422 && Array.isArray(error.detail)
+        ? error.detail : []
+      const hasIssue = (type: string, field: string): boolean => details.some(issue => (
+        issue && typeof issue === 'object' && issue.type === type && Array.isArray(issue.loc)
+        && issue.loc.length === 2 && issue.loc[0] === 'body' && issue.loc[1] === field
+      ))
+      if (details.length === 2 && hasIssue('missing', 'expected_alert_id') && hasIssue('extra_forbidden', 'through_alert_id')) {
+        throw new Error('Update AgentsServer to dismiss all alerts in this chat.')
+      }
+      throw error
+    }
+  }
+
+  private async acknowledgeEmergencyRequest(sessionId: string, body: Record<string, string>): Promise<Session> {
+    const response = await this.post<unknown>(`/api/sessions/${encodeURIComponent(sessionId)}/emergency/acknowledge`, body)
     const session = response && typeof response === 'object' && !Array.isArray(response)
       ? (response as Record<string, unknown>).session
       : null
