@@ -17,6 +17,8 @@ CHUNK_BYTES = 64 * 1024
 MAX_RETAINED_BYTES = 32 * 1024 * 1024
 MAX_DEPTH = 96
 MAX_NODES = 250_000
+MAX_KEY_BYTES = 4096
+MAX_SCALAR_BYTES = 1024
 SCAN_SECONDS = 60.0
 _SPECIAL = re.compile(rb'["\\\x00-\x1f]')
 _NUMBER = re.compile(rb'-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\Z')
@@ -26,16 +28,31 @@ _HEX = frozenset(b'0123456789abcdefABCDEF')
 class TranscriptBudgetExceeded(ValueError):
     """Never treat exhausted work/memory as an ignorable malformed record."""
 
+    def at_record(self, number: int, start: int):
+        # A delta scan starts inside the file; do not call this a file line or
+        # a user-visible chat message number. Never include transcript content.
+        return TranscriptBudgetExceeded(
+            f'{self} Record {number:,} in this scan (source byte offset {start:,}).')
+
 
 class InvalidRecord(ValueError):
     pass
 
 
-def scan_check(deadline: float, cancelled: Callable[[], bool] | None = None):
+def scan_check(deadline: float, cancelled: Callable[[], bool] | None = None,
+               *, budget_seconds: float | None = None):
     if cancelled is not None and cancelled():
         raise TranscriptBudgetExceeded('transcript scan cancelled')
     if time.monotonic() >= deadline:
-        raise TranscriptBudgetExceeded('transcript scan exceeded its processing time budget')
+        limit = f' ({budget_seconds:g} seconds)' if budget_seconds is not None else ''
+        raise TranscriptBudgetExceeded(
+            f'Transcript scan exceeded its processing time budget{limit}. '
+            'Reading stopped before completion; this is a processing timeout, not a file-size limit.')
+
+
+def byte_amount(size: int) -> str:
+    mib = f' ({size / (1024 * 1024):.2f} MiB)' if size >= 1024 * 1024 else ''
+    return f'{size:,} bytes{mib}'
 
 
 def opaque_path(path: tuple) -> bool:
@@ -64,6 +81,8 @@ class RawRecord:
     malformed: bool
     deadline: float
     cancelled: Callable[[], bool] | None = None
+    number: int = 1
+    budget_seconds: float | None = None
 
     def __len__(self):
         return self.end - self.start
@@ -76,30 +95,33 @@ class RawRecord:
             self.stream.seek(self.start)
             remaining = len(self)
             while remaining:
-                scan_check(self.deadline, self.cancelled)
+                scan_check(self.deadline, self.cancelled, budget_seconds=self.budget_seconds)
                 chunk = self.stream.read(min(CHUNK_BYTES, remaining))
                 if not chunk:
                     raise ValueError('transcript was truncated during record hashing')
                 digest.update(chunk)
                 remaining -= len(chunk)
+        except TranscriptBudgetExceeded as error:
+            raise error.at_record(self.number, self.start) from error
         finally:
             self.stream.seek(saved)
 
 
 
 class _RecordParser:
-    def __init__(self, stream, end, deadline, cancelled, project, maximum):
+    def __init__(self, stream, end, deadline, cancelled, project, maximum, budget_seconds):
         self.stream, self.end = stream, end
         self.deadline, self.cancelled, self.project = deadline, cancelled, project
         self.buffer, self.index, self.final, self.complete = b'', 0, False, False
         self.retained, self.nodes, self.maximum = 0, 0, maximum
+        self.budget_seconds = budget_seconds
 
     def fill(self):
         if self.index < len(self.buffer):
             return True
         if self.final:
             return False
-        scan_check(self.deadline, self.cancelled)
+        scan_check(self.deadline, self.cancelled, budget_seconds=self.budget_seconds)
         remaining = self.end - self.stream.tell()
         self.buffer = self.stream.readline(min(CHUNK_BYTES, remaining)) if remaining > 0 else b''
         self.index = 0
@@ -124,7 +146,16 @@ class _RecordParser:
     def reserve(self, size):
         self.retained += size
         if self.retained > self.maximum:
-            raise TranscriptBudgetExceeded(f'transcript retained text/metadata exceeds the {self.maximum / (1024 * 1024):g} MiB memory budget')
+            raise TranscriptBudgetExceeded(
+                'Single transcript record retained text/metadata exceeds its import budget: '
+                f'observed at least {byte_amount(self.retained)}; limit {byte_amount(self.maximum)}. '
+                'This includes accounting overhead, not the total conversation file size.')
+
+    def check_key_size(self, size):
+        if size > MAX_KEY_BYTES:
+            raise TranscriptBudgetExceeded(
+                'Single transcript record contains an oversized JSON field name: '
+                f'observed at least {byte_amount(size)}; limit {byte_amount(MAX_KEY_BYTES)}.')
 
     def string(self, retain, key=False):
         if self.take() != 34:
@@ -140,8 +171,8 @@ class _RecordParser:
             if retain:
                 self.reserve(len(piece)); parts.extend(piece)
                 size += len(piece)
-                if key and size > 4096:
-                    raise TranscriptBudgetExceeded('transcript JSON key exceeds metadata budget')
+                if key:
+                    self.check_key_size(size)
             self.index = stop
             if match is None:
                 continue
@@ -170,14 +201,20 @@ class _RecordParser:
             if retain:
                 self.reserve(len(raw)); parts.extend(raw)
                 size += len(raw)
-                if key and size > 4096:
-                    raise TranscriptBudgetExceeded('transcript JSON key exceeds metadata budget')
+                if key:
+                    self.check_key_size(size)
         raise InvalidRecord('unterminated JSON string')
 
     def value(self, path=(), retain=True, depth=0):
         self.nodes += 1
-        if depth > MAX_DEPTH or self.nodes > MAX_NODES:
-            raise TranscriptBudgetExceeded('transcript JSON structure exceeds processing budget')
+        if depth > MAX_DEPTH:
+            raise TranscriptBudgetExceeded(
+                'Single transcript record exceeds the JSON nesting limit: '
+                f'observed depth {depth:,}; limit {MAX_DEPTH:,}.')
+        if self.nodes > MAX_NODES:
+            raise TranscriptBudgetExceeded(
+                'Single transcript record exceeds the JSON value-count limit: '
+                f'observed at least {self.nodes:,} values; limit {MAX_NODES:,}.')
         self.space()
         if self.project and opaque_path(path):
             retain = False
@@ -218,8 +255,10 @@ class _RecordParser:
         token = bytearray()
         while self.peek() is not None and self.peek() not in b' \r\n\t,]}':
             token.append(self.take())
-            if len(token) > 1024:
-                raise TranscriptBudgetExceeded('transcript JSON scalar exceeds metadata budget')
+            if len(token) > MAX_SCALAR_BYTES:
+                raise TranscriptBudgetExceeded(
+                    'Single transcript record contains an oversized JSON scalar (number or literal): '
+                    f'observed at least {byte_amount(len(token))}; limit {byte_amount(MAX_SCALAR_BYTES)}.')
         raw = bytes(token)
         if raw not in (b'true', b'false', b'null', b'NaN', b'Infinity', b'-Infinity') and not _NUMBER.fullmatch(raw):
             raise InvalidRecord('invalid JSON scalar')
@@ -239,35 +278,45 @@ def jsonl_records(stream: BinaryIO, *, end: int, project=True, strict=False,
     exhaustion always raises, so callers never commit a partial-success cursor.
     A fixed end excludes concurrent appends; callers own file identity checks.
     """
+    # Externally supplied deadlines can belong to a larger operation. Do not
+    # invent a duration for them; the caller can provide its own timeout detail.
+    budget_seconds = SCAN_SECONDS if deadline is None else None
     deadline = time.monotonic() + SCAN_SECONDS if deadline is None else deadline
     count = 0
     while stream.tell() < end:
         count += 1
-        if count > max_records:
-            raise TranscriptBudgetExceeded('transcript record count exceeds processing budget')
         start = stream.tell()
-        parser = _RecordParser(stream, end, deadline, cancelled, project, max_retained_bytes)
+        if count > max_records:
+            raise TranscriptBudgetExceeded(
+                'Transcript scan exceeds the record-count limit: '
+                f'observed at least {count:,} records; limit {max_records:,}. '
+                'This counts JSONL records, not chat messages.').at_record(count, start)
+        parser = _RecordParser(stream, end, deadline, cancelled, project, max_retained_bytes, budget_seconds)
         blank = False
         malformed = False
         try:
-            parser.space()
-            blank = parser.peek() is None
-            value = None if blank else parser.value()
-            parser.space()
-            if parser.peek() is not None:
-                raise InvalidRecord('trailing JSON content')
-        except (InvalidRecord, UnicodeDecodeError, json.JSONDecodeError) as error:
-            if strict:
-                raise ValueError('malformed transcript record') from error
-            parser.drain()
-            malformed = True
-            value = None
+            try:
+                parser.space()
+                blank = parser.peek() is None
+                value = None if blank else parser.value()
+                parser.space()
+                if parser.peek() is not None:
+                    raise InvalidRecord('trailing JSON content')
+            except (InvalidRecord, UnicodeDecodeError, json.JSONDecodeError) as error:
+                if strict:
+                    raise ValueError('malformed transcript record') from error
+                parser.drain()
+                malformed = True
+                value = None
+        except TranscriptBudgetExceeded as error:
+            raise error.at_record(count, start) from error
         stop = stream.tell()
         if stop <= start:
             raise ValueError('transcript was truncated during reading')
         if require_newline and not parser.complete:
             raise ValueError('transcript cursor does not end on a complete line')
-        raw = RawRecord(stream, start, stop, parser.complete, blank, malformed or blank, deadline, cancelled)
+        raw = RawRecord(stream, start, stop, parser.complete, blank, malformed or blank,
+                        deadline, cancelled, count, budget_seconds)
         if strict and not isinstance(value, dict):
             raise ValueError('transcript object expected')
         yield value if isinstance(value, dict) else None, stop, raw

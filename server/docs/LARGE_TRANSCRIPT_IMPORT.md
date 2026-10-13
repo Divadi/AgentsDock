@@ -3,7 +3,7 @@
 Claude/Codex native history import and synchronization use a chunked JSONL
 projection. Source file size and an opaque media/tool field's size no longer
 have the former **256 MiB file / 32 MiB raw record** admission caps. A reported
-line number refers to a physical JSONL record, not a chat turn or model context.
+record number is relative to the current scan, not a chat turn or model context.
 
 ## What is streamed
 
@@ -42,6 +42,24 @@ This is bounded-memory processing, not a promise to accept every possible file:
 The server does not enforce one file-size threshold for the optimized import
 path. A huge textual message, pathological JSON, excessively many records or a
 very slow source can still exhaust a specific processing/proof budget.
+
+## Import failure messages
+
+Streaming budget failures identify the exact protection: retained text/metadata
+in one record, JSON field/scalar size, nesting depth, JSON value count, scan
+record count, or processing timeout. Size/count failures include the observed
+amount and configured limit. The observed amount is a lower bound because
+reading stops at the threshold; it is not the full offending record's size.
+The 32 MiB retained budget includes accounting overhead, not just text bytes or
+the entire conversation's disk size. Default scan timeouts name the 60-second
+budget; externally owned deadlines do not invent a duration.
+
+Failures include the record's ordinal within the scan and its starting byte
+offset in the original file. This remains accurate for incremental scans that
+start in the middle of a file. Messages never include conversation text or JSON
+field names. The import API returns the reason through its existing `error`
+field, used by the desktop import result and resume-by-ID error display. Failed
+imports do not report partial success or alter the provider transcript.
 
 ## Verification
 

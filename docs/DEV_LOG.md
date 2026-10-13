@@ -1,5 +1,19 @@
 # Public development log
 
+## 2026-10-12 — Explain native import resource limits
+
+- Identify single-record text/metadata, field/scalar size, nesting, value-count,
+  scan-record-count and timeout failures separately. Include observed amounts
+  and limits, plus scan-relative record position and source byte offset.
+- Explain that retained-byte accounting includes overhead and is distinct from
+  total conversation disk size. Observed sizes are lower bounds because reading
+  stops at exhaustion; do not expose transcript content in diagnostics.
+- Preserve the import API's error contract, failure semantics and source bytes.
+  All 97 focused reader/import/sync checks passed, including real parser errors
+  reaching both providers' bulk-import responses without creating a chat.
+  Changed Python compilation and diff checks passed.
+  Native desktop acceptance remains pending while computer control is unavailable.
+
 ## 2026-10-12 — Stream large native history payloads
 
 - Replace whole-record JSON loading for native imports, sync and native proof

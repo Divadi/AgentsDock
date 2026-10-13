@@ -48895,7 +48895,7 @@ def provider_history_source_snapshot(
                 take = min(len(chunk), int(verify_offset) - prefix_hashed)
                 prefix_digest.update(chunk[:take])
                 prefix_hashed += take
-            scan_check(deadline)
+            scan_check(deadline, budget_seconds=SCAN_SECONDS)
             newline = chunk.rfind(b"\n")
             if newline >= 0:
                 running_digest.update(chunk[:newline + 1])

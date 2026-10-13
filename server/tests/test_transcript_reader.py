@@ -73,6 +73,72 @@ class StreamingTranscriptTests(unittest.TestCase):
         for _,_,receipt in records: receipt.update_hash(digest)
         self.assertEqual(digest.hexdigest(),hashlib.sha256(raw).hexdigest())
 
+    def test_size_error_identifies_single_record_limit_without_exposing_text(self):
+        prefix = b'{"text":"first"}\n'
+        raw = prefix + b'{"text":"PRIVATE-CONTENT' + b'x' * 2048 + b'"}\n'
+        for strict in (False, True):
+            with self.subTest(strict=strict), self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+                self.parse(raw, max_retained_bytes=1024, strict=strict)
+            error = str(raised.exception)
+            for part in ('Single transcript record', 'retained text/metadata', 'observed at least',
+                         'limit 1,024 bytes', 'accounting overhead',
+                         f'Record 2 in this scan (source byte offset {len(prefix)})'):
+                self.assertIn(part, error)
+            self.assertNotIn('PRIVATE-CONTENT', error)
+            self.assertLess(len(error), 1000)  # Survives the import API's error limit.
+        stream = io.BytesIO(raw)
+        stream.seek(len(prefix))
+        with self.assertRaisesRegex(reader.TranscriptBudgetExceeded,
+                                   rf'Record 1 in this scan \(source byte offset {len(prefix)}\)'):
+            list(reader.jsonl_records(stream, end=len(raw), max_retained_bytes=1024))
+
+    def test_structure_and_record_count_errors_name_the_specific_limit(self):
+        cases = [
+            (b'{"secret-key":0}\n', 'MAX_KEY_BYTES', 3, 'JSON field name', 'limit 3 bytes'),
+            (b'{"\\u0073\\u0065":0}\n', 'MAX_KEY_BYTES', 6, 'JSON field name', 'limit 6 bytes'),
+            (b'{"x":12345}\n', 'MAX_SCALAR_BYTES', 4, 'JSON scalar', 'limit 4 bytes'),
+            (b'{"x":[[0]]}\n', 'MAX_DEPTH', 2, 'JSON nesting', 'observed depth 3; limit 2'),
+            (b'{"x":[0,1]}\n', 'MAX_NODES', 3, 'JSON value-count', 'observed at least 4 values; limit 3'),
+        ]
+        for raw, constant, limit, scope, detail in cases:
+            with self.subTest(scope=scope), patch.object(reader, constant, limit):
+                with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+                    self.parse(raw)
+                self.assertIn(scope, str(raised.exception))
+                self.assertIn(detail, str(raised.exception))
+                self.assertIn('Record 1 in this scan', str(raised.exception))
+                self.assertNotIn('secret-key', str(raised.exception))
+        with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+            self.parse(b'{}\n{}\n{}\n', max_records=2)
+        self.assertIn('observed at least 3 records; limit 2', str(raised.exception))
+        self.assertIn('JSONL records, not chat messages', str(raised.exception))
+        self.assertIn('Record 3 in this scan (source byte offset 6)', str(raised.exception))
+
+    def test_timeout_reports_configured_budget_and_preserves_record_location(self):
+        with patch.object(reader.time, 'monotonic', side_effect=[100, 161]):
+            with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+                self.parse(b'{}\n')
+        self.assertIn('(60 seconds)', str(raised.exception))
+        self.assertIn('processing timeout, not a file-size limit', str(raised.exception))
+        self.assertIn('Record 1 in this scan (source byte offset 0)', str(raised.exception))
+        # Caller deadlines may represent a different, larger operation.
+        with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+            self.parse(b'{}\n', deadline=0)
+        self.assertNotIn('60 seconds', str(raised.exception))
+        receipt = self.parse(b'{}\n')[0][2]
+        with patch.object(reader.time, 'monotonic', return_value=receipt.deadline + 1):
+            with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+                receipt.update_hash(hashlib.sha256())
+        self.assertIn('(60 seconds)', str(raised.exception))
+        self.assertIn('Record 1 in this scan', str(raised.exception))
+
+    def test_timeout_while_skipping_malformed_record_still_reports_location(self):
+        raw = b'invalid-' + b'x' * 4096 + b'\n'
+        with patch.object(reader, 'CHUNK_BYTES', 8), patch.object(reader.time, 'monotonic', side_effect=[100, 101, 161]):
+            with self.assertRaises(reader.TranscriptBudgetExceeded) as raised:
+                self.parse(raw)
+        self.assertIn('Record 1 in this scan', str(raised.exception))
+
     def test_generated_nonopaque_json_matches_standard_decoder(self):
         rng=random.Random(71)
         def value(depth=0):
