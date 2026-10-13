@@ -104,3 +104,87 @@ pnpm exec vitest run src/main/coordinated-updates.test.ts src/main/service.test.
   behavior. No Linux-native claim is made by this test run.
 - Only the designated local test server was updated. These changes are not a
   published desktop/server release.
+
+## Large-state and busy-update stress pass — 2026-10-13
+
+The previous small-chat acceptance was extended with actual isolated execution
+worker/gateway processes and a native Electron client. Production server source
+was `fd4cb2ed`; desktop source was `a5e1e768`. Temporary candidate directories
+used fixture version labels, not published release packages.
+
+Dataset:
+
+- 1,000 saved chats, including 200 archived chats.
+- Approximately 1.21 GB of history: 128,000 baseline events with mixed Unicode
+  prompts, long replies and structured tool output, plus queue/recovery events.
+- One 128 MiB image-like tool payload and a separate array of 260,001 values.
+- 192 durable queued messages across 64 chats.
+- 32 interrupted-run examples with the native registry's latest-event metadata.
+
+| Scenario | Observed result |
+| --- | --- |
+| Start production worker and gateway with the populated state | Transport health in 10–11 seconds; chat recovery ready in 11–12 seconds across the completed runs. |
+| Read concurrently while restoration is complete | 120 requests at concurrency 12, covering health, update status, chat list, detail and timeline index; no HTTP errors. |
+| Read with 32 controlled runs active | Another 120 requests at concurrency 12; no errors. Per-route p95 was below 0.23 seconds in this run. |
+| Request worker replacement while busy | Three authenticated public requests returned the explicit 32-active-run deferral. Direct activation also refused before stopping either component and retired its temporary transaction. |
+| Replace gateway while busy | Production activation controller replaced the gateway in about one second, preserving the worker epoch and all 32 controlled runs. |
+| Reopen the App while busy | The native App reconnected, displayed the saved chats/queues and retained a visible pending update with blocker counts. Cancelling that reservation through the UI left all 32 runs active. |
+| Replace an idle worker | Production controller replaced it, retained the gateway and identity, and reached chat-ready state in about three seconds. Paused durable queues survived. |
+| Candidate startup fails | Controller rejected the deliberately broken worker and restored the previous one; gateway and identity survived. A subsequent valid retry succeeded. |
+| Check preservation after replacements, rollback and retry | All 1,000 original history prefixes matched their original hashes. All 192 queued IDs and their order survived. All 32 controlled live runs finished exactly once. |
+| Recover interrupted runs with valid native metadata | The repeatable process test closed each of 32 interrupted runs once without replaying its accepted input. |
+
+The first manually generated interrupted-run examples omitted the registry's
+latest-event metadata and therefore were not valid interrupted-run acceptance.
+The automated fixture was corrected to match the native persisted schema and
+passed; the incomplete examples are not counted as recovery evidence.
+
+The rollback run also confirmed a meaningful intermediate state: component
+health was available before the reconstructed queues appeared. After
+`chat_readiness.ready` became true, all 64 queued-chat entries were present.
+Transport health or matching component versions alone must not establish
+complete recovery.
+
+### Repeatable opt-in process test
+
+The new test generates approximately 1.2 GB and is skipped by default. Use the
+server dependency environment and native temporary storage with enough free
+space. Provider executables are explicitly disabled and no installed service
+is addressed:
+
+```sh
+cd server
+RUN_LARGE_STATE_UPDATE_TESTS=1 python -m unittest \
+  tests.test_large_state_update_integration -v
+```
+
+It checks real startup/queue restoration, 184 authenticated reads, rejection of
+new work under an activation hold, exact queue order, interrupted-run closure
+and byte preservation. It prints bounded counts and timing statistics. The
+busy replacement, rollback and native UI observations above were separate
+manual isolated acceptance; they are not claimed as coverage of this one test.
+
+### Additional boundaries and update policy
+
+- The 32 active runs were deterministic workload fixtures inside the real
+  application; the eight child processes were owned fixtures. They were not
+  32 live model sessions, and do not prove provider-specific long-goal behavior.
+- The native service-manager adapter managed only owned subprocesses. The real
+  activation controller, process identity checks, maintenance controls,
+  transaction journal, worker/gateway transports and recovery were exercised;
+  launchd/systemd installation was not.
+- The pending update receipt used for the UI case was explicitly seeded, with
+  public download polling disabled. Rendering, reconnection and cancellation
+  used the real native transport. That case does not prove package preparation
+  or automatic idle-to-install scheduling.
+- History was retained across worker replacement using explicitly paused queue
+  fixtures. The ordinary idle updater still waits for queued work; this result
+  is not permission to bypass its admission policy.
+- Continuous active/queued work can keep an ordinary update pending indefinitely.
+  The current policy allows new work while waiting; these tests do not implement
+  a drain policy or authorize forced interruption. App installation must remain
+  independent, and a pending server must remain visibly pending.
+- The local development App cannot self-update. A signed old-app-to-new-app
+  installation plus automatic server package installation under this same load
+  remains release acceptance, as do Linux/Windows native-service behavior and
+  low-memory-host behavior. No public feed or production trust setting changed.

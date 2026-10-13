@@ -1,5 +1,24 @@
 # Public development log
 
+## 2026-10-13 — Stress-test recovery and component updates with large histories
+
+- Added an opt-in process test with 1,000 saved chats, approximately 1.21 GB of
+  mixed history, 192 queued messages and 32 interrupted turns. Production
+  worker/gateway startup, concurrent HTTP reads, exact queue order, single
+  interrupted-run closure and original history-byte preservation passed.
+- Separate isolated native acceptance exercised 32 deterministic concurrent
+  runs and eight child processes: busy worker replacement was rejected, gateway
+  replacement preserved work, and a failed candidate rolled back before a
+  successful retry. The native App reconnected, showed pending blockers and
+  cancelled the fixture reservation without stopping active work.
+- Both component health and chat readiness are required: rollback restored
+  HTTP before background queue reconstruction finished. Continuous work can
+  still defer an ordinary idle update indefinitely under the existing policy.
+- See [the stress matrix and boundaries](RECOVERY_READINESS_TESTING.md#large-state-and-busy-update-stress-pass--2026-10-13).
+  These are source/runtime and native-client checks, not a signed release
+  installation or platform-wide acceptance. No production code, public release
+  or working service was changed by this stress pass.
+
 ## 2026-10-13 — Distinguish failed chat recovery and stream emergency receipts
 
 - Expanded acceptance found and fixed a structured-payload regression: emergency
