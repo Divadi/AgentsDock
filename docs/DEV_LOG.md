@@ -1,5 +1,26 @@
 # Public development log
 
+## 2026-10-13 — Repair legacy cross-chat reply imports
+
+- Older cross-chat reply/request imports no longer reappear as messages
+  attributed to the user when the matching delivery is outside the loaded
+  timeline page. The previous repair covered asynchronous handoffs but missed
+  this older exchange format.
+- Recovery matches the native provider input to durable delivery records.
+  Genuine user quotations remain visible; the original journal, provider
+  history, event identities and ordering are preserved. This does not enable
+  legacy communication routes.
+- All 48 focused history-repair/import-boundary tests passed. Unchanged source
+  reproduced the gap, while a read-only check of an affected large history
+  confirmed the candidate repair without changing its files or service state.
+- An isolated native offscreen app reproduced the leaked user bubble before
+  the fix. The candidate used real authenticated timeline reads, removed that
+  duplicate, preserved a separate genuine quotation, and remained correct on
+  chat navigation and reload. Fixture journal/provider bytes stayed identical.
+  No model-provider request or new cross-chat delivery was made.
+- Availability: source only; requires a server update. No production restart
+  or release publication is included.
+
 ## 2026-10-13 — Dismiss emergency alerts for a chat
 
 - The current chat's emergency banner now has one **Dismiss all** action.
