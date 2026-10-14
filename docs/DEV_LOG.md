@@ -1,5 +1,84 @@
 # Public development log
 
+## 2026-10-13 — Validate recovery fixes against current main
+
+- Integrate the new batch emergency dismissal with the bounded-memory journal
+  reader. A 40 MiB regression reproduced more than 80 MiB of allocations with
+  the unprojected reader and passed below 8 MiB after the correction.
+- Recheck 201 focused server cases, then all 31 emergency cases including the
+  added regression; 907 desktop checks, TypeScript and production compilation
+  passed. The 1,000-chat/1.21 GB process test passed again, retaining all 192
+  queued messages and original history bytes; chat readiness took 14 seconds.
+- An isolated native development app used the real authenticated server to
+  dismiss two alerts with a 40 MiB intervening tool record. Both receipts were
+  durable, the active banner cleared, and refresh retained the historical rows
+  without restoring the banner. This fixture used no model provider.
+- No published release or running user service was replaced by this merge
+  validation. Signed end-to-end release acceptance remains separate.
+
+## 2026-10-13 — Stress-test recovery and component updates with large histories
+
+- Added an opt-in process test with 1,000 saved chats, approximately 1.21 GB of
+  mixed history, 192 queued messages and 32 interrupted turns. Production
+  worker/gateway startup, concurrent HTTP reads, exact queue order, single
+  interrupted-run closure and original history-byte preservation passed.
+- Separate isolated native acceptance exercised 32 deterministic concurrent
+  runs and eight child processes: busy worker replacement was rejected, gateway
+  replacement preserved work, and a failed candidate rolled back before a
+  successful retry. The native App reconnected, showed pending blockers and
+  cancelled the fixture reservation without stopping active work.
+- Both component health and chat readiness are required: rollback restored
+  HTTP before background queue reconstruction finished. Continuous work can
+  still defer an ordinary idle update indefinitely under the existing policy.
+- See [the stress matrix and boundaries](RECOVERY_READINESS_TESTING.md#large-state-and-busy-update-stress-pass--2026-10-13).
+  These are source/runtime and native-client checks, not a signed release
+  installation or platform-wide acceptance. No production code, public release
+  or working service was changed by this stress pass.
+
+## 2026-10-13 — Distinguish failed chat recovery and stream emergency receipts
+
+- Expanded acceptance found and fixed a structured-payload regression: emergency
+  journal projection no longer inherits native-import value-count limits or
+  charges discarded object keys as retained metadata. Import defaults remain
+  unchanged. The new regression failed before the correction.
+- Additional validation passed 195 recovery/alert checks, 203 update/rollback
+  checks, 99 overlapping import/admission checks and 487 desktop service/update
+  checks. Native Electron also exercised Send and Refresh against an isolated
+  failed-recovery HTTP server: the draft survived, the error was explicit, and
+  server selection remained available. The 256 MiB HTTP fixture repeated at
+  1.58 seconds. Repeating the real provider/UI acknowledgement after deployment,
+  reopening the test app, and continuing the same conversation also passed.
+  Test-instance identity, token and existing chats were preserved; disposable
+  test data was cleaned up. See [the test matrix](RECOVERY_READINESS_TESTING.md)
+  for boundaries.
+
+- Completed queue-recovery timeouts now report failure instead of indefinitely
+  claiming recovery is in progress. Admission stays closed on failure, and
+  disconnecting a request cannot cancel shared queue restoration.
+- Health separately reports chat readiness. Desktop connection status remains
+  usable for recovery while warning about unavailable chat admission; a paired
+  update stays pending or failed until reported chat recovery succeeds. Older
+  servers without the field retain their existing behavior.
+- Emergency receipt scans now perform linear reads and retain only lifecycle
+  fields. Large unrelated records no longer cause repeated whole-line copying.
+  Projection reads release the global session lock and recheck sequence state
+  before applying, preserving acknowledgement idempotency and ordering.
+- A real loopback HTTP fixture with a 256 MiB unrelated record acknowledged in
+  about 1.6 seconds; the unchanged stable source timed out at 30 seconds. This is
+  a synthetic regression, not proof of a particular user's remote cause.
+- Validation: 187 focused Python checks, 5,142 desktop checks (five skipped),
+  TypeScript, production compilation, bundle audit and strict ad-hoc signature
+  verification passed. Permission-sensitive test fixtures used native temporary
+  storage; build outputs remain local.
+- A separate native Electron profile completed a real Codex request through the
+  production client transport. A synthetic provider alert appeared in the UI;
+  clicking Acknowledge cleared its active controls and committed exactly one
+  durable acknowledgement. An explicit repeated request returned acknowledged
+  false, preserving idempotency. Recovery failures were injected in isolated
+  HTTP/regression fixtures, not into a user's active service.
+- Available as a local test server and local desktop build. No release is
+  published by this change.
+
 ## 2026-10-13 — View local server logs from the CLI
 
 - Add `agentsdock logs [NAME]`, defaulting to the default instance, with
