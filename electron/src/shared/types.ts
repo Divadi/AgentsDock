@@ -1773,6 +1773,8 @@ export type GatewayHealth = ServerComponentHealth & {
 
 export interface Health {
   ok: boolean
+  /** Transport health stays available while durable chat admission recovers. */
+  chat_readiness?: { ready: boolean; state: 'ready' | 'recovering' | 'failed'; message: string | null }
   state_dir?: string
   server_identity?: string
   server_name?: string

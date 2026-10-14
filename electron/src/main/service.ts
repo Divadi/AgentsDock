@@ -7270,10 +7270,13 @@ function abortable<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
 }
 
 function connectionStateForHealth(health: Health): ServerConnectionState {
-  return health.capabilities?.tmux?.available === false ? 'degraded' : 'online'
+  return health.chat_readiness?.ready === false || health.capabilities?.tmux?.available === false ? 'degraded' : 'online'
 }
 
 function connectionWarningForHealth(health: Health): string | null {
+  if (health.chat_readiness?.ready === false) {
+    return health.chat_readiness.message || 'Chat recovery is incomplete. Check the server before sending more messages.'
+  }
   const tmux = health.capabilities?.tmux
   if (tmux?.available !== false) return null
   return tmux.message?.trim() || 'tmux is not available; terminal sessions and detached server updates are disabled.'

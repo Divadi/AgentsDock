@@ -9158,6 +9158,29 @@ describe('server profile lifecycle', () => {
     expect(bProbe.dispose).toHaveBeenCalledOnce()
   })
 
+  it('keeps recovery controls connected while reporting failed chat readiness', async () => {
+    const message = 'Queued message recovery failed. Restart the managed server.'
+    let ready = false
+    const a = fakeClient({ health: async () => ({ ok: true, server_identity: 'server-a',
+      chat_readiness: { ready, state: ready ? 'ready' : 'failed', message: ready ? null : message } }) })
+    const { service, settings } = createProfileService({
+      'http://a.test:7850': [a], 'http://b.test:7850': [fakeClient()]
+    })
+    settings.setProfileServerIdentity('a', 'server-a')
+    const bootstrap = await service.bootstrap()
+    await service.refreshServer('a', bootstrap.profileGeneration)
+    let after = await service.bootstrap()
+    expect(after.profiles.find(profile => profile.id === 'a')).toMatchObject({
+      connectionState: 'degraded', lastConnectionError: message
+    })
+    ready = true
+    await service.refreshServer('a', after.profileGeneration)
+    after = await service.bootstrap()
+    expect(after.profiles.find(profile => profile.id === 'a')).toMatchObject({
+      connectionState: 'online', lastConnectionError: null
+    })
+  })
+
   it('keeps a healthy active server connected but degraded when tmux is missing', async () => {
     const missingTmux = {
       available: false,
