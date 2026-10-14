@@ -44306,7 +44306,9 @@ def emergency_alert_batch_through(
     settled: set[str] = set()
     active: list[tuple[int, str]] = []
     boundary = None
-    for event in reversed_jsonl_events(events_path(session_id)):
+    for event in reversed_jsonl_events(
+        events_path(session_id), retained_fields=EMERGENCY_EVENT_FIELDS,
+    ):
         if event.get("type") == "emergency_alert_acknowledged":
             settled.add(str(event.get("emergency_alert_id") or ""))
         elif event.get("type") == "emergency_alert_raised":

@@ -2,6 +2,7 @@ import asyncio
 import json
 import tempfile
 import threading
+import tracemalloc
 import unittest
 from contextlib import ExitStack
 from pathlib import Path
@@ -200,6 +201,33 @@ class EmergencyAlertServerTests(unittest.IsolatedAsyncioTestCase):
         result = await agent_server.acknowledge_session_emergency("source", agent_server.AcknowledgeEmergencyRequest(
             expected_alert_id=raised["alert"]["id"]))
         self.assertTrue(result["acknowledged"])
+
+    async def test_batch_dismissal_keeps_large_history_payload_out_of_memory(self):
+        first = await self.raise_alert("request.batch-large.0001", "First alert")
+        boundary = await self.raise_alert("request.batch-large.0002", "Last displayed alert")
+        path = agent_server.events_path("source")
+        seq = agent_server.EVENT_SEQ_CACHE["source"] + 1
+        with path.open("ab") as stream:
+            stream.write((f'{{"seq":{seq},"type":"tool_finished","output":"').encode())
+            for _ in range(40):
+                stream.write(b"x" * (1024 * 1024))
+            stream.write(b'"}\n')
+        agent_server.EVENT_SEQ_CACHE["source"] = seq
+        tracemalloc.start()
+        try:
+            event, ids = agent_server.emergency_alert_batch_through("source", boundary["alert"]["id"])
+            _, peak = tracemalloc.get_traced_memory()
+        finally:
+            tracemalloc.stop()
+        self.assertEqual(event["emergency_alert"]["id"], boundary["alert"]["id"])
+        self.assertEqual(ids, [first["alert"]["id"], boundary["alert"]["id"]])
+        self.assertLess(peak, 8 * 1024 * 1024, "batch scan materialized unrelated history")
+        request = agent_server.AcknowledgeEmergencyRequest(through_alert_id=boundary["alert"]["id"])
+        result = await agent_server.acknowledge_session_emergency("source", request)
+        self.assertTrue(result["acknowledged"])
+        self.assertFalse(agent_server.active_emergency_alerts(agent_server.STORE.sessions["source"]))
+        again = await agent_server.acknowledge_session_emergency("source", request)
+        self.assertFalse(again["acknowledged"])
 
     async def test_parallel_http_acknowledgements_commit_exactly_once(self):
         import httpx

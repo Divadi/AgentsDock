@@ -63,6 +63,20 @@ were removed after validation.
 
 ## Repeating automated checks
 
+After integrating current main, the new batch dismissal path was also moved
+onto the projected reader. Its 40 MiB regression measured over 80 MiB of Python
+allocations before the correction and less than 8 MiB afterward. All 31 alert
+tests passed, including batch boundary/retry cases. An isolated native
+development app dismissed two synthetic alerts through the real authenticated
+API with that large intervening record; both receipts persisted and refresh
+kept the active banner cleared while retaining historical rows.
+
+The integrated branch also passed 201 focused server checks, 907 desktop
+checks, TypeScript and production compilation. The repeat large-state process
+test preserved all original history and queue order, with chat readiness in
+14.1 seconds and per-route p95 below 0.22 seconds. These timings supersede no
+earlier observation and remain local measurements, not performance guarantees.
+
 Use an isolated HOME, state/config directories and native temporary storage;
 never inject recovery errors into a working user's state. From `server/`, use
 the project's Python environment:

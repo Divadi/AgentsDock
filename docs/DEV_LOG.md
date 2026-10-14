@@ -1,5 +1,21 @@
 # Public development log
 
+## 2026-10-13 — Validate recovery fixes against current main
+
+- Integrate the new batch emergency dismissal with the bounded-memory journal
+  reader. A 40 MiB regression reproduced more than 80 MiB of allocations with
+  the unprojected reader and passed below 8 MiB after the correction.
+- Recheck 201 focused server cases, then all 31 emergency cases including the
+  added regression; 907 desktop checks, TypeScript and production compilation
+  passed. The 1,000-chat/1.21 GB process test passed again, retaining all 192
+  queued messages and original history bytes; chat readiness took 14 seconds.
+- An isolated native development app used the real authenticated server to
+  dismiss two alerts with a 40 MiB intervening tool record. Both receipts were
+  durable, the active banner cleared, and refresh retained the historical rows
+  without restoring the banner. This fixture used no model provider.
+- No published release or running user service was replaced by this merge
+  validation. Signed end-to-end release acceptance remains separate.
+
 ## 2026-10-13 — Stress-test recovery and component updates with large histories
 
 - Added an opt-in process test with 1,000 saved chats, approximately 1.21 GB of
