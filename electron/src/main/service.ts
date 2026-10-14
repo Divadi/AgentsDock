@@ -2760,8 +2760,15 @@ export class AppService {
     await this.ensureValidatedScope(scope)
     const session = await scope.client.acknowledgeEmergency(sessionId, alertId)
     this.assertCurrentScope(scope)
-    this.upsertSession(scope, session)
-    return session
+    return this.applyEmergencyReceipt(scope, session)
+  }
+
+  async dismissEmergencyAlerts(sessionId: string, throughAlertId: string): Promise<Session> {
+    const scope = this.captureScope()
+    await this.ensureValidatedScope(scope)
+    const session = await scope.client.dismissEmergencyAlerts(sessionId, throughAlertId)
+    this.assertCurrentScope(scope)
+    return this.applyEmergencyReceipt(scope, session)
   }
 
   async importHistory(sessionId: string, force = false): Promise<TimelinePage> {
@@ -6895,6 +6902,16 @@ export class AppService {
       : receipt
     this.upsertSession(scope, merged)
     return merged
+  }
+
+  private applyEmergencyReceipt(scope: ConnectionScope, receipt: Session): Session {
+    // An emergency stream can deliver a later raise before this HTTP reply.
+    // Keep that newer state instead of clearing an alert outside the request.
+    const current = this.sessions.find(session => session.id === receipt.id)
+    const session = current && (current.latest_event_seq ?? 0) > (receipt.latest_event_seq ?? 0)
+      ? current : receipt
+    this.upsertSession(scope, session)
+    return session
   }
 
   private upsertSession(scope: ConnectionScope, session: Session): void {

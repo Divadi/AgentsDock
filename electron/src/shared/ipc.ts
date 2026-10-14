@@ -394,6 +394,7 @@ export interface AgentsDockAPI {
     markRead(sessionId: string, seq?: number | null): Promise<Session>
     markUnread(sessionId: string): Promise<Session>
     acknowledgeEmergency(sessionId: string, alertId: string): Promise<Session>
+    dismissEmergencyAlerts(sessionId: string, throughAlertId: string): Promise<Session>
     importHistory(sessionId: string, force?: boolean): Promise<TimelinePage>
     listLocal(): Promise<LocalSessionCandidate[]>
     bulkImport(items: BulkImportSessionItem[]): Promise<BulkImportSessionResult[]>

@@ -654,6 +654,13 @@ On macOS, the installer creates the LaunchAgent
 `com.agentsdock.server` and writes logs under
 `~/Library/Logs/AgentsServer/`.
 
+The source CLI also provides `agentsdock logs [NAME]` (`default` when omitted),
+with `--lines N` and `--follow`. It selects the installed service layout,
+including both gateway and worker logs for split default installations. This
+command is not in the published 1.0.10 / 1.0.11-beta.1 packages yet; use the
+platform commands above until a CLI release includes it. See
+[the log command guide](../npm/agentsdock/README.md#read-service-logs).
+
 ### Managed updates from AgentsDock
 
 Managed update endpoints use the same access token as the rest of the API.
@@ -1458,6 +1465,27 @@ GET /api/sessions/{session_id}/diffs/{run_id}
 The endpoint uses the same bearer-token authentication as the rest of the API.
 Binary changes remain compact Git binary markers rather than being copied into
 the event log.
+
+## Dismissing emergency alerts
+
+`POST /api/sessions/{session_id}/emergency/acknowledge` accepts exactly one
+of these fields:
+
+- `expected_alert_id`: acknowledge that one alert (existing behavior).
+- `through_alert_id`: acknowledge every still-active alert raised through
+  that alert's durable position, including the boundary alert itself.
+
+Clients discover the batch option through
+`capabilities.agent_emergency_alerts_v1.acknowledge_through_alert_id`. Capture
+the displayed alert ID when the user clicks; alerts raised after that boundary
+remain active. The boundary remains valid after another device acknowledges
+it, and repeating the request is harmless. An unknown boundary returns 409;
+a missing chat returns 404; both fields or neither field returns 422.
+
+Batch responses contain `session`, `acknowledged`, and `acknowledged_count`.
+The server persists ordinary acknowledgement events together and broadcasts
+the resulting summary. Reopening the chat or connecting another device sees
+the same result. Dismissal retains alert history and does not stop running work.
 
 ## Public API Sketch
 
