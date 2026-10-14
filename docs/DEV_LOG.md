@@ -1,5 +1,43 @@
 # Public development log
 
+## 2026-10-13 — Show CLI connection details together
+
+- Successful first-time global npm setup shows the default server URL and
+  token directly in the controlling terminal, even with npm's normal hidden
+  lifecycle output. Raw installer output and tokens stay out of npm's captured
+  streams/debug logs. Headless installs retain a non-secret summary; existing
+  installations are still left unchanged.
+- Interactive `agentsdock token [NAME]` shows binding-aware connection URLs
+  before the selected token and optional clipboard prompt. Interactive
+  `agentsdock status [NAME]` offers an opt-in arrow-key server picker afterward.
+  Cancellation shows no token; redirected status never prompts, and redirected
+  explicit token commands retain raw token-only output.
+- Checked the actual packaged CLI against a running macOS test instance:
+  URL/token agreement, status → consent → arrow selection → token, decline,
+  and redirected behavior. Authenticated health, service process/start time,
+  server identity/version and configuration stayed unchanged. No clipboard
+  write, service restart or global CLI replacement was performed.
+- Package tests exercise real npm both with and without foreground scripts,
+  checking terminal visibility and absence of credentials from npm logs.
+  That first-install test uses a synthetic installer, not new native service
+  creation. All 171 focused Node/Python checks passed, along with JavaScript
+  syntax and diff checks. Native Linux terminal acceptance remains untested. Source only;
+  no npm publication is included.
+
+## 2026-10-13 — Explain missing uv during npm setup
+
+- When automatic server setup cannot find or run uv, explain its Python
+  environment role and show installation, verification and retry instructions.
+  macOS guidance includes `brew install uv`; other platforms link the official
+  installation guide. Retry commands preserve the selected stable/beta version.
+- Keep installer logs and credentials out of npm diagnostics. Guidance does
+  not execute package managers, download prerequisites, retry setup, or add
+  telemetry. Unrelated failures retain their existing diagnostic path.
+- All 44 Node CLI checks and five package checks passed, including real npm
+  lifecycle execution with a synthetic missing-uv installer failure and private
+  output assertions. No uv installation/removal, live service changes or new
+  server creation was performed. This improvement is source-only until released.
+
 ## 2026-10-13 — Validate recovery fixes against current main
 
 - Integrate the new batch emergency dismissal with the bounded-memory journal
