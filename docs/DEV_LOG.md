@@ -1,5 +1,14 @@
 # Public development log
 
+## 2026-10-14 — Shorten the README introduction and quickstart
+
+- Reduce the feature overview and explain the app/server relationship in one
+  short paragraph. Keep installation to four steps, with the npm command and
+  URL/token retrieval visible.
+- Add prominent website, setup and feature-guide links; keep detailed
+  prerequisites and troubleshooting in the existing server guide.
+- Documentation only; no runtime, installer or release behavior changed.
+
 ## 2026-10-14 — Use the published npm CLI in installation guides
 
 - Make `npm install -g agentsdock` the primary manual installation command in
