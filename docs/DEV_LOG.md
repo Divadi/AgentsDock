@@ -18,9 +18,18 @@
 - Desktop suite: 5,162 passed, five skipped; eight packaging/license checks,
   TypeScript and production compilation passed. Server catch-up/reasoning
   regressions passed. Native offscreen acceptance uses a real authenticated
-  test service and provider, with a fault proxy keeping protocol ping/pong
-  alive while dropping application frames. Post-change native acceptance and
-  cross-machine validation are still in progress. No public release or merge.
+  test service, separately with Codex and Claude, with a fault proxy keeping
+  protocol ping/pong alive while dropping application frames. The legacy
+  connection remained stale after 60 seconds despite a completed reply; the
+  new connection automatically recovered the missing reply by the 40-second
+  observation. Both runs retained exactly two submitted turns and two final
+  replies. This is transport acceptance, not a new claim of thinking parity.
+- The local arm64 test package passed bundle audit, ad-hoc signature validation
+  and isolated startup. It disables updates and uses separate app data; it is
+  not a notarized public release. Real cross-machine/network switching and OS
+  sleep/wake remain user acceptance items; wake handling has focused regression
+  coverage. The designated test server was updated; no working server restart,
+  public upload, release or merge is included.
 
 ## 2026-10-13 — Show CLI connection details together
 
