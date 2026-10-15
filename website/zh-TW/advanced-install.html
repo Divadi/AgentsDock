@@ -127,7 +127,7 @@
         <ul>
           <li><strong>主機：</strong>Linux，或 Apple 晶片的 macOS。不支援 Intel macOS；安裝指令碼會在做任何更改前停止。</li>
           <li><strong>Node.js/npm：</strong>用於 <code>agentsdock</code> CLI。需要 Node.js 22.14 或更高版本。</li>
-          <li><strong><code>uv</code></strong> 預裝在 <code>PATH</code> 中（macOS 上 <code>brew install uv</code>；Linux 上用發行版的套件管理工具）。它負責準備隔離的 Python 3.10+ 執行環境。安裝指令碼從不下載引導指令碼。</li>
+          <li>伺服器的 <code>PATH</code> 中已安裝 <strong><code>uv</code></strong>，並在 npm 安裝前用 <code>uv --version</code> 驗證。它管理隔離的 Python 環境和相依套件，用戶端不需要它。macOS 已安裝 Homebrew 時，用 <code>brew install uv</code>；Linux 或其他方式請見 <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">uv 官方安裝指南</a>。AgentsDock 不會自動安裝 uv，檢查失敗時請看<a href="./setup.html#uv-missing">疑難排解</a>。</li>
           <li>你計畫使用的服務供應商 CLI（<strong>Claude Code</strong>、<strong>Codex</strong>、<strong>OpenCode</strong> 或 <strong>Cursor</strong>）已在主機上安裝並登入，且與執行伺服器的是同一個使用者帳號。</li>
           <li><strong>tmux</strong>（可選）——啟用應用程式內終端機、即時窗格檢視和應用程式內託管更新。裝有 Homebrew 的 macOS 上，安裝指令碼會詢問是否代為安裝；否則顯示安裝指令並繼續。</li>
           <li><strong>Tailscale</strong>（可選）——讓其他裝置無需暴露連接埠即可存取伺服器。</li>

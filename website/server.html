@@ -128,9 +128,11 @@
         </div>
 
         <h2 id="install">Install &amp; update</h2>
-        <p>First install — install the AgentsDock CLI as the user who will own the server:</p>
+        <p>Before installing: use macOS (Apple silicon) or Linux with Node.js 22.14 or later, npm, and <a href="./setup.html#install-uv"><code>uv</code></a> on the server machine. AgentsDock does not install uv automatically. On macOS with Homebrew, run <code>brew install uv</code>; for Linux or other methods, see the <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">official uv installation guide</a>.</p>
+        <p>Confirm <code>uv --version</code> works in the same terminal, then install the AgentsDock CLI as the user who will own the server:</p>
 <pre>npm install -g agentsdock</pre>
         <p>On a fresh machine, the global install creates the default user service and installs the runtime under <code>~/.local/share/agents-server</code>. No repo clone is needed. Do not use <code>sudo</code>. A local <code>npm install agentsdock</code> only adds a project dependency; it does not create a server service.</p>
+        <p>After installation, run <code>agentsdock list</code> to confirm <code>default</code> is running and find its URL, then <code>agentsdock token default</code> to read its token. npm may hide setup messages; see the <a href="./setup.html#connection-output">connection output example</a>.</p>
         <p>To update an existing server, use the app: open <strong>Settings &rarr; Updates</strong>, click <strong>Check now</strong>, then use <strong>Update server</strong> or <strong>Retry server update</strong> when offered. The managed updater swaps in the new runtime, restarts the service, and keeps your token and state.</p>
         <p><strong>Custom install options</strong></p>
 <pre>AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
@@ -141,12 +143,13 @@ agentsdock setup [--port PORT] [--bind ADDRESS] [--non-interactive] [--dry-run]<
           <li><code>--non-interactive</code> — no prompts; for scripted or SSH-driven runs.</li>
           <li><code>--dry-run</code> — print the native installer command without executing it.</li>
         </ul>
-        <p>Requirements: macOS (Apple silicon) or Linux, Node.js/npm, a preinstalled <code>uv</code> (<code>brew install uv</code> on macOS), and whichever provider CLIs you plan to use installed and signed in. <code>tmux</code> is optional — it powers the in-app terminal and managed updates.</p>
+        <p>Install and sign in to whichever provider CLIs you plan to use on the server. <code>tmux</code> is optional — it powers the in-app terminal and managed updates. If setup reports that uv is required on PATH, see <a href="./setup.html#uv-missing">uv troubleshooting</a>.</p>
         <p>If an older server update was interrupted during the 1.0.4-era migration, run <code>agentsdock recover</code> on the server machine, then choose <strong>Retry server update</strong> in the app.</p>
 
         <h2 id="token">Show your access token</h2>
         <p>To see the token at any time, run this on the server — it only reads the existing configuration and changes nothing:</p>
-<pre>agentsdock token</pre>
+<pre>agentsdock token default</pre>
+        <p>For a named server, replace <code>default</code> with its name. Run <code>agentsdock token</code> without a name to choose a server interactively.</p>
         <p>Paste it into the app's <strong>Access token</strong> field when adding the server (see the <a href="./setup.html#part-device">Setup guide</a>).</p>
 
         <h2 id="health">Check it's running</h2>

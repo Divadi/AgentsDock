@@ -79,7 +79,7 @@
             <a href="#prereqs">開始之前</a>
             <a href="#part-remote">第一步 · 架設遠端機器</a>
             <a href="#part-device">第二步 · 連線你的裝置</a>
-            <a href="#troubleshoot">連不上？</a>
+            <a href="#troubleshoot">疑難排解</a>
           </span>
           <a class="docs-nav-link" href="./iphone.html">用戶端安裝</a>
           <a class="docs-nav-link" href="./agents.html">連線 agents</a>
@@ -116,7 +116,7 @@
       <article class="legal docs-body">
         <p class="section-kicker">文件</p>
         <h1>安裝與連線</h1>
-        <p class="legal-meta">最後更新：2026 年 10 月 1 日 · 約需 15 分鐘</p>
+        <p class="legal-meta">最後更新：2026 年 10 月 14 日 · 約需 15 分鐘</p>
 
         <ul class="docs-intro-list">
           <li><strong>AgentsServer</strong> 在你自己的遠端機器上執行實際工作。</li>
@@ -125,7 +125,8 @@
 
         <h2 id="prereqs">開始之前</h2>
         <ul>
-          <li>一臺由你掌控的遠端機器（Linux，或 Apple silicon Mac）來執行伺服器。先在這臺機器上安裝 Node.js/npm 和 <code>uv</code>。<code>tmux</code> 是可選的，只有應用程式內終端機需要它。</li>
+          <li>一臺由你掌控的遠端機器（Linux，或 Apple silicon Mac）來執行伺服器，已安裝 Node.js 22.14 或更新版本及 npm。<code>tmux</code> 是可選的，只有應用程式內終端機需要它。</li>
+          <li>伺服器機器上已安裝 <strong><code>uv</code></strong>。它管理伺服器的 Python 環境和相依套件，AgentsDock 不會自動安裝它。詳細步驟請見下方的<a href="#install-uv">先安裝 uv</a>。</li>
           <li>一個 <a href="https://tailscale.com/download" target="_blank" rel="noopener">Tailscale</a> 帳號（可選）——僅在需要從區域網路之外存取遠端機器時才用得到。在同一 Wi‑Fi 下可以直接用機器的區域網路 IP；Tailscale 讓你能從其他任何地方安全連線。</li>
           <li>你計畫使用的服務供應商 CLI（<strong>Claude Code</strong>、<strong>Codex</strong>、<strong>OpenCode</strong> 或 <strong>Cursor</strong>）已安裝在遠端機器上。</li>
           <li>一臺能執行 <strong>AgentsDock 用戶端</strong>的裝置：macOS、Windows、Linux、iPhone、iPad 或 Android。</li>
@@ -138,37 +139,36 @@
         <p>在負責執行工作的那臺機器上做一次即可。它會持續執行，你的各個裝置都連線到它。</p>
 
         <h3 class="docs-step" id="remote-server"><span class="step-n">1</span>安裝 AgentsServer</h3>
-        <p>在遠端機器上，用將要執行伺服器的使用者安裝 AgentsDock CLI：</p>
+        <p id="install-uv"><strong>先安裝 uv。</strong>只有執行伺服器的機器需要它，手機或只作為用戶端的電腦不需要。macOS 已安裝 Homebrew 時，執行：</p>
+        <pre><code>brew install uv
+uv --version</code></pre>
+        <p>Linux 或其他安裝方式請參考 <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">uv 官方安裝指南</a>。在同一個終端機裡確認 <code>uv --version</code> 能顯示版本號碼，再繼續下一步。</p>
+        <p>然後在遠端機器上，用將要執行伺服器的使用者安裝 AgentsDock CLI：</p>
         <pre><code>npm install -g agentsdock</code></pre>
         <p>在一臺新機器上，這個指令也會建立並啟動預設伺服器。標準安裝不需要 clone repo。不要使用 <code>sudo</code>。</p>
-        <p class="legal-meta">安裝完成時，終端機會顯示伺服器網址與安裝結果。以下是範例，實際位址和 token 會依你的環境而不同：</p>
-        <pre class="terminal-output"><code><span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
-
-<span class="term-success">Your new service is up!</span>
-
-  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7850</span>
-  <span class="term-dim">Other local/network addresses:</span>
-    <span class="term-url">http://192.168.1.23:7850</span>
-
-  <span class="term-label">You already have</span>
-  <span class="term-success">AgentsServer running</span>
-  <span class="term-success">tmux available</span>
-
-<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7850</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
+        <p>npm 可能隱藏安裝成功時的提示。安裝時使用 <code>npm install -g agentsdock --foreground-scripts</code> 可以顯示這些資訊。已發布的 1.0.10 CLI 只顯示簡短摘要，不會直接顯示安裝程式的完整輸出或 token。</p>
+        <p class="legal-meta">使用 <code>--foreground-scripts</code> 時的安裝提示範例，省略了 npm 自身的資訊，實際位址可能不同：</p>
+        <pre class="terminal-output" style="white-space: pre-wrap"><code><span class="term-dim">agentsdock: Setting up your first AgentsDock server. This may take a few minutes.</span>
+agentsdock: <span class="term-success">Server 1.0.10 is ready</span> at <span class="term-url">http://100.100.100.12:7850</span>. Open AgentsDock to connect. Use agentsdock token to view/copy its private token.</code></pre>
         <p>伺服器預設監聽 7850 連接埠，並在遠端機器上持續執行——你的裝置連線的就是它。</p>
-        <p>之後想確認伺服器狀態，可以執行：</p>
-        <pre><code>agentsdock status</code></pre>
-        <p class="legal-meta">輸出大概會像這樣：</p>
-        <pre class="terminal-output"><code><span class="term-head">Server (default):</span>
-  <span class="term-label">Status:</span>   <span class="term-success">running</span>
-  <span class="term-label">Address:</span>  <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(Tailscale / other networks)</span>
-            <span class="term-url">http://192.168.1.23:7850</span> <span class="term-dim">(Same Wi-Fi / LAN)</span>
-            <span class="term-url">http://127.0.0.1:7850</span> <span class="term-dim">(This machine only)</span>
-  <span class="term-label">Version:</span>  1.0.10
-  <span class="term-label">Port:</span>     7850</code></pre>
-        <p>伺服器會用一個 token 保護。連線裝置時，在遠端機器上執行下面的指令檢視：</p>
-        <pre><code>agentsdock token</code></pre>
-        <p class="legal-meta">狀態、重新啟動、更新和解除安裝等伺服器指令都在<a href="./server.html">管理伺服器</a>頁面。</p>
+        <p id="connection-output">安裝結束後，確認 <strong>default</strong> 的狀態是 <strong>running</strong>，並查看連線位址：</p>
+        <pre><code>agentsdock list</code></pre>
+        <p class="legal-meta">以下範例已連線 Tailscale。實際位址取決於你的網路和伺服器繫結設定：</p>
+        <pre class="terminal-output"><code><span class="term-label">NAME                 STATUS     PORT</span>
+<span class="term-head">default</span>              <span class="term-success">running</span>    7850
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7850</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7850</span></code></pre>
+        <p>同一區域網路內使用 LAN 位址，跨網路時使用私人 Tailscale 網路中的位址。<code>127.0.0.1</code> 只能在伺服器本機使用。</p>
+        <p>單獨查看預設伺服器的 <strong>token</strong>，並妥善保管：</p>
+        <pre><code>agentsdock token default</code></pre>
+        <p class="legal-meta" id="token-output">以下是支援剪貼簿的本機終端機輸出範例，其中的 token 是預留文字，不是真實憑證：</p>
+        <pre class="terminal-output" style="white-space: pre-wrap"><code><span class="term-label">Access token (default):</span>
+<span class="term-key">ad_tok_EXAMPLE_ONLY_DO_NOT_USE</span>
+
+<span class="term-dim">Copy token to this machine's clipboard? [y/N]</span></code></pre>
+        <p>只把你自己的真實 token 貼到應用程式中。透過 SSH 或終端機不支援剪貼簿時，請手動複製 token 那一行。</p>
+        <p class="legal-meta">更多執行資訊可用 <code>agentsdock status</code> 查看。重新啟動、更新和解除安裝等指令請見<a href="./server.html">管理伺服器</a>。</p>
         <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">在 GitHub 上檢視 AgentsServer 原始碼 <span aria-hidden="true">&rarr;</span></a></p>
 
         <h3 class="docs-step" id="remote-cli"><span class="step-n">2</span>在遠端機器上登入服務供應商 CLI</h3>
@@ -197,7 +197,7 @@
         <p>在 AgentsDock 中新增伺服器，填入遠端機器的地址——它的 Tailscale <code>100.x.x.x</code> 地址加連接埠 <code>7850</code>——然後把第一步得到的 token 貼上到<strong>token</strong>欄位。它長這樣：</p>
         <pre><code>ad_tok_9f3b7c2e••••••••••••••••••••   (sample)</code></pre>
         <p>這個 token 存放在你的伺服器機器上——也就是第一步架設的遠端機器，而不是你正在用來連線的裝置。想再次獲取，在遠端機器上執行：</p>
-        <pre><code>agentsdock token</code></pre>
+        <pre><code>agentsdock token default</code></pre>
         <p>點選<strong>測試連線（Test connection）</strong>確認應用程式能連到伺服器，再點<strong>新增並切換（Add &amp; switch）</strong>。連線成功後：新建一個對話，選擇一個服務供應商，並指定遠端機器上的一個工作目錄。</p>
         <figure class="docs-shot">
           <img src="../assets/setup-token.png" alt="AgentsDock connection form on macOS with the Access token field, a Test connection button, and Add and switch" loading="lazy" />
@@ -215,7 +215,12 @@
           <figcaption>在側邊欄頂部的選單裡切換伺服器——每個伺服器都保留自己的對話。</figcaption>
         </figure>
 
-        <h2 id="troubleshoot">連不上？</h2>
+        <h2 id="troubleshoot">疑難排解</h2>
+        <h3 id="uv-missing">uv 未安裝或無法執行</h3>
+        <p>如果安裝時顯示 <code>A trusted uv installation is required on PATH.</code>，表示 uv 未安裝、不在 <code>PATH</code> 中，或無法執行。請<a href="#install-uv">安裝 uv</a>，在同一個終端機裡確認 <code>uv --version</code> 正常，再重試並顯示狀態資訊：</p>
+        <pre><code>npm install -g agentsdock --foreground-scripts</code></pre>
+        <p>這個必要套件錯誤不需要修改設定或刪除檔案。如果 uv 正常後安裝仍失敗，請透過<a href="./report-issue.html">回報問題</a>提供新的診斷輸出，並移除 token 等憑證。</p>
+        <h3>連不上？</h3>
         <ul>
           <li>確認在同一臺裝置的瀏覽器裡能開啟伺服器 URL——瀏覽器打不開的話，應用程式也連不上。</li>
           <li>檢查兩端的 Tailscale 都已開啟並登入，並且你用的是遠端機器的 <code>100.x.x.x</code> Tailscale 地址（而不是只在遠端機器自己網路裡有效的區域網路 IP）。</li>

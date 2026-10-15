@@ -128,9 +128,11 @@
         </div>
 
         <h2 id="install">安装与更新</h2>
-        <p>首次安装——用将要运行服务器的用户安装 AgentsDock CLI：</p>
+        <p>安装前：服务器机器需运行 macOS（Apple 芯片）或 Linux，并安装 Node.js 22.14 或更高版本、npm 和 <a href="./setup.html#install-uv"><code>uv</code></a>。AgentsDock 不会自动安装 uv。macOS 已安装 Homebrew 时，运行 <code>brew install uv</code>；Linux 或其他安装方式见 <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">uv 官方安装指南</a>。</p>
+        <p>在同一个终端里确认 <code>uv --version</code> 正常，再用将要运行服务器的用户安装 AgentsDock CLI：</p>
 <pre>npm install -g agentsdock</pre>
         <p>在一台新机器上，全局安装会创建默认用户级服务，并把运行时安装到 <code>~/.local/share/agents-server</code>。标准安装不需要 clone repo。不要使用 <code>sudo</code>。本地 <code>npm install agentsdock</code> 只会添加项目依赖，不会创建服务器服务。</p>
+        <p>安装后运行 <code>agentsdock list</code>，确认 <code>default</code> 正在运行并查看 URL，再用 <code>agentsdock token default</code> 查看 token。npm 可能隐藏安装提示，具体见<a href="./setup.html#connection-output">连接信息输出示例</a>。</p>
         <p>更新已有服务器时，在应用里操作：打开<strong>设置 &rarr; 更新</strong>，点击 <strong>Check now</strong>，然后在出现时使用 <strong>Update server</strong> 或 <strong>Retry server update</strong>。托管更新会换上新的运行时、重启服务，并保留你的 token 和状态。</p>
         <p>自定义安装选项</p>
 <pre>AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
@@ -141,12 +143,13 @@ agentsdock setup [--port PORT] [--bind ADDRESS] [--non-interactive] [--dry-run]<
           <li><code>--non-interactive</code>——不出现任何提示；用于脚本化或通过 SSH 驱动的运行。</li>
           <li><code>--dry-run</code>——打印实际会执行的原生安装命令，但不执行。</li>
         </ul>
-        <p>要求：macOS（Apple 芯片）或 Linux，Node.js/npm，预装 <code>uv</code>（macOS 上 <code>brew install uv</code>），以及你计划使用的提供方 CLI 已安装并登录。<code>tmux</code> 可选——它支撑应用内终端和托管更新。</p>
+        <p>在服务器上安装并登录你计划使用的提供方 CLI。<code>tmux</code> 可选——它支撑应用内终端和托管更新。如果安装时提示 PATH 中需要 uv，见 <a href="./setup.html#uv-missing">uv 问题排查</a>。</p>
         <p>如果旧服务器在 1.0.4 迁移期间中断，在服务器机器上运行 <code>agentsdock recover</code>，然后回到应用里选择 <strong>Retry server update</strong>。</p>
 
         <h2 id="token">查看你的 token</h2>
         <p>之后随时想看 token，在服务器上运行下面的命令——它只读取现有配置，不做任何更改：</p>
-<pre>agentsdock token</pre>
+<pre>agentsdock token default</pre>
+        <p>命名服务器请把 <code>default</code> 换成对应名称。不带名称运行 <code>agentsdock token</code>，可以交互选择服务器。</p>
         <p>添加服务器时把它粘贴到应用的<strong>token</strong>字段（参见<a href="./setup.html#part-device">搭建指南</a>）。</p>
 
         <h2 id="health">确认正在运行</h2>

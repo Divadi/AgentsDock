@@ -128,9 +128,11 @@
         </div>
 
         <h2 id="install">安裝與更新</h2>
-        <p>首次安裝——用將要執行伺服器的使用者安裝 AgentsDock CLI：</p>
+        <p>安裝前：伺服器機器需執行 macOS（Apple 晶片）或 Linux，並安裝 Node.js 22.14 或更新版本、npm 和 <a href="./setup.html#install-uv"><code>uv</code></a>。AgentsDock 不會自動安裝 uv。macOS 已安裝 Homebrew 時，執行 <code>brew install uv</code>；Linux 或其他安裝方式請見 <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">uv 官方安裝指南</a>。</p>
+        <p>在同一個終端機裡確認 <code>uv --version</code> 正常，再用將要執行伺服器的使用者安裝 AgentsDock CLI：</p>
 <pre>npm install -g agentsdock</pre>
         <p>在一臺新機器上，全域安裝會建立預設使用者級服務，並把執行環境安裝到 <code>~/.local/share/agents-server</code>。標準安裝不需要 clone repo。不要使用 <code>sudo</code>。本機 <code>npm install agentsdock</code> 只會新增專案依賴，不會建立伺服器服務。</p>
+        <p>安裝後執行 <code>agentsdock list</code>，確認 <code>default</code> 正在執行並查看 URL，再用 <code>agentsdock token default</code> 查看 token。npm 可能隱藏安裝提示，詳細內容請見<a href="./setup.html#connection-output">連線資訊輸出範例</a>。</p>
         <p>更新已有伺服器時，在應用程式裡操作：開啟<strong>設定 &rarr; 更新</strong>，點選 <strong>Check now</strong>，然後在出現時使用 <strong>Update server</strong> 或 <strong>Retry server update</strong>。託管更新會換上新的執行環境、重新啟動服務，並保留你的 token 和狀態。</p>
         <p>自訂安裝選項</p>
 <pre>AGENTSDOCK_SKIP_SETUP=1 npm install -g agentsdock
@@ -141,12 +143,13 @@ agentsdock setup [--port PORT] [--bind ADDRESS] [--non-interactive] [--dry-run]<
           <li><code>--non-interactive</code>——不出現任何提示；用於指令碼化或透過 SSH 驅動的執行。</li>
           <li><code>--dry-run</code>——顯示實際會執行的原生安裝指令，但不執行。</li>
         </ul>
-        <p>要求：macOS（Apple 晶片）或 Linux，Node.js/npm，預裝 <code>uv</code>（macOS 上 <code>brew install uv</code>），以及你計畫使用的服務供應商 CLI 已安裝並登入。<code>tmux</code> 可選——它支撐應用程式內終端機和託管更新。</p>
+        <p>在伺服器上安裝並登入你計畫使用的服務供應商 CLI。<code>tmux</code> 可選——它支撐應用程式內終端機和託管更新。如果安裝時顯示 PATH 中需要 uv，請見 <a href="./setup.html#uv-missing">uv 疑難排解</a>。</p>
         <p>如果舊伺服器在 1.0.4 遷移期間中斷，在伺服器機器上執行 <code>agentsdock recover</code>，然後回到應用程式裡選擇 <strong>Retry server update</strong>。</p>
 
         <h2 id="token">檢視你的 token</h2>
         <p>之後隨時想看 token，在伺服器上執行下面的指令——它唯讀取現有設定，不做任何更改：</p>
-<pre>agentsdock token</pre>
+<pre>agentsdock token default</pre>
+        <p>命名伺服器請把 <code>default</code> 換成對應名稱。不帶名稱執行 <code>agentsdock token</code>，可以互動選擇伺服器。</p>
         <p>新增伺服器時把它貼上到應用程式的<strong>token</strong>欄位（參見<a href="./setup.html#part-device">安裝與連線</a>）。</p>
 
         <h2 id="health">確認正在執行</h2>

@@ -22,6 +22,45 @@ painful to rediscover later.
   active server and push the latest server repository/code to GitHub so app and
   server contract versions do not drift.
 
+## 2026-10-14 - Correct the npm setup output examples
+
+- Replaced the raw installer progress and setup JSON in all three setup guides
+  with the published 1.0.10 CLI's non-secret summary. Explained that npm may hide
+  lifecycle messages and that `--foreground-scripts` makes them visible.
+- Added a colored `agentsdock list` example for checking the default server's
+  status and addresses, followed by `agentsdock token default`. Updated the
+  server-management pages to use the same connection steps and distinguish
+  explicitly named tokens from the interactive server picker.
+- Added a localized token-output example with an explicitly fake placeholder
+  and the optional local clipboard prompt. Verified the transcript against the
+  released installer's token formatter without reading an actual credential;
+  browser checks passed for placement, color, wrapping, and management links.
+- Compared the example text with the published npm postinstall formatter using
+  a synthetic installer receipt and blocked native subprocesses. Browser checks
+  passed for all six setup/server pages at desktop and mobile widths, including
+  output equality across languages, colors, wrapping, and navigation.
+- Approved for website publication and mirror sync together with the uv
+  prerequisite changes below. No real installer, server update, or service
+  restart was performed; fresh-install acceptance is not claimed.
+
+## 2026-10-13 - Clarify the website's uv prerequisite
+
+- Updated the English, Simplified Chinese, and Traditional Chinese setup
+  guides to explain the server-only uv requirement before npm installation,
+  show the Homebrew command for macOS and `uv --version`, and link the official
+  installation guide for other environments.
+- Added troubleshooting for the exact missing-uv error, a retry with
+  `--foreground-scripts`, and guidance to share new diagnostics if it persists.
+  Added matching prerequisite references to the homepage, server management,
+  and advanced installation pages without changing the existing design.
+- Verified the requirement against the maintained installer and npm postinstall
+  source. All 12 edited pages passed browser checks at desktop and mobile
+  widths, including prerequisite ordering, links, troubleshooting navigation,
+  language switching, and absence of page overflow or script errors.
+- Included in the approved October 14 website publication batch. No server
+  code, installed packages, or services changed. A fresh-machine install was
+  not run.
+
 ## 2026-10-13 - Publish the Traditional Chinese website
 
 - Added `website/zh-TW/` with the same 24 pages as Simplified Chinese, using

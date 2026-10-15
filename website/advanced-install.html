@@ -127,7 +127,7 @@
         <ul>
           <li><strong>Host:</strong> Linux, or Apple-silicon macOS. Intel macOS is not supported; the installer stops before changing anything.</li>
           <li><strong>Node.js/npm</strong> for the <code>agentsdock</code> CLI. Node.js 22.14 or later is required.</li>
-          <li><strong><code>uv</code></strong> preinstalled on <code>PATH</code> (<code>brew install uv</code> on macOS; your distro's package manager on Linux). It provisions the isolated Python 3.10+ runtime. The installer never downloads a bootstrap script.</li>
+          <li><strong><code>uv</code></strong> installed on the server's <code>PATH</code> and verified with <code>uv --version</code> before running npm install. It manages the isolated Python environment and dependencies; clients do not need it. On macOS with Homebrew, use <code>brew install uv</code>. For Linux or other methods, see the <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">official uv installation guide</a>. AgentsDock does not install uv automatically; see <a href="./setup.html#uv-missing">troubleshooting</a> if the check fails.</li>
           <li>Any provider CLIs you plan to use — <strong>Claude Code</strong>, <strong>Codex</strong>, <strong>OpenCode</strong>, or <strong>Cursor</strong> — installed and signed in on the host, in the same user account that runs the server.</li>
           <li><strong>tmux</strong> (optional) — enables the in-app terminal, live pane inspection, and in-app managed updates. On macOS with Homebrew, the installer offers to install it; otherwise it prints the command and continues.</li>
           <li><strong>Tailscale</strong> (optional) — for reaching the server from other devices without exposing the port.</li>

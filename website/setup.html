@@ -79,7 +79,7 @@
             <a href="#prereqs">Before you start</a>
             <a href="#part-remote">Part 1 · Set up the remote</a>
             <a href="#part-device">Part 2 · Connect your device</a>
-            <a href="#troubleshoot">Not connecting?</a>
+            <a href="#troubleshoot">Troubleshooting</a>
           </span>
           <a class="docs-nav-link" href="./iphone.html">Client install</a>
           <a class="docs-nav-link" href="./agents.html">Connect agents</a>
@@ -116,7 +116,7 @@
       <article class="legal docs-body">
         <p class="section-kicker">Docs</p>
         <h1>Setup guide</h1>
-        <p class="legal-meta">Last updated: October 1, 2026 · about 15 minutes</p>
+        <p class="legal-meta">Last updated: October 14, 2026 · about 15 minutes</p>
 
         <ul class="docs-intro-list">
           <li><strong>AgentsServer</strong> runs the real work on a remote machine you own.</li>
@@ -125,7 +125,8 @@
 
         <h2 id="prereqs">Before you start</h2>
         <ul>
-          <li>A <strong>remote machine</strong> you control — Linux, or Apple-silicon macOS — to run the server. Install Node.js/npm and <code>uv</code> on that machine first. <code>tmux</code> is optional, only needed for the in-app terminal.</li>
+          <li>A <strong>remote machine</strong> you control — Linux, or Apple-silicon macOS — to run the server, with Node.js 22.14 or later and npm installed. <code>tmux</code> is optional, only needed for the in-app terminal.</li>
+          <li><strong><code>uv</code></strong> installed on the server machine. It manages the server's Python environment and dependencies; AgentsDock does not install it automatically. See <a href="#install-uv">Install uv first</a> below.</li>
           <li>A <strong>Tailscale</strong> account <em>(optional)</em> — only needed to reach the remote from <strong>outside its local network</strong>. On the same Wi&#8209;Fi you can use the machine's local IP address; Tailscale is what lets you connect securely from anywhere else.</li>
           <li>Any provider CLI you plan to use — <strong>Claude Code</strong>, <strong>Codex</strong>, <strong>OpenCode</strong>, or <strong>Cursor</strong> — installed on the remote.</li>
           <li>A device that can run an <strong>AgentsDock client</strong>: macOS, Windows, Linux, iPhone, iPad, or Android.</li>
@@ -138,37 +139,36 @@
         <p>Do this once, on the machine that will do the work. It stays running and your devices connect to it.</p>
 
         <h3 class="docs-step" id="remote-server"><span class="step-n">1</span>Install the AgentsServer</h3>
-        <p>Install the AgentsDock CLI on the remote as the user who will own the server:</p>
+        <p id="install-uv"><strong>Install uv first.</strong> You only need it on the machine running the server, not on phones or computers used only as clients. On macOS with Homebrew:</p>
+        <pre><code>brew install uv
+uv --version</code></pre>
+        <p>For Linux or other installation methods, follow the <a href="https://docs.astral.sh/uv/getting-started/installation/" target="_blank" rel="noopener">official uv installation guide</a>. Confirm <code>uv --version</code> prints a version in the same terminal before continuing.</p>
+        <p>Then install the AgentsDock CLI on the remote as the user who will own the server:</p>
         <pre><code>npm install -g agentsdock</code></pre>
         <p>On a fresh machine, this also creates and starts the default server. No repo clone is needed. Do not use <code>sudo</code>.</p>
-        <p class="legal-meta">Near the end, the terminal prints the server URL and a setup result line. Your addresses and token will be different:</p>
-        <pre class="terminal-output"><code><span class="term-head">[7/7] AgentsServer 1.0.10 is ready</span>
-
-<span class="term-success">Your new service is up!</span>
-
-  <span class="term-label">Server URL</span>    <span class="term-url">http://100.100.100.12:7850</span>
-  <span class="term-dim">Other local/network addresses:</span>
-    <span class="term-url">http://192.168.1.23:7850</span>
-
-  <span class="term-label">You already have</span>
-  <span class="term-success">AgentsServer running</span>
-  <span class="term-success">tmux available</span>
-
-<span class="term-json">AGENTSDOCK_SETUP_RESULT={"server_url":"<span class="term-url">http://100.100.100.12:7850</span>","access_token":"ad_tok_...","service":"launchd","tailscale_ip":"100.100.100.12","server_version":"1.0.10"}</span></code></pre>
+        <p>npm may hide successful setup messages. To show them during installation, use <code>npm install -g agentsdock --foreground-scripts</code>. The published 1.0.10 CLI prints a short summary, not the installer's full output or token.</p>
+        <p class="legal-meta">Example setup messages with <code>--foreground-scripts</code>; npm's own messages are omitted and your address may differ:</p>
+        <pre class="terminal-output" style="white-space: pre-wrap"><code><span class="term-dim">agentsdock: Setting up your first AgentsDock server. This may take a few minutes.</span>
+agentsdock: <span class="term-success">Server 1.0.10 is ready</span> at <span class="term-url">http://100.100.100.12:7850</span>. Open AgentsDock to connect. Use agentsdock token to view/copy its private token.</code></pre>
         <p>The server listens on port <strong>7850</strong> by default and stays running on the remote — that's the piece your devices connect to.</p>
-        <p>To confirm what is running later:</p>
-        <pre><code>agentsdock status</code></pre>
-        <p class="legal-meta">Example output:</p>
-        <pre class="terminal-output"><code><span class="term-head">Server (default):</span>
-  <span class="term-label">Status:</span>   <span class="term-success">running</span>
-  <span class="term-label">Address:</span>  <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(Tailscale / other networks)</span>
-            <span class="term-url">http://192.168.1.23:7850</span> <span class="term-dim">(Same Wi-Fi / LAN)</span>
-            <span class="term-url">http://127.0.0.1:7850</span> <span class="term-dim">(This machine only)</span>
-  <span class="term-label">Version:</span>  1.0.10
-  <span class="term-label">Port:</span>     7850</code></pre>
-        <p>It's secured with an <strong>access token</strong>. To show it when connecting a device, run this on the remote:</p>
-        <pre><code>agentsdock token</code></pre>
-        <p class="legal-meta">Server commands for status, restart, update, and uninstall are on <a href="./server.html">Manage your server</a>.</p>
+        <p id="connection-output">After installation finishes, confirm <strong>default</strong> is <strong>running</strong> and find its connection addresses:</p>
+        <pre><code>agentsdock list</code></pre>
+        <p class="legal-meta">Example with Tailscale connected. Addresses depend on your network and server binding:</p>
+        <pre class="terminal-output"><code><span class="term-label">NAME                 STATUS     PORT</span>
+<span class="term-head">default</span>              <span class="term-success">running</span>    7850
+  <span class="term-dim">Tailscale / other networks:</span> <span class="term-url">http://100.100.100.12:7850</span> <span class="term-dim">(recommended)</span>
+  <span class="term-dim">Same Wi-Fi / LAN:</span>          <span class="term-url">http://192.168.1.23:7850</span>
+  <span class="term-dim">This machine only:</span>         <span class="term-url">http://127.0.0.1:7850</span></code></pre>
+        <p>Use a LAN address on the same network or a Tailscale address across your private tailnet. <code>127.0.0.1</code> works only on the server machine itself.</p>
+        <p>Read the default server's <strong>access token</strong> separately and keep it private:</p>
+        <pre><code>agentsdock token default</code></pre>
+        <p class="legal-meta" id="token-output">Example in a local terminal with clipboard support. The token below is a placeholder, not a real credential:</p>
+        <pre class="terminal-output" style="white-space: pre-wrap"><code><span class="term-label">Access token (default):</span>
+<span class="term-key">ad_tok_EXAMPLE_ONLY_DO_NOT_USE</span>
+
+<span class="term-dim">Copy token to this machine's clipboard? [y/N]</span></code></pre>
+        <p>Paste only your actual token into the app. Over SSH or without clipboard support, copy the token line manually.</p>
+        <p class="legal-meta">For more runtime details, use <code>agentsdock status</code>. Restart, update, and uninstall commands are on <a href="./server.html">Manage your server</a>.</p>
         <p><a class="quickstart-docs" href="https://github.com/ZhengyiLuo/AgentsDock/tree/main/server" target="_blank" rel="noopener">View AgentsServer source on GitHub <span aria-hidden="true">&rarr;</span></a></p>
 
         <h3 class="docs-step" id="remote-cli"><span class="step-n">2</span>Sign in to provider CLIs on the remote</h3>
@@ -197,7 +197,7 @@
         <p>In AgentsDock, add a server with the remote's <strong>address</strong> — its Tailscale <code>100.x.x.x</code> address and port <code>7850</code> — then paste the <strong>access token</strong> from Part 1 into the <strong>Access token</strong> field. It looks something like this:</p>
         <pre><code>ad_tok_9f3b7c2e••••••••••••••••••••   (sample)</code></pre>
         <p>This token lives on <strong>your server machine</strong> — the remote you set up in Part 1, <em>not</em> the device you're connecting from. To get it again, run this on the remote:</p>
-        <pre><code>agentsdock token</code></pre>
+        <pre><code>agentsdock token default</code></pre>
         <p>Click <strong>Test connection</strong> to confirm the app can reach the server, then <strong>Add &amp; switch</strong>. You're connected: start a chat, pick a provider, and point it at a working directory on your remote.</p>
         <figure class="docs-shot">
           <img src="./assets/setup-token.png" alt="AgentsDock connection form on macOS with the Access token field, a Test connection button, and Add and switch" loading="lazy" />
@@ -215,7 +215,12 @@
           <figcaption>Switch servers from the menu at the top of the sidebar — each server keeps its own chats.</figcaption>
         </figure>
 
-        <h2 id="troubleshoot">Not connecting?</h2>
+        <h2 id="troubleshoot">Troubleshooting</h2>
+        <h3 id="uv-missing">uv missing or not working</h3>
+        <p>If setup reports <code>A trusted uv installation is required on PATH.</code>, uv is missing, cannot be found on <code>PATH</code>, or cannot run. <a href="#install-uv">Install uv</a>, confirm <code>uv --version</code> works in the same terminal, then retry with status messages visible:</p>
+        <pre><code>npm install -g agentsdock --foreground-scripts</code></pre>
+        <p>This prerequisite error does not require editing configuration or deleting files. If setup still fails after uv works, share the new diagnostic output with <a href="./report-issue.html">Support</a>, without tokens or other credentials.</p>
+        <h3>Not connecting?</h3>
         <ul>
           <li>Confirm the server URL opens in a browser <em>on the same device</em> — if the browser can't reach it, the app can't either.</li>
           <li>Check that Tailscale is active and signed in on <em>both</em> ends, and that you used the remote's <code>100.x.x.x</code> Tailscale address (not a local IP that only works on the remote's own network).</li>
