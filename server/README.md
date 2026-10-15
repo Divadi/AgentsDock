@@ -22,13 +22,47 @@ The desktop and mobile client is also open source:
 
 ## Get started
 
-Use a Linux or Apple silicon macOS host with
+Use a Linux or Apple silicon macOS host with **Node.js 22.14 or later**, npm and
 [`uv`](https://docs.astral.sh/uv/getting-started/installation/) installed.
+macOS requires a desktop login; Linux requires a working user systemd session.
 Install and authenticate the agent CLI you want to use on that host.
 `tmux` is optional for terminal access and managed updates.
 
-AgentsDock desktop can guide you through **Set up AgentsServer**. To install
-from this repository instead:
+AgentsDock desktop can guide you through **Set up AgentsServer**. For the
+recommended manual installation, run as the server owner without `sudo`:
+
+```sh
+npm install -g agentsdock
+agentsdock list
+```
+
+On a fresh machine, the global install automatically creates and starts the
+default server, normally on port **7850**. No separate setup/start command is
+required. Existing default or named installations and history are left unchanged;
+installing the npm CLI again does not update or restart a running server.
+
+Use the installer output or `agentsdock list` to find the server URL. To retrieve
+the default server's access token without reinstalling or restarting:
+
+```sh
+agentsdock token default
+```
+
+Add the URL and token in AgentsDock. For beta installation, use
+`npm install -g agentsdock@beta`; existing servers still use managed updates.
+Local npm installs, CI installs and installs with scripts disabled do not
+automatically create a service. For explicit setup/retry or a custom port, see
+the [CLI setup instructions](npm/agentsdock/README.md#install-the-command).
+
+For access from another network, connect the server and your device through
+Tailscale. Keep access tokens private and do not expose the agent port directly
+to the public internet. See the [setup guide](https://agentsdock.net/setup.html)
+for detailed instructions.
+
+### Install from source (advanced)
+
+The source installer remains available for development and checkout-based
+installations:
 
 ```bash
 git clone https://github.com/ZhengyiLuo/AgentsDock.git
@@ -36,18 +70,7 @@ cd AgentsDock/server
 ./install.sh
 ```
 
-The installer starts the default server, normally on port **7850**, and prints
-its URL and access token. Add that URL/token pair in AgentsDock. To show the token
-again without restarting:
-
-```bash
-./install.sh --show-token
-```
-
-For access from another network, connect the server and your device through
-Tailscale. Keep access tokens private and do not expose the agent port directly
-to the public internet. See the [setup guide](https://agentsdock.net/setup.html)
-for detailed instructions.
+In that checkout, `./install.sh --show-token` reads an existing default token.
 
 ### Memory at launch
 
@@ -61,22 +84,22 @@ for operator overrides.
 
 Add a separate server without replacing your original/default server:
 
-```bash
+```sh
 # Create a server with an automatic name and free port
-./instances.sh new
+agentsdock new
 
 # Or choose its name and port
-./instances.sh new --name work --port 7851
+agentsdock new work --port 7851
 
 # List all servers and their connection URLs
-./instances.sh list
+agentsdock list
 
 # Uninstall one server (replace work with its name)
-./uninstall.sh --instance work
+agentsdock remove work
 ```
 
-Uninstall asks for confirmation and preserves history by default. Bare
-`./uninstall.sh` selects all servers; use `--instance` to select just one.
+Removal asks for confirmation and preserves history by default. Select the
+instance explicitly; bare `agentsdock remove` never selects all servers.
 
 Named instances retain separate legacy service units. The default server keeps
 the current split service lifecycle; `--execution-mode split` is rejected for
@@ -84,15 +107,17 @@ named instances to avoid taking over the default gateway.
 
 ## Updating
 
+Use the app's managed update controls for an installed server. Updating the npm
+CLI alone leaves its running server unchanged. Signed updates preserve the
+server's token and chat history. See the
+[update guide](https://agentsdock.net/update.html).
+
 For the default server installed from a checkout:
 
 ```bash
 git pull --ff-only
 ./install.sh
 ```
-
-Updates preserve its token and chat history. AgentsDock Settings also supports
-signed server updates. See the [update guide](https://agentsdock.net/update.html).
 
 ## Documentation and support
 
@@ -108,18 +133,13 @@ Features in this checkout may not yet be in a published release. The maintained 
 standalone AgentsServer repository remains a compatibility distribution during
 the update migration.
 
-### Short npm command (prepared, not yet published)
+### CLI reference
 
-The public [`agentsdock` CLI](npm/agentsdock/README.md) is being prepared as the
-short entry point. After publication, install it with `npm install -g agentsdock`
-and use `agentsdock list`, `agentsdock restart NAME`, and
-`agentsdock token NAME`. Local npm installs use `npx agentsdock`.
-The CLI pins the same-version `@agentsdock/server` runtime and preserves its
-signed update protocol. The first global installation automatically creates and
-starts the default server; existing default/named installations or state are
-left unchanged. `agentsdock setup` remains available for explicit/custom setup.
-Local/CI installs do not auto-start a service. Existing published scoped-package instructions remain
-valid; an unpublished CLI is not yet available from the public registry.
+The published [`agentsdock` CLI](npm/agentsdock/README.md) is the short entry
+point. It pins the same-version `@agentsdock/server` runtime and preserves the
+signed update protocol. Existing scoped-package installations remain supported.
+See the CLI reference for command options, source-only features and native
+instance-management acceptance limits.
 
 ## License
 

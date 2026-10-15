@@ -104,24 +104,29 @@ providers and features depend on the client and server version.
 
 1. **Install the app.** Get a desktop build from
    [public GitHub Releases](https://github.com/ZhengyiLuo/AgentsDock/releases)
-   ([current stable: 1.0.9](https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.9)),
+   ([latest stable release](https://github.com/ZhengyiLuo/AgentsDock/releases/latest)),
    or find the current iPhone/iPad distribution link on
    [the website](https://agentsdock.net/#downloads).
 2. **Set up AgentsServer.** Direct macOS and Linux builds provide
    **Set up AgentsServer**. For a fresh manual installation on Linux or Apple
-   silicon macOS, install Node.js/npm and
+   silicon macOS, install Node.js **22.14 or later** with npm and
    [`uv`](https://docs.astral.sh/uv/getting-started/installation/), then run:
 
    ```sh
-   npx @agentsdock/server install
+   npm install -g agentsdock
+   agentsdock list
    ```
 
-   This installs the latest stable server, normally on port **7850**. Run it as
-   the user who will own the server, without `sudo`. Existing installations
-   use the app's managed updates; this command refuses existing server state.
+   On a fresh machine, the global install automatically creates and starts the
+   latest stable server, normally on port **7850**; no separate setup command is
+   required. Run as the user who will own the server, without `sudo`.
+   Existing installations and history are left unchanged; update running
+   servers through the app. `agentsdock list` shows existing instances and
+   connection addresses; `agentsdock token default` reads the default token.
    See [server setup and prerequisites](server/README.md#get-started).
 3. **Connect and start a chat.** Add the server connection in AgentsDock,
-   using the URL and access token printed by the installer. Install the agent
+   using the URL from `agentsdock list` and the access token from
+   `agentsdock token default`. Install the agent
    CLI you want on the server, then sign in or configure a supported API
    connection in **Settings → My Agents** on desktop. Choose an agent and a
    working directory on the server, and send a task.

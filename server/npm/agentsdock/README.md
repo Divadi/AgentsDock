@@ -27,10 +27,9 @@ state, including named instances; repeat installs leave these unchanged and do
 not restart, overwrite or upgrade a running service. The runtime lives in its
 managed installation directory, independently of the npm package/cache.
 
-For a beta, select `npm install -g agentsdock@beta`. This documentation describes
-the package being prepared; commands are available from the registry only after
-that package/channel has been published. Do not infer name ownership from an npm
-404 response.
+For a beta, select `npm install -g agentsdock@beta`. Stable and beta packages are
+published on npm. Features explicitly marked as source-only below may require a
+later package release.
 
 `-g` makes the command available outside the current project when npm's global
 bin directory is on your PATH. A local `npm install agentsdock` is also supported;
