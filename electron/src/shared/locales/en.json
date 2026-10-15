@@ -1,4 +1,6 @@
 {
+  "files.openFailed": "Could not open \"{filename}\": {reason}",
+  "files.linkUnavailable": "This file is not available as an attachment in this chat. Ask the agent to attach it, then try again.",
   "serverConnection.qrFor": "Connection QR code for {server}",
   "serverConnection.showQr": "Show connection QR code",
   "serverConnection.closeQr": "Close connection QR code",

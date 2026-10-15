@@ -1,5 +1,27 @@
 # Public development log
 
+## 2026-10-14 — Explain failed desktop file links
+
+- File links and binary attachment links now surface native open/download
+  failures through the existing dismissible error notice. Missing linked
+  attachments explain, in English and Chinese, that the agent must attach the
+  file. A server filesystem path is not automatically a downloadable attachment;
+  registration and authorization requirements are unchanged.
+- Late errors are discarded after changing chat or server. Successful opens
+  preserve their existing behavior and do not clear unrelated error notices.
+- Real native offscreen acceptance reproduced the silent failure before the
+  fix, then exercised missing-file HTTP 404, dismissal/retry and an authorized
+  attachment HTTP 200 through the production IPC and test server. Checked dark
+  English and narrow light Chinese layouts. The packaged local candidate also
+  passed actual click-to-error and normal attachment opening against the server.
+- Focused regression checks (51), TypeScript and production compilation passed.
+  The first full suite hit the existing same-second server-update receipt test;
+  its standalone rerun passed all 44 checks. The serial full-suite rerun passed
+  5,176 tests (five skipped). Eight package/license checks passed.
+- Availability: local desktop candidate `1.0.11-beta.1.sync.4`, retaining the
+  latest-first sync changes; not published. No server update is required.
+  Cross-machine acceptance remains pending; mobile is outside this change.
+
 ## 2026-10-14 — Open stale desktop chats latest-first
 
 - Cached content still paints immediately, but opening/reconnecting a timeline
