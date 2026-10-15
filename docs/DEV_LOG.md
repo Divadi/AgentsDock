@@ -1,5 +1,26 @@
 # Public development log
 
+## 2026-10-14 — Use the published npm CLI in installation guides
+
+- Make `npm install -g agentsdock` the primary manual installation command in
+  the product and server READMEs. Explain automatic first setup, existing-state
+  preservation, URL/token retrieval and the distinction from managed updates.
+- Retain source installation as an advanced path and show the short commands
+  for named instances. Remove obsolete unpublished-package wording from the
+  server and CLI introductions.
+- Organize first-time setup around the server host, prerequisites, npm install,
+  address/token selection and a first provider chat. Clarify that tmux enables
+  managed updates, localhost addresses cannot connect another device, and
+  native Windows is a client platform rather than an npm server host.
+- Link desktop downloads to the latest stable release instead of a stale
+  version. Add setup troubleshooting and distinguish unreleased CLI output
+  improvements from commands available in the published packages.
+- Verified public npm tags and the stable package's integrity, setup guards
+  and command parser without creating, restarting or changing a service.
+  Checked shell syntax for all 18 command blocks, resolved 24 relative file
+  links and verified the prerequisite documentation links. Documentation only;
+  no fresh service installation, runtime or release change.
+
 ## 2026-10-13 — Show CLI connection details together
 
 - Successful first-time global npm setup shows the default server URL and
