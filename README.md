@@ -44,8 +44,7 @@
 <div align="center">
   AgentsDock brings <strong>Claude Code</strong>, <strong>Codex</strong>,
   <strong>Cursor</strong>, and <strong>OpenCode</strong> into one desktop and
-  mobile workspace. Use your agents for coding, research, and long-running work
-  without living in a terminal. Easily review files and rich media.
+  mobile workspace for coding and research.
   <br />
   <br />
   <strong>Desktop:</strong>
@@ -59,94 +58,51 @@
   <a href="https://github.com/ZhengyiLuo/AgentsDock-Releases/releases/download/android-v0.1.1-beta.8/AgentsDock-0.1.1-android-arm64-beta.8.apk">Android</a>
   <br />
   <br />
-  <strong>
-    AgentsDock is the client; AgentsServer is the self-hosted backend.
-  </strong>
+  <a href="https://agentsdock.net">Website</a>
+  ·
+  <a href="https://agentsdock.net/setup.html">Setup guide</a>
+  ·
+  <a href="https://agentsdock.net/features.html">Features</a>
 </div>
 
 ## What you can do
 
-- **Work with your agents:** start and resume chats, follow live activity, and
-  queue the next task.
-- **Ask a side question:** Codex Side chat has independent model and reasoning
-  controls, live activity, and Stop/Clear actions alongside your main chat.
-- **Review the results:** view images and videos inline, browse files, inspect
-  code changes, and download artifacts.
-- **Keep long-running work organized:** group chats, search history, create
-  digests, and schedule recurring jobs.
-- **Open a real terminal:** use a persistent tmux terminal attached to each
-  chat's workspace.
-- **Move between devices and servers:** connect multiple clients to the same
-  server, or manage several servers from one app.
+- Work with multiple agents and servers in one place.
+- Review code, plots, images, and videos right in your chats.
+- Browse files, use terminals, and schedule jobs.
+- Continue your work from desktop or mobile.
+
+See the [website](https://agentsdock.net) for screenshots and
+[feature walkthroughs](https://agentsdock.net/features.html).
 
 ## How it works
 
-**AgentsDock is the client. AgentsServer is the self-hosted backend.** Install
-the server on the machine that has your projects and agent CLIs. That can be
-the same computer as the desktop app or a remote machine you control. The
-desktop and mobile apps connect to it to send tasks and display results.
-
-The agent CLIs must be installed and authenticated **on the server**, not on
-your phone. Self-hosting gives you control of the server and stored history;
-it does not make the models local. Your selected provider still processes
-model requests, and clients may cache content on your devices. Available
-providers and features depend on the client and server version.
+**AgentsServer** runs your agents on a computer you control.
+**AgentsDock** connects to it from your desktop or phone. The server and desktop
+app can run on the same computer.
 
 ## Get started
 
-You need a server and an app. They can run on the **same computer**; a separate
-server is only needed if you want to run your agents elsewhere. npm installs the
-server and its command-line tool. Download the desktop/mobile app separately.
-
-1. **Prepare the server machine.** Use **Apple silicon macOS** with a desktop
-   login, or **Linux** with a working user systemd session. Install
-   [Node.js **22.14 or later**, including npm](https://nodejs.org/en/download),
-   and [`uv`](https://docs.astral.sh/uv/getting-started/installation/) for the
-   server's Python environment. Install **tmux** for persistent terminals and
-   in-app Server updates; basic chats can run without it. On macOS with
-   Homebrew, `brew install node uv tmux` installs these prerequisites.
-   Windows can run the desktop app and connect to a supported server;
-   the npm Server installer does not run natively on Windows.
-2. **Install the server.** Run these commands in a terminal **on the server
-   machine**, as your normal user, without `sudo`:
+1. **Prepare your computer.** Use Linux or an Apple silicon Mac with
+   Node.js **22.14+**, `uv`, and `tmux`.
+   [Prerequisite instructions →](server/README.md#1-prepare-the-server-machine)
+2. **Install the server.** Run on that computer, without `sudo`:
 
    ```sh
    npm install -g agentsdock
-   agentsdock list
-   agentsdock token default
    ```
 
-   On a fresh machine, the global install creates and starts the stable
-   **default** server, normally on port **7850**. No repo clone, npm account,
-   or separate setup/start command is needed. Wait for installation to finish;
-   it downloads Python dependencies too. Confirm `default` is `running` in
-   `agentsdock list`, then keep its URL and token for the next step. The token
-   grants access to your server; keep it private.
-3. **Install and connect the app.** Download the
-   [latest stable desktop app](https://github.com/ZhengyiLuo/AgentsDock/releases/latest)
-   or [mobile app](https://agentsdock.net/#downloads). Add a server using the
-   URL from `agentsdock list` and the token from `agentsdock token default`.
-   On the same computer, use its **This machine only** URL. From a phone or
-   another computer, use the listed **LAN** URL on the same network, or the
-   **Tailscale** URL with both devices connected to your private tailnet.
-   `127.0.0.1` always means the device you are using; it will not reach a
-   different computer. Test the connection and save it.
-4. **Start your first chat.** Install and sign in to at least one supported
-   agent CLI **on the server machine**: Claude Code, Codex, Cursor or OpenCode.
-   In the desktop app, check **Settings → My Agents**, then create a chat,
-   choose the agent and a working directory on the server, and send a message.
-   Installing AgentsDock does not install or sign in to these providers for you.
+   First installation automatically sets up and starts the server.
+3. **Connect the app.** [Download AgentsDock](https://agentsdock.net/#downloads).
+   Run `agentsdock list` and `agentsdock token default` on the server, then add
+   its URL and token in the app. For another device, use the listed LAN or
+   Tailscale address.
+4. **Start chatting.** Install and sign in to your preferred agent CLI on the
+   server, then choose an agent and workspace in the app.
 
-**Already have a server?** The npm install leaves existing installations and
-history unchanged; it does not update or restart them. Use **Settings → Updates**
-in the desktop app for supported managed updates. To add another independent
-server, use `agentsdock new`, not another default setup. See
-[multiple servers](server/README.md#multiple-servers-on-one-machine).
-
-If installation fails, or you need a custom port, see
-[server setup and troubleshooting](server/README.md#get-started).
-Keep remote access on your LAN or a private network such as Tailscale; do not
-forward the server port to the public internet.
+Follow the [full setup guide](https://agentsdock.net/setup.html) for connection
+help. Already have a server? npm leaves it unchanged; update through
+**Settings → Updates** in the desktop app.
 
 ## Develop from source
 
