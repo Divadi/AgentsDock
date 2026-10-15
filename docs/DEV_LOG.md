@@ -1,5 +1,88 @@
 # Public development log
 
+## 2026-10-14 — Explain failed desktop file links
+
+- File links and binary attachment links now surface native open/download
+  failures through the existing dismissible error notice. Missing linked
+  attachments explain, in English and Chinese, that the agent must attach the
+  file. A server filesystem path is not automatically a downloadable attachment;
+  registration and authorization requirements are unchanged.
+- Late errors are discarded after changing chat or server. Successful opens
+  preserve their existing behavior and do not clear unrelated error notices.
+- Real native offscreen acceptance reproduced the silent failure before the
+  fix, then exercised missing-file HTTP 404, dismissal/retry and an authorized
+  attachment HTTP 200 through the production IPC and test server. Checked dark
+  English and narrow light Chinese layouts. The packaged local candidate also
+  passed actual click-to-error and normal attachment opening against the server.
+- Focused regression checks (51), TypeScript and production compilation passed.
+  The first full suite hit the existing same-second server-update receipt test;
+  its standalone rerun passed all 44 checks. The serial full-suite rerun passed
+  5,176 tests (five skipped). Eight package/license checks passed.
+- Availability: local desktop candidate `1.0.11-beta.1.sync.4`, retaining the
+  latest-first sync changes; not published. No server update is required.
+  User acceptance of the local file-link test passed before PR submission.
+  Cross-machine acceptance remains pending; mobile is outside this change.
+
+## 2026-10-14 — Open stale desktop chats latest-first
+
+- Cached content still paints immediately, but opening/reconnecting a timeline
+  now requests the latest bounded semantic page before subscribing at its
+  snapshot boundary. It no longer starts a full offline-gap replay while also
+  fetching that page. Older history remains available through upward paging;
+  server/provider history, thinking content and chronological order are unchanged.
+- A main-process authoritative tail can replace a disjoint renderer window
+  without a redundant refetch or fabricated adjacency. Overlapping loaded
+  prefixes retain their existing handling. Failed tail reads retain the cache;
+  retired leases and buffered events cannot overwrite a replacement log.
+- Native offscreen acceptance used the real authenticated test service with
+  2,000 synthetic turns / 8,000 events, including long reasoning. The App opened
+  at the recent tail, paged older content through real scroll/click input, and
+  accepted a 57-character unsent draft without timeline requests. Six native
+  service clients each reopened a stale cache five times and underwent three
+  forced disconnects; all received one real Codex final reply without duplicates
+  or replaying the old gap. Claude was verified separately with two real replies
+  and an application-frame blackhole; recovery preserved both replies.
+- Focused desktop checks, TypeScript, production compilation and 28 server
+  transport/reasoning/stress checks passed. Full desktop validation passed
+  5,164 tests (five skipped), plus eight package/license checks with two workers.
+  Earlier high-concurrency runs encountered timing failures in unchanged secure
+  peer/update settings tests; those tests were not changed by this work.
+- Availability: local test candidate only; no publication, push or merge.
+  Physical cross-machine/network-switching and OS sleep/wake acceptance remain
+  pending. This change is desktop-side; the existing test server protocol is
+  sufficient, and the working server is not changed.
+
+## 2026-10-14 — Recover stalled desktop timeline streams
+
+- Desktop advances its reconnect cursor only after the event consumer accepts
+  a row. Consumer failures close the stream and retry from the previous cursor,
+  with backoff; they cannot silently skip the failed row.
+- An additive, negotiated server capability confirms completed WebSocket
+  catch-up and sends lightweight idle heartbeats. Desktop reconnects after
+  45 seconds without progress and renews open timelines after system wake.
+  A progressing catch-up is not replaced by the periodic metadata refresh.
+  Legacy clients/servers keep their existing protocol. Recovery never resends
+  prompts, refreshes provider credentials or changes thinking content.
+- Real loopback transport stress covered six clients, 6,000 historical rows,
+  18 forced reconnects, filtered sequence gaps and 40 live appends. Every client
+  received the complete expected sequence without duplicates; connection
+  reservations were released. These synthetic-history tests do not call models.
+- Desktop suite: 5,162 passed, five skipped; eight packaging/license checks,
+  TypeScript and production compilation passed. Server catch-up/reasoning
+  regressions passed. Native offscreen acceptance uses a real authenticated
+  test service, separately with Codex and Claude, with a fault proxy keeping
+  protocol ping/pong alive while dropping application frames. The legacy
+  connection remained stale after 60 seconds despite a completed reply; the
+  new connection automatically recovered the missing reply by the 40-second
+  observation. Both runs retained exactly two submitted turns and two final
+  replies. This is transport acceptance, not a new claim of thinking parity.
+- The local arm64 test package passed bundle audit, ad-hoc signature validation
+  and isolated startup. It disables updates and uses separate app data; it is
+  not a notarized public release. Real cross-machine/network switching and OS
+  sleep/wake remain user acceptance items; wake handling has focused regression
+  coverage. The designated test server was updated; no working server restart,
+  public upload, release or merge is included.
+
 ## 2026-10-14 — Shorten the README introduction and quickstart
 
 - Reduce the feature overview and explain the app/server relationship in one

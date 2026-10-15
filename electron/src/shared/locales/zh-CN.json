@@ -1,4 +1,6 @@
 {
+  "files.openFailed": "无法打开“{filename}”：{reason}",
+  "files.linkUnavailable": "此文件不是当前会话中可用的附件。请让 Agent 将文件作为附件发送后重试。",
   "serverConnection.qrFor": "{server} 的连接二维码",
   "serverConnection.showQr": "显示连接二维码",
   "serverConnection.closeQr": "关闭连接二维码",

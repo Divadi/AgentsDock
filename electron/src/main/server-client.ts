@@ -284,6 +284,7 @@ interface ClientConfiguration {
   baseURL: string
   token: string
   websocketSubprotocolAuth: boolean
+  eventStreamLiveness: boolean
   abortController: AbortController
   transports: Set<() => void>
   securePeerAdmissions: Map<string, SecurePeerRequestAdmission>
@@ -409,6 +410,10 @@ export class AgentServerClient {
     if (this.configuration === configuration) {
       configuration.websocketSubprotocolAuth = (
         health.capabilities?.websocket_auth_v1?.available === true
+      )
+      configuration.eventStreamLiveness = (
+        health.capabilities?.event_stream_liveness_v1?.available === true
+        && health.capabilities.event_stream_liveness_v1.version === 1
       )
     }
     const agentTeamMessages = health.capabilities?.agent_team_messages_v1
@@ -2178,7 +2183,7 @@ export class AgentServerClient {
     sessionId: string,
     after: number,
     onEvent: (event: Event) => void,
-    onState: (connected: boolean, error?: string) => void,
+    onState: (connected: boolean, error?: string, phase?: 'catching-up') => void,
     onProviderRuntime?: (event: ProviderRuntimeChanged) => void,
     onPinnedItemsChanged?: (event: TimelinePinsChanged) => void,
     onReasoningStream?: (snapshot: ReasoningSummaryStreamSnapshot) => void,
@@ -2194,19 +2199,27 @@ export class AgentServerClient {
     let socket: WebSocket | null = null
     let retry: NodeJS.Timeout | null = null
     let connectWatchdog: NodeJS.Timeout | null = null
+    let livenessWatchdog: NodeJS.Timeout | null = null
+    let deliveryFailed = false
     const stop = (): void => {
       if (stopped) return
       stopped = true
       if (retry) clearTimeout(retry)
       if (connectWatchdog) clearTimeout(connectWatchdog)
+      if (livenessWatchdog) clearTimeout(livenessWatchdog)
       retry = null
       connectWatchdog = null
+      livenessWatchdog = null
       configuration.transports.delete(stop)
       socket?.close()
     }
     const connect = (): void => {
       if (stopped) return
       const url = new URL(endpoint)
+      // Opt in only after health negotiation. Old servers ignore unknown query
+      // parameters but cannot promise heartbeats or catch-up acknowledgement.
+      const liveness = configuration.eventStreamLiveness
+      if (liveness) url.searchParams.set('liveness', 'true')
       url.searchParams.set('after', String(lastSeq))
       url.searchParams.set('visible', 'true')
       if (onReasoningStream) {
@@ -2221,17 +2234,33 @@ export class AgentServerClient {
       const current = new WebSocket(url, protocols)
       socket = current
       let disconnected = false
+      let caughtUp = false
       let reasoningInstance = ''
       let reasoningRevision = -1
       const disconnect = (error?: string): void => {
         if (stopped || disconnected) return
         disconnected = true
         if (connectWatchdog) clearTimeout(connectWatchdog)
+        if (livenessWatchdog) clearTimeout(livenessWatchdog)
         connectWatchdog = null
+        livenessWatchdog = null
         onState(false, error)
         const jitter = Math.floor(Math.random() * Math.min(250, retryDelay / 3))
         retry = setTimeout(connect, retryDelay + jitter)
         retryDelay = Math.min(10_000, retryDelay * 2)
+      }
+      const noteProgress = (): void => {
+        if (!liveness) return
+        if (livenessWatchdog) {
+          livenessWatchdog.refresh()
+          return
+        }
+        // Three missed server heartbeats. This is a transport deadline, not a
+        // model-response deadline: healthy idle chats also receive heartbeats.
+        livenessWatchdog = setTimeout(() => {
+          disconnect('Live updates stalled; reconnecting')
+          current.close()
+        }, 45_000)
       }
       connectWatchdog = setTimeout(() => {
         if (stopped || disconnected || current.readyState !== 0) return
@@ -2242,13 +2271,32 @@ export class AgentServerClient {
         if (stopped || disconnected) return
         if (connectWatchdog) clearTimeout(connectWatchdog)
         connectWatchdog = null
-        retryDelay = 500
-        onState(true)
+        noteProgress()
+        if (!liveness) {
+          if (!deliveryFailed) retryDelay = 500
+          onState(true)
+        } else onState(false, undefined, 'catching-up')
       })
       current.addEventListener('message', message => {
         if (stopped || disconnected) return
+        let packet: unknown
+        try { packet = JSON.parse(String(message.data)) }
+        catch { return } // Malformed input is not a successful delivery.
+        if (!packet || typeof packet !== 'object') return
         try {
-          const packet = JSON.parse(String(message.data)) as unknown
+          if ('type' in packet && packet.type === 'event_stream_status') {
+            const status = packet as { session_id?: string; version?: number; phase?: string }
+            if (liveness && status.session_id === sessionId && status.version === 1
+              && (status.phase === 'ready' || (caughtUp && status.phase === 'heartbeat'))) {
+              noteProgress()
+              if (!caughtUp) {
+                caughtUp = true
+                if (!deliveryFailed) retryDelay = 500
+                onState(true)
+              }
+            }
+            return // Control packets never acknowledge durable event sequence.
+          }
           if (packet && typeof packet === 'object' && 'type' in packet && packet.type === 'reasoning_summary_stream') {
             if (isReasoningSummaryStream(packet) && packet.session_id === sessionId
               && (!reasoningInstance || packet.instance_id === reasoningInstance)
@@ -2278,10 +2326,19 @@ export class AgentServerClient {
             return
           }
           const event = packet as Event
-          if (!Number.isFinite(event.seq) || event.seq <= lastSeq) return
-          lastSeq = event.seq
+          if (!Number.isSafeInteger(event.seq) || event.seq <= lastSeq || event.session_id !== sessionId) return
           onEvent(compactTimelineEvent(event))
-        } catch { /* ignore malformed packets */ }
+          // Only acknowledge after the synchronous consumer accepted the row.
+          // Otherwise reconnect would permanently skip the failed delivery.
+          lastSeq = event.seq
+          deliveryFailed = false
+          retryDelay = 500
+          noteProgress()
+        } catch {
+          deliveryFailed = true
+          disconnect('Live updates could not be applied; reconnecting')
+          current.close()
+        }
       })
       current.addEventListener('close', () => disconnect())
       current.addEventListener('error', () => {
@@ -2961,6 +3018,7 @@ function createConfiguration(baseURL: string, token: string): ClientConfiguratio
     baseURL: normalizeServerURL(baseURL),
     token,
     websocketSubprotocolAuth: false,
+    eventStreamLiveness: false,
     abortController: new AbortController(),
     transports: new Set(),
     securePeerAdmissions: new Map()

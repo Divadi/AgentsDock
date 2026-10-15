@@ -941,6 +941,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       window.agentsDock.events.on('server:timeline', payload => {
         if (!profileEventMatches(payload, get())) return
         const { sessionId, snapshot, source, mode } = payload
+        const authoritativeTail = source === 'server' && mode === 'replace'
+          && payload.authoritativeTail === true && snapshot.historyVerified === true
+        // Settle IPC events from the retired stream before replacing its window.
+        if (authoritativeTail) flushLiveEvents(true)
         const currentSnapshot = get().snapshots[sessionId]
         const discontinuity = mode === 'replace'
           && timelineReplacementIsDiscontinuous(currentSnapshot, snapshot)
@@ -952,7 +956,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         }
         set(state => {
           const incoming = mode === 'replace'
-            ? replaceSnapshot(state.snapshots[sessionId], snapshot)
+            ? replaceSnapshot(state.snapshots[sessionId], snapshot, authoritativeTail)
             : mergeSnapshots(state.snapshots[sessionId], snapshot)
           const loadingSessionIds = withoutSessionId(state.loadingSessionIds, sessionId)
           const pending = state.pendingTurnSubmissions[sessionId]
@@ -965,7 +969,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             loadingSessionId: focusedLoadingSessionId(state.selectedSessionId, loadingSessionIds)
           }
         })
-        if (discontinuity) scheduleTimelineRepair(sessionId, captureProfileScope(get()))
+        if (discontinuity && !authoritativeTail) scheduleTimelineRepair(sessionId, captureProfileScope(get()))
       }),
       window.agentsDock.events.on('server:event', payload => {
         if (profileEventMatches(payload, get())) enqueueLiveEvent(payload.event,

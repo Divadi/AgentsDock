@@ -1562,6 +1562,110 @@ describe('AgentServerClient pinned items', () => {
 describe('AgentServerClient live stream', () => {
   afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); FakeWebSocket.instances = [] })
 
+  async function livenessClient() {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    vi.stubGlobal('WebSocket', FakeWebSocket)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true, capabilities: { event_stream_liveness_v1: { available: true, version: 1 } }
+    }), { status: 200 })))
+    const client = new AgentServerClient('http://example.test:7850', 'token')
+    await client.health()
+    return client
+  }
+
+  it('retries a failed consumer from the last applied event, ignoring the failed socket tail', () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    vi.stubGlobal('WebSocket', FakeWebSocket)
+    const applied: number[] = []
+    let fail = true
+    const consume = (event: Event) => {
+      if (fail) throw new Error('consumer unavailable')
+      applied.push(event.seq)
+    }
+    const client = new AgentServerClient('http://example.test:7850', 'token')
+    const state = vi.fn()
+    const stop = client.stream('chat', 5, consume, state)
+    const first = FakeWebSocket.instances[0]
+    const packet = (seq: number) => JSON.stringify({ id: `e${seq}`, session_id: 'chat', seq, type: 'assistant_text', ts: 'now' })
+    first.emit('open')
+    first.emit('message', packet(6))
+    first.emit('message', packet(7))
+    expect(first.closed).toBe(true)
+    expect(state).toHaveBeenLastCalledWith(false, 'Live updates could not be applied; reconnecting')
+    vi.advanceTimersByTime(500)
+    const second = FakeWebSocket.instances[1]
+    expect(second.url.searchParams.get('after')).toBe('5')
+    fail = false
+    second.emit('message', packet(6))
+    second.emit('message', packet(7))
+    expect(applied).toEqual([6, 7])
+    stop()
+  })
+
+  it('waits for catch-up confirmation, then recovers a half-open connection without resending a turn', async () => {
+    const client = await livenessClient()
+    const state = vi.fn(), event = vi.fn()
+    const stop = client.stream('chat', 5, event, state)
+    const first = FakeWebSocket.instances[0]
+    expect(first.url.searchParams.get('liveness')).toBe('true')
+    first.emit('open')
+    expect(state).not.toHaveBeenCalledWith(true)
+    const status = { type: 'event_stream_status', session_id: 'chat', version: 1, phase: 'ready' }
+    first.emit('message', JSON.stringify({ ...status, session_id: 'other' }))
+    expect(state).not.toHaveBeenCalledWith(true)
+    first.emit('message', JSON.stringify(status))
+    expect(state).toHaveBeenLastCalledWith(true)
+    vi.advanceTimersByTime(30_000)
+    first.emit('message', JSON.stringify({ ...status, phase: 'heartbeat', seq: 9999 }))
+    vi.advanceTimersByTime(30_000)
+    expect(first.closed).toBe(false)
+    vi.advanceTimersByTime(15_000)
+    expect(first.closed).toBe(true)
+    expect(state).toHaveBeenLastCalledWith(false, 'Live updates stalled; reconnecting')
+    vi.advanceTimersByTime(500)
+    expect(FakeWebSocket.instances[1].url.searchParams.get('after')).toBe('5')
+    expect(event).not.toHaveBeenCalled()
+    stop()
+    vi.advanceTimersByTime(120_000)
+    expect(FakeWebSocket.instances).toHaveLength(2)
+  })
+
+  it('allows a long progressing catch-up without declaring live before ready', async () => {
+    const client = await livenessClient()
+    const state = vi.fn(), received: number[] = []
+    const stop = client.stream('chat', 0, e => received.push(e.seq), state)
+    const socket = FakeWebSocket.instances[0]
+    socket.emit('open')
+    for (let seq = 1; seq <= 6000; seq++) {
+      vi.advanceTimersByTime(20)
+      socket.emit('message', JSON.stringify({ id: `e${seq}`, session_id: 'chat', seq, type: 'assistant_text', ts: 'now' }))
+    }
+    expect(received).toHaveLength(6000)
+    expect(socket.closed).toBe(false)
+    expect(state).not.toHaveBeenCalledWith(true)
+    socket.emit('message', JSON.stringify({ type: 'event_stream_status', version: 1, session_id: 'chat', phase: 'ready' }))
+    expect(state).toHaveBeenLastCalledWith(true)
+    stop()
+  })
+
+  it('preserves the legacy server protocol without a heartbeat reconnect loop', () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('WebSocket', FakeWebSocket)
+    const client = new AgentServerClient('http://example.test:7850', 'token')
+    const state = vi.fn()
+    const stop = client.stream('chat', 5, vi.fn(), state)
+    const socket = FakeWebSocket.instances[0]
+    expect(socket.url.searchParams.has('liveness')).toBe(false)
+    socket.emit('open')
+    vi.advanceTimersByTime(300_000)
+    expect(state).toHaveBeenCalledExactlyOnceWith(true)
+    expect(FakeWebSocket.instances).toHaveLength(1)
+    expect(socket.closed).toBe(false)
+    stop()
+  })
+
   it('reconnects after the newest received sequence instead of replaying the stream', () => {
     vi.useFakeTimers()
     vi.spyOn(Math, 'random').mockReturnValue(0)

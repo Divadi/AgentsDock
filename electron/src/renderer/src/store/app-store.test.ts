@@ -4398,7 +4398,7 @@ describe('event merging', () => {
     expect(merged.historyDiscontinuity).toBe(true)
   })
 
-  it('keeps the proven window and repairs after repeated failures without a reconnect or reselect', async () => {
+  it.each([false, true])('accepts an authoritative latest window or repairs an unverified gap (authoritative: %s)', async authoritativeTail => {
     const handlers = new Map<string, (payload: any) => void>()
     const previous = {
       ...snapshot('chat-a', [eventFor('chat-a', 1), eventFor('chat-a', 50)], true),
@@ -4464,8 +4464,21 @@ describe('event merging', () => {
 
       handlers.get('server:timeline')?.({
         profileId: 'local', profileGeneration: 1, sessionId: 'chat-a',
-        snapshot: replacement, source: 'server', mode: 'replace'
+        snapshot: replacement, source: 'server', mode: 'replace', authoritativeTail
       })
+
+      if (authoritativeTail) {
+        expect(useAppStore.getState().snapshots['chat-a'].events.map(item => item.seq)).toEqual([500, 550])
+        expect(useAppStore.getState().snapshots['chat-a'].nextTimelineBefore).toBe(500)
+        expect(useAppStore.getState().snapshots['chat-a'].historyDiscontinuity).toBe(false)
+        await vi.advanceTimersByTimeAsync(8_000)
+        expect(open).not.toHaveBeenCalled()
+        handlers.get('server:event')?.({ profileId: 'local', profileGeneration: 1, event: eventFor('chat-a', 551) })
+        await vi.advanceTimersByTimeAsync(40)
+        expect(useAppStore.getState().snapshots['chat-a'].events.map(item => item.seq)).toEqual([500, 550, 551])
+        expect(useAppStore.getState().selectedSessionId).toBe('chat-primary')
+        return
+      }
 
       expect(useAppStore.getState().snapshots['chat-a'].events).toBe(previous.events)
       expect(useAppStore.getState().snapshots['chat-a'].historyDiscontinuity).toBe(true)

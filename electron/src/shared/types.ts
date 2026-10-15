@@ -1750,6 +1750,7 @@ export interface HealthCapabilities {
   pinned_items?: PinnedItemsCapability
   port_forwarding_v1?: PortForwardingCapability
   websocket_auth_v1?: ServerCapability
+  event_stream_liveness_v1?: ServerCapability & { version?: number }
   [key: string]: SideQuestionsCapability | ServerCapability | ServerRestartCapability | TeamHubV1Capability | TeamHubHostControlCapability | LocalSessionImportCapability | SessionForkCompletedPrefixCapability | AgentEmergencyAlertsCapability | TeamMailHintsCapability | TeamActivityHintsCapability | AgentTeamMailCapability | AgentTeamMessagesCapability | TeamBulletinAliasCapability | TeamAllServersAliasCapability | PinnedItemsCapability | JsonValue | undefined
 }
 
@@ -1898,6 +1899,8 @@ export interface ProfileTimelineEvent extends ProfileEventContext {
   snapshot: SessionSnapshot
   source: 'cache' | 'server'
   mode?: 'merge' | 'replace'
+  /** Main-process latest-page read; accept a disjoint window without refetching. */
+  authoritativeTail?: boolean
 }
 export interface ProfileTerminalDataEvent extends ProfileEventContext { sessionId: string; data: string }
 export interface ProfileTerminalStateEvent extends ProfileEventContext {

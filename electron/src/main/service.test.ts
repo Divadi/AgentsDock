@@ -3901,6 +3901,59 @@ describe('background connection event publication', () => {
 })
 
 describe('split-chat timeline subscriptions', () => {
+  it('does not replace a progressing catch-up on the ordinary background refresh', async () => {
+    const client = fakeClient({
+      sessionPage: async sessionId => emptyTimelinePage(sessionId),
+      stream: (_session, _after, _event, state) => {
+        state(false, undefined, 'catching-up')
+        return vi.fn()
+      }
+    })
+    const { service } = createProfileService({ 'http://a.test:7850': [client] })
+    Object.assign(service, { validatedGeneration: 1 })
+    await service.subscribeTimeline('chat', 0)
+    await settleBackgroundWork()
+    const internals = service as unknown as { scope: unknown; refreshAll(a: boolean, b: boolean, scope: unknown): Promise<void> }
+    await internals.refreshAll(false, false, internals.scope)
+    await settleBackgroundWork()
+    expect(client.stream).toHaveBeenCalledOnce()
+  })
+
+  it('renews open timelines on wake, flushes accepted events and fences the old transport', async () => {
+    const streams: Array<{ after: number; event: (event: Event) => void; stop: ReturnType<typeof vi.fn> }> = []
+    const session: Session = { id: 'chat', title: 'Chat', backend: 'codex', cwd: '/tmp', created_at: 'now', updated_at: 'now' }
+    const persisted: Event = { id: 'e4', seq: 4, session_id: 'chat', type: 'assistant_text', ts: 'now', text: 'Accepted before sleep' }
+    const client = fakeClient({
+      sessionPage: async sessionId => ({ ...emptyTimelinePage(sessionId), session, events: [persisted], latest_seq: 4 }),
+      stream: (_session, after, event) => {
+        const stream = { after, event, stop: vi.fn() }
+        streams.push(stream)
+        return stream.stop
+      }
+    })
+    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] })
+    Object.assign(service, { validatedGeneration: 1, running: true })
+    const scope = (service as unknown as { scope: { namespace: string } }).scope
+    const send = vi.fn()
+    service.addWindow({ isDestroyed: () => false, on: vi.fn(), webContents: { send } } as never)
+    await service.subscribeTimeline('chat', 0)
+    await settleBackgroundWork()
+    streams[0].event({ id: 'e4', seq: 4, session_id: 'chat', type: 'assistant_text', ts: 'now', text: 'Accepted before sleep' })
+    service.resumeLiveUpdates()
+    await settleBackgroundWork()
+    expect(streams[0].stop).toHaveBeenCalledOnce()
+    expect(streams[1].after).toBe(4)
+    send.mockClear()
+    streams[0].event({ id: 'stale', seq: 99, session_id: 'chat', type: 'assistant_text', ts: 'now' })
+    expect(send).not.toHaveBeenCalledWith('server:event', expect.objectContaining({ event: expect.objectContaining({ id: 'stale' }) }))
+    expect(cache.events(scope.namespace, 'chat').some(e => e.id === 'e4')).toBe(true)
+    service.stop()
+    const count = streams.length
+    service.resumeLiveUpdates()
+    await settleBackgroundWork()
+    expect(streams).toHaveLength(count)
+  })
+
   it('forwards transient summaries only for the current lease and profile without writing them to SQLite', async () => {
     const streams: Array<{
       summary: NonNullable<Parameters<AgentServerClient['stream']>[6]>
@@ -4174,79 +4227,114 @@ describe('split-chat timeline subscriptions', () => {
     await refreshing
   })
 
-  it.each(['merge', 'replace', 'schema audit'] as const)('connects cached chat before history and preserves newer live events and queues across %s', async mode => {
+  it('opens a deeply stale cache from the latest page before subscribing, without replaying the gap', async () => {
+    const response = deferred<TimelinePage>()
+    const session: Session = { id: 'chat', title: 'Stale chat', backend: 'codex' }
+    const old: Event = { id: 'old', session_id: 'chat', seq: 4, type: 'assistant_text', ts: 'now', text: 'Old' }
+    const latest: Event = { ...old, id: 'latest', seq: 8000, text: 'Latest' }
+    const client = fakeClient({ sessionPage: () => response.promise })
+    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] }, value => {
+      value.putSession('profile:a', session)
+      value.putEvents('profile:a', 'chat', [old])
+      value.putTimelineState('profile:a', 'chat', false, 4, 1, null, true)
+    })
+    Object.assign(service, { validatedGeneration: 1 })
+    const send = vi.fn()
+    service.addWindow({ isDestroyed: () => false, on: vi.fn(), webContents: { send } } as never)
+    expect((await service.openTimeline('chat')).events).toEqual([old])
+    await settleBackgroundWork()
+    expect(client.sessionPage).toHaveBeenCalledExactlyOnceWith('chat', { pageMode: 'semantic', limit: 48, tail: true, visible: true })
+    expect(client.stream).not.toHaveBeenCalled()
+    response.resolve({ session, events: [latest], queued_turns: [], has_more: true,
+      latest_seq: 8002, semantic_item_count: 48, next_semantic_before: 7800 })
+    await settleBackgroundWork()
+    expect(client.stream.mock.calls[0]?.[1]).toBe(8002)
+    expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([latest])
+    expect(send).toHaveBeenCalledWith('server:timeline', expect.objectContaining({ mode: 'replace', authoritativeTail: true,
+      snapshot: expect.objectContaining({ historyVerified: true, nextTimelineBefore: 7800 }) }))
+  })
+
+  it.each([true, false])('publishes the latest window before raced live events and queue changes (verified cache: %s)', async verified => {
     const response = deferred<TimelinePage>()
     const session: Session = { id: 'chat', title: 'Cached chat', backend: 'claude' }
     const old: Event = { id: 'old', session_id: 'chat', seq: 10, type: 'assistant_text', ts: 'now', text: 'Cached answer' }
     const queued = { queued_id: 'queued-old', session_id: 'chat', prompt: 'Queued prompt', file_ids: [], created_at: 'now' }
     const page: TimelinePage = { session, events: [old], queued_turns: [queued], has_more: false, latest_seq: 12, semantic_item_count: 1 }
-    let receive!: (event: Event) => void
-    const stop = vi.fn()
+    const unqueued: Event = { id: 'unqueued', session_id: 'chat', seq: 13, type: 'turn_unqueued', queued_id: queued.queued_id, ts: 'now' }
+    const answer: Event = { id: 'new', session_id: 'chat', seq: 14, type: 'assistant_text', ts: 'now', text: 'Raced the HTTP snapshot' }
     const client = fakeClient({
-      sessionPage: async (_id, options) => options?.pageMode === 'semantic' ? page : response.promise,
-      stream: (_id, _after, onEvent, onState) => { receive = onEvent; onState(true); return stop }
+      sessionPage: () => response.promise,
+      stream: (_id, after, onEvent, onState) => {
+        expect(after).toBe(12)
+        onEvent(unqueued); onEvent(answer); onState(true)
+        return vi.fn()
+      }
     })
     const { service, cache } = createProfileService({ 'http://a.test:7850': [client] }, value => {
       value.putSession('profile:a', session)
-      value.putEvents('profile:a', session.id, [old])
-      if (mode !== 'schema audit') value.putTimelineState('profile:a', session.id, false, 10, 1, null, true)
-      value.putQueuedTurns('profile:a', session.id, [queued])
+      value.putEvents('profile:a', 'chat', [old])
+      if (verified) value.putTimelineState('profile:a', 'chat', false, 10, 1, null, true)
+      value.putQueuedTurns('profile:a', 'chat', [queued])
     })
     Object.assign(service, { validatedGeneration: 1 })
     const send = vi.fn()
     service.addWindow({ isDestroyed: () => false, on: vi.fn(), webContents: { send } } as never)
-    expect((await service.openTimeline(session.id)).events).toEqual([old])
+    expect((await service.openTimeline('chat')).events).toEqual([old])
     await settleBackgroundWork()
-    expect(client.stream).toHaveBeenCalledOnce()
-    expect(send).toHaveBeenCalledWith('server:sync', expect.objectContaining({ sessionId: 'chat', state: 'live' }))
-
-    const unqueued: Event = { id: 'unqueued', session_id: 'chat', seq: 13, type: 'turn_unqueued', queued_id: queued.queued_id, ts: 'now' }
-    const answer: Event = { id: 'new', session_id: 'chat', seq: 14, type: 'assistant_text', ts: 'now', text: 'Arrived before HTTP' }
-    receive(unqueued)
-    receive(answer)
-    expect(send).toHaveBeenCalledWith('server:event', expect.objectContaining({ event: answer }))
-    response.resolve({ ...page, events_omitted_after: mode === 'replace' ? 1 : 0 })
+    expect(client.stream).not.toHaveBeenCalled()
+    response.resolve(page)
     await settleBackgroundWork()
+    ;(service as unknown as { flushEventCache(): void }).flushEventCache()
     expect(cache.snapshot('profile:a', 'chat')?.events.map(event => event.id)).toEqual(['old', 'unqueued', 'new'])
     expect(cache.queuedTurns('profile:a', 'chat')).toEqual([])
-    expect(send).toHaveBeenCalledWith('server:timeline', expect.objectContaining({ mode: mode === 'merge' ? 'merge' : 'replace', snapshot: expect.objectContaining({
-      events: expect.arrayContaining([answer]), queuedTurns: []
-    }) }))
-    // A socket backlog delivered after the authoritative HTTP snapshot cannot
-    // restore a queue item that snapshot already superseded.
-    receive({ id: 'old-queue-replay', session_id: 'chat', seq: 11, type: 'turn_queued', queued_id: queued.queued_id, prompt: queued.prompt, ts: 'now' })
-    ;(service as unknown as { flushEventCache(): void }).flushEventCache()
-    expect(cache.queuedTurns('profile:a', 'chat')).toEqual([])
-    expect(client.stream).toHaveBeenCalledOnce()
-    expect(stop).not.toHaveBeenCalled()
+    const snapshotCall = send.mock.calls.findIndex(([channel]) => channel === 'server:timeline')
+    const eventCall = send.mock.calls.findIndex(([channel]) => channel === 'server:event')
+    expect(snapshotCall).toBeGreaterThanOrEqual(0)
+    expect(eventCall).toBeGreaterThan(snapshotCall)
+    expect(client.sessionPage).toHaveBeenCalledOnce()
   })
 
-  it('resets the early cached socket cursor when the server history was replaced', async () => {
+  it('uses the replaced log boundary and rejects callbacks from a retired lease', async () => {
     const response = deferred<TimelinePage>()
     const session: Session = { id: 'chat', title: 'Cached chat', backend: 'codex' }
     const old: Event = { id: 'old', session_id: 'chat', seq: 90, type: 'assistant_text', ts: 'now', text: 'Old history' }
     const fresh: Event = { ...old, id: 'fresh', seq: 2, text: 'Replacement history' }
-    const page: TimelinePage = { session, events: [fresh], queued_turns: [], has_more: false, latest_seq: 2, semantic_item_count: 1 }
     const stop = vi.fn()
     let receive!: (event: Event) => void
-    const client = fakeClient({ sessionPage: async (_id, options) => options?.pageMode === 'semantic' ? page : response.promise,
+    const client = fakeClient({ sessionPage: async () => ({ session, events: [old], queued_turns: [], has_more: false, latest_seq: 90, semantic_item_count: 1 }),
       stream: (_id, _after, onEvent) => { receive = onEvent; return stop } })
-    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] }, value => {
-      value.putSession('profile:a', session)
-      value.putEvents('profile:a', 'chat', [old])
-      value.putTimelineState('profile:a', 'chat', false, 90, 1, null, true)
-    })
+    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] })
     Object.assign(service, { validatedGeneration: 1 })
     await service.openTimeline('chat')
+    const retired = receive
+    retired({ ...old, id: 'pending', seq: 91 })
+    client.sessionPage.mockImplementation(() => response.promise)
+    await service.openTimeline('chat')
     await settleBackgroundWork()
-    expect(client.stream.mock.calls[0]?.[1]).toBe(90)
-    receive({ ...old, id: 'old-tail', seq: 91, text: 'Old log event buffered before reset' })
-    response.resolve(page)
+    retired({ ...old, id: 'stale', seq: 92 })
+    response.resolve({ session, events: [fresh], queued_turns: [], has_more: false, latest_seq: 2, semantic_item_count: 1 })
     await settleBackgroundWork()
-    expect(client.stream.mock.calls[1]?.[1]).toBe(2)
+    expect(client.stream.mock.calls.map(call => call[1])).toEqual([90, 2])
     expect(stop).toHaveBeenCalledOnce()
     ;(service as unknown as { flushEventCache(): void }).flushEventCache()
     expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([fresh])
+  })
+
+  it('keeps the cached window on tail failure without replaying a stale cursor, then recovers on ordinary refresh', async () => {
+    const session: Session = { id: 'chat', title: 'Cached chat', backend: 'codex' }
+    const old: Event = { id: 'old', session_id: 'chat', seq: 4, type: 'assistant_text', ts: 'now' }
+    const client = fakeClient({ sessionPage: async () => { throw new Error('Offline') } })
+    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] }, value => {
+      value.putSession('profile:a', session); value.putEvents('profile:a', 'chat', [old])
+    })
+    Object.assign(service, { validatedGeneration: 1 })
+    await service.openTimeline('chat'); await settleBackgroundWork()
+    expect(client.stream).not.toHaveBeenCalled()
+    expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([old])
+    client.sessionPage.mockResolvedValue({ session, events: [{ ...old, id: 'latest', seq: 8000 }], queued_turns: [], has_more: true, latest_seq: 8000, semantic_item_count: 1 })
+    const internals = service as unknown as { scope: unknown; refreshAll(a: boolean, b: boolean, scope: unknown): Promise<void> }
+    await internals.refreshAll(false, false, internals.scope); await settleBackgroundWork()
+    expect(client.stream.mock.calls[0]?.[1]).toBe(8000)
   })
 
   it.each([false, true])('waits for fresh health before a disconnected chat socket retries (initially connected: %s)', async connected => {
@@ -5036,7 +5124,7 @@ describe('semantic timeline paging', () => {
     expect(client.sessionPage).toHaveBeenCalledWith('chat', expect.objectContaining({ pageMode: 'semantic' }))
   })
 
-  it('lazily audits a verified tail once after a health version upgrade and keeps offline cache intact', async () => {
+  it('refreshes only opened latest windows after a health version upgrade and keeps offline cache intact', async () => {
     let version = '0.1.26-beta.60', offline = false
     const session: Session = { id: 'chat', title: 'Chat', backend: 'codex', latest_event_seq: 90, last_read_agent_event_seq: 80 }
     const old: Event = { id: 'same-import', session_id: 'chat', seq: 10, type: 'turn_started',
@@ -5049,6 +5137,7 @@ describe('semantic timeline paging', () => {
         turn_id: 'source-turn', timestamp: old.ts, source_text_sha256: createHash('sha256').update(old.prompt!).digest('hex') } }
     const client = fakeClient({
       health: async () => ({ ok: true, server_version: version }), sessions: async () => [session],
+      stream: (_id, _after, _event, state) => { state(true); return vi.fn() },
       sessionPage: async (_id, options) => {
         if (offline) throw new Error('Synthetic offline timeline')
         return { session, events: options?.pageMode === 'semantic' ? [repaired, answer] : [], queued_turns: [],
@@ -5066,7 +5155,7 @@ describe('semantic timeline paging', () => {
     await service.refreshServer('a', 1)
     expect((await service.openTimeline('chat')).events).toEqual([old, answer])
     await settleBackgroundWork()
-    expect(client.sessionPage.mock.calls.some(([, options]) => options?.pageMode === 'semantic')).toBe(false)
+    expect(client.sessionPage.mock.calls.some(([, options]) => options?.pageMode === 'semantic')).toBe(true)
     service.unsubscribeTimeline('chat')
     const priorCalls = client.sessionPage.mock.calls.length
     version = '0.1.26-beta.61'
@@ -5074,13 +5163,13 @@ describe('semantic timeline paging', () => {
     expect(client.sessionPage).toHaveBeenCalledTimes(priorCalls)
     expect(cache.timelineState('profile:a', 'unopened')?.pagingSchemaVersion).toBeNull()
     offline = true
-    expect((await service.openTimeline('chat')).events).toEqual([old, answer])
+    expect((await service.openTimeline('chat')).events).toEqual([repaired, answer])
     await settleBackgroundWork()
-    expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([old, answer])
+    expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([repaired, answer])
     expect(cache.timelineState('profile:a', 'chat')?.pagingSchemaVersion).toBeNull()
     service.unsubscribeTimeline('chat')
     offline = false
-    expect((await service.openTimeline('chat')).events).toEqual([old, answer])
+    expect((await service.openTimeline('chat')).events).toEqual([repaired, answer])
     await settleBackgroundWork()
     expect(cache.snapshot('profile:a', 'chat')?.events).toEqual([repaired, answer])
     expect(cache.timelineState('profile:a', 'chat')?.pagingSchemaVersion).toBe(TIMELINE_PAGING_SCHEMA_VERSION)
@@ -5090,7 +5179,7 @@ describe('semantic timeline paging', () => {
     await service.refreshServer('a', 1)
     service.unsubscribeTimeline('chat')
     await service.openTimeline('chat'); await settleBackgroundWork()
-    expect(client.sessionPage.mock.calls.filter(([, options]) => options?.pageMode === 'semantic')).toHaveLength(auditCalls)
+    expect(client.sessionPage.mock.calls.filter(([, options]) => options?.pageMode === 'semantic')).toHaveLength(auditCalls + 1)
     expect(client.sessionPage.mock.calls.every(([id]) => id === 'chat')).toBe(true)
   })
 
