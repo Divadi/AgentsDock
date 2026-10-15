@@ -20,6 +20,7 @@
   5,176 tests (five skipped). Eight package/license checks passed.
 - Availability: local desktop candidate `1.0.11-beta.1.sync.4`, retaining the
   latest-first sync changes; not published. No server update is required.
+  User acceptance of the local file-link test passed before PR submission.
   Cross-machine acceptance remains pending; mobile is outside this change.
 
 ## 2026-10-14 — Open stale desktop chats latest-first
@@ -81,6 +82,36 @@
   sleep/wake remain user acceptance items; wake handling has focused regression
   coverage. The designated test server was updated; no working server restart,
   public upload, release or merge is included.
+
+## 2026-10-14 — Shorten the README introduction and quickstart
+
+- Reduce the feature overview and explain the app/server relationship in one
+  short paragraph. Keep installation to four steps, with the npm command and
+  URL/token retrieval visible.
+- Add prominent website, setup and feature-guide links; keep detailed
+  prerequisites and troubleshooting in the existing server guide.
+- Documentation only; no runtime, installer or release behavior changed.
+
+## 2026-10-14 — Use the published npm CLI in installation guides
+
+- Make `npm install -g agentsdock` the primary manual installation command in
+  the product and server READMEs. Explain automatic first setup, existing-state
+  preservation, URL/token retrieval and the distinction from managed updates.
+- Retain source installation as an advanced path and show the short commands
+  for named instances. Remove obsolete unpublished-package wording from the
+  server and CLI introductions.
+- Organize first-time setup around the server host, prerequisites, npm install,
+  address/token selection and a first provider chat. Clarify that tmux enables
+  managed updates, localhost addresses cannot connect another device, and
+  native Windows is a client platform rather than an npm server host.
+- Link desktop downloads to the latest stable release instead of a stale
+  version. Add setup troubleshooting and distinguish unreleased CLI output
+  improvements from commands available in the published packages.
+- Verified public npm tags and the stable package's integrity, setup guards
+  and command parser without creating, restarting or changing a service.
+  Checked shell syntax for all 18 command blocks, resolved 24 relative file
+  links and verified the prerequisite documentation links. Documentation only;
+  no fresh service installation, runtime or release change.
 
 ## 2026-10-13 — Show CLI connection details together
 
