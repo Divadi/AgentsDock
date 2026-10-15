@@ -1899,6 +1899,8 @@ export interface ProfileTimelineEvent extends ProfileEventContext {
   snapshot: SessionSnapshot
   source: 'cache' | 'server'
   mode?: 'merge' | 'replace'
+  /** Main-process latest-page read; accept a disjoint window without refetching. */
+  authoritativeTail?: boolean
 }
 export interface ProfileTerminalDataEvent extends ProfileEventContext { sessionId: string; data: string }
 export interface ProfileTerminalStateEvent extends ProfileEventContext {

@@ -134,10 +134,12 @@ All feature work and bug fixes also follow the hands-on acceptance requirements
 in [APP_DEV_OPERATIONS.md](../docs/APP_DEV_OPERATIONS.md). Mocked checks alone
 do not establish that a feature works through the real app/server connection.
 
-The renderer is cache-first. It opens the cached tail immediately, subscribes
-to live events, and performs an `after=<last cached seq>` reconciliation in the
-background. Incoming events are coalesced to one renderer publish per animation
-frame. Timeline rows are virtualized with stable semantic keys.
+The renderer is cache-first. It opens the cached tail immediately, requests the
+latest bounded semantic page, then subscribes to events after that page's
+boundary. Reopening a stale cache does not replay the entire offline gap;
+older history loads on upward navigation. Failed refreshes retain the cache.
+Incoming events are coalesced to one renderer publish per animation frame.
+Timeline rows are virtualized with stable semantic keys.
 
 Every selected chat also owns a lightweight workspace surface rooted at its
 server-side `cwd`. The right-hand Details panel has a **Files** tab for browsing

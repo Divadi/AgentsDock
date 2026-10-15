@@ -1,5 +1,34 @@
 # Public development log
 
+## 2026-10-14 — Open stale desktop chats latest-first
+
+- Cached content still paints immediately, but opening/reconnecting a timeline
+  now requests the latest bounded semantic page before subscribing at its
+  snapshot boundary. It no longer starts a full offline-gap replay while also
+  fetching that page. Older history remains available through upward paging;
+  server/provider history, thinking content and chronological order are unchanged.
+- A main-process authoritative tail can replace a disjoint renderer window
+  without a redundant refetch or fabricated adjacency. Overlapping loaded
+  prefixes retain their existing handling. Failed tail reads retain the cache;
+  retired leases and buffered events cannot overwrite a replacement log.
+- Native offscreen acceptance used the real authenticated test service with
+  2,000 synthetic turns / 8,000 events, including long reasoning. The App opened
+  at the recent tail, paged older content through real scroll/click input, and
+  accepted a 57-character unsent draft without timeline requests. Six native
+  service clients each reopened a stale cache five times and underwent three
+  forced disconnects; all received one real Codex final reply without duplicates
+  or replaying the old gap. Claude was verified separately with two real replies
+  and an application-frame blackhole; recovery preserved both replies.
+- Focused desktop checks, TypeScript, production compilation and 28 server
+  transport/reasoning/stress checks passed. Full desktop validation passed
+  5,164 tests (five skipped), plus eight package/license checks with two workers.
+  Earlier high-concurrency runs encountered timing failures in unchanged secure
+  peer/update settings tests; those tests were not changed by this work.
+- Availability: local test candidate only; no publication, push or merge.
+  Physical cross-machine/network-switching and OS sleep/wake acceptance remain
+  pending. This change is desktop-side; the existing test server protocol is
+  sufficient, and the working server is not changed.
+
 ## 2026-10-14 — Recover stalled desktop timeline streams
 
 - Desktop advances its reconnect cursor only after the event consumer accepts

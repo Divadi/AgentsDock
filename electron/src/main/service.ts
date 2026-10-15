@@ -151,8 +151,7 @@ import { agentFileBelongsToSession, isolateSessionEvent } from '../shared/sessio
 import { buildWorkspaceMediaURL, isValidMediaIdentifier } from '../shared/media-url'
 import {
   CacheNamespaceCollisionError,
-  LocalCache,
-  TIMELINE_PAGING_SCHEMA_VERSION
+  LocalCache
 } from './persistence'
 import {
   AgentServerClient,
@@ -208,7 +207,6 @@ import {
 } from './secure-peer-contract'
 
 const INITIAL_SEMANTIC_ITEM_LIMIT = 48
-const DELTA_EVENT_LIMIT = 480
 const HISTORY_PAGE_SEMANTIC_ITEM_LIMIT = 120
 const LEGACY_TIMELINE_EVENT_LIMIT = 480
 const LEGACY_BOUNDARY_BACKFILL_EVENT_LIMIT = 1_000
@@ -2796,9 +2794,8 @@ export class AppService {
     const lease = this.beginTimelineSubscription(scope, sessionId)
     this.emitSync(scope, sessionId, 'syncing')
     const cached = this.cache.snapshot(scope.namespace, sessionId)
-    const cachedLast = this.cache.latestEventSequence(scope.namespace, sessionId)
     if (cached && !forceRemote) {
-      queueMicrotask(() => void this.reconcileTimelineAndStream(scope, sessionId, cachedLast, lease))
+      queueMicrotask(() => void this.reconcileTimelineAndStream(scope, sessionId, lease))
       return cached
     }
     try {
@@ -2852,15 +2849,6 @@ export class AppService {
       SEMANTIC_TIMELINE_CAPABILITY_CACHE_KEY,
       { serverVersion: this.serverVersionForScope(scope), supported }
     )
-  }
-
-  private semanticTimelineCapabilityChanged(scope: ConnectionScope): boolean {
-    const capability = this.cache.preference<SemanticTimelineCapability | null>(
-      scope.namespace,
-      SEMANTIC_TIMELINE_CAPABILITY_CACHE_KEY,
-      null
-    )
-    return !capability || capability.serverVersion !== this.serverVersionForScope(scope)
   }
 
   private async restoreLegacyTurnBoundary(
@@ -3451,11 +3439,11 @@ export class AppService {
     if (firstError) throw firstError
   }
 
-  async subscribeTimeline(sessionId: string, after: number): Promise<void> {
+  async subscribeTimeline(sessionId: string, _after: number): Promise<void> {
     const scope = this.captureScope()
     const lease = this.beginTimelineSubscription(scope, sessionId)
     this.emitSync(scope, sessionId, 'syncing')
-    queueMicrotask(() => void this.reconcileTimelineAndStream(scope, sessionId, after, lease))
+    queueMicrotask(() => void this.reconcileTimelineAndStream(scope, sessionId, lease))
   }
 
   resumeLiveUpdates(): void {
@@ -3468,8 +3456,7 @@ export class AppService {
       const lease = this.renewTimelineSubscription(sessionId)
       if (lease === null) continue
       this.emitSync(scope, sessionId, 'syncing')
-      const after = this.cache.latestEventSequence(scope.namespace, sessionId)
-      void this.reconcileTimelineAndStream(scope, sessionId, after, lease)
+      void this.reconcileTimelineAndStream(scope, sessionId, lease)
     }
     if (!this.isValidatedScope(scope)) void this.runBackgroundRefresh(false, scope)
   }
@@ -3477,6 +3464,7 @@ export class AppService {
   private beginTimelineSubscription(scope: ConnectionScope, sessionId: string): number {
     this.assertCurrentScope(scope)
     this.stopTimelineSubscription(sessionId)
+    this.flushEventCache()
     if (this.timelineSubscriptions.size >= MAX_TIMELINE_SUBSCRIPTIONS) {
       const oldestSessionId = this.timelineSubscriptions.keys().next().value as string | undefined
       if (oldestSessionId) {
@@ -3489,7 +3477,7 @@ export class AppService {
     return lease
   }
 
-  private activateTimelineStream(scope: ConnectionScope, sessionId: string, after: number, lease: number, acceptReconcileEvent?: (event: Event) => boolean): void {
+  private activateTimelineStream(scope: ConnectionScope, sessionId: string, after: number, lease: number): void {
     if (!this.isCurrentTimeline(scope, sessionId, lease)) return
     const subscription = this.timelineSubscriptions.get(sessionId)
     if (!subscription) return
@@ -3503,13 +3491,11 @@ export class AppService {
       const subagentState = this.subagentProjector.project(event)
       if (event.type === 'raw_event') {
         if (subagentState) {
-          if (acceptReconcileEvent && !acceptReconcileEvent(subagentState)) return
           this.emitAgentEvent(scope, subagentState)
           this.enqueueEventCache(scope, subagentState)
         }
         return
       }
-      if (acceptReconcileEvent && !acceptReconcileEvent(event)) return
       this.emitAgentEvent(scope, event)
       this.enqueueEventCache(scope, event)
       if (JOB_REFRESH_EVENT_TYPES.has(event.type) && !isImportedProviderControlMetadata(event)) void this.refreshJobs(scope)
@@ -5376,8 +5362,7 @@ export class AppService {
         if (subscription.connected || subscription.initializing || subscription.catchingUp) continue
         const lease = this.renewTimelineSubscription(sessionId)
         if (lease == null) continue
-        const cachedLast = this.cache.latestEventSequence(activeScope.namespace, sessionId)
-        queueMicrotask(() => void this.reconcileTimelineAndStream(activeScope, sessionId, cachedLast, lease))
+        queueMicrotask(() => void this.reconcileTimelineAndStream(activeScope, sessionId, lease))
       }
     }
     const [sessions, jobs] = await metadataResults
@@ -5611,7 +5596,7 @@ export class AppService {
     return health
   }
 
-  private async reconcileTimelineAndStream(scope: ConnectionScope, sessionId: string, cachedLast: number, lease: number): Promise<void> {
+  private async reconcileTimelineAndStream(scope: ConnectionScope, sessionId: string, lease: number): Promise<void> {
     if (!this.isValidatedScope(scope)) {
       this.finishTimelineInitialization(sessionId, lease)
       return
@@ -5619,187 +5604,38 @@ export class AppService {
     const reconcileKey = `${scope.generation}:${sessionId}:${lease}`
     if (this.timelineReconcileInFlight.has(reconcileKey)) return
     this.timelineReconcileInFlight.add(reconcileKey)
-    let liveDuringReconcile: Event[] | null = []
-    let streamStarted = false
-    let reconciledThrough: number | null = null
     try {
-      const before = this.cache.snapshot(scope.namespace, sessionId)
-      const timelineState = this.cache.timelineState(scope.namespace, sessionId)
-      const initialRequestIsSemantic = cachedLast <= 0
-      const needsCompletenessAudit = Boolean(
-        before
-        && cachedLast > 0
-        && (
-          timelineState?.pagingSchemaVersion !== TIMELINE_PAGING_SCHEMA_VERSION
-          || (
-            timelineState.semanticPaging === false
-            && this.semanticTimelineCapabilityChanged(scope)
-          )
-        )
-      )
-      // Cached chats can receive replay and new output immediately. Keep HTTP
-      // for imports, metadata, queues and cache-schema repairs. Empty first
-      // opens still wait for their authoritative page.
-      if (before?.events.length && cachedLast > 0) {
-        this.activateTimelineStream(scope, sessionId, cachedLast, lease, event => {
-          // Once HTTP has supplied this range, a slower socket replay must not
-          // reapply old queue mutations over its newer authoritative snapshot.
-          if (reconciledThrough !== null && event.seq <= reconciledThrough) return false
-          liveDuringReconcile?.push(event)
-          return true
+      // A cached cursor can be days behind. Fetch the authoritative latest
+      // window FIRST, then subscribe at its boundary. The server catches up
+      // only writes that raced this request, not the entire offline backlog.
+      await this.fetchTimeline(scope, sessionId, lease, snapshot => {
+        this.emit('server:timeline', {
+          sessionId, snapshot, source: 'server', mode: 'replace', authoritativeTail: true,
+          profileId: scope.profileId, profileGeneration: scope.generation
         })
-        streamStarted = true
-      }
-      const pageRequest = cachedLast > 0
-        ? scope.client.sessionPage(sessionId, { after: cachedLast, limit: DELTA_EVENT_LIMIT, tail: false, visible: true })
-        : this.semanticTimelinePage(scope, sessionId, {
-          limit: INITIAL_SEMANTIC_ITEM_LIMIT, tail: true, visible: true
-        })
-      const [deltaPage, auditPage] = await Promise.all([
-        pageRequest,
-        needsCompletenessAudit
-          ? this.semanticTimelinePage(scope, sessionId, {
-            limit: INITIAL_SEMANTIC_ITEM_LIMIT, tail: true, visible: true
-          })
-          : Promise.resolve(null)
-      ])
-      let page = deltaPage
-      let pageWasSemanticAttempt = initialRequestIsSemantic
-      if (!this.isCurrentTimeline(scope, sessionId, lease)) return
-
-      let mode: 'merge' | 'replace' = initialRequestIsSemantic ? 'replace' : 'merge'
-      if (auditPage) {
-        pageWasSemanticAttempt = true
-        const auditSucceeded = semanticAttemptSucceeded(auditPage)
-        page = auditSucceeded ? auditPage : {
-          ...auditPage,
-          session: deltaPage.session,
-          events: mergeEventsBySequence(auditPage.events, deltaPage.events),
-          queued_turns: deltaPage.queued_turns ?? auditPage.queued_turns,
-          latest_seq: Math.max(auditPage.latest_seq ?? 0, deltaPage.latest_seq ?? 0) || null
-        }
-        mode = auditSucceeded ? 'replace' : 'merge'
-        appLog('timeline', auditSucceeded
-          ? 'replacing unverified legacy cache from semantic audit'
-          : 'merging repaired legacy tail after semantic audit fallback', {
-          sessionId,
-          semanticItems: auditPage.semantic_item_count,
-          tailEvents: auditPage.events.length
-        })
-      } else if ((page.events_omitted_after ?? 0) > 0 || (page.latest_seq ?? cachedLast) < cachedLast) {
-        page = await this.semanticTimelinePage(scope, sessionId, {
-          limit: INITIAL_SEMANTIC_ITEM_LIMIT, tail: true, visible: true
-        })
-        pageWasSemanticAttempt = true
-        if (!this.isCurrentTimeline(scope, sessionId, lease)) return
-        mode = 'replace'
-      }
-      // Settle old socket writes before either a refresh or a log reset. A
-      // delayed cache batch must not reinsert the retired log after replacement.
-      if (streamStarted) this.flushEventCache()
-      // A replaced/truncated server log needs a socket with its new cursor.
-      if (streamStarted && (page.latest_seq ?? cachedLast) < cachedLast) streamStarted = false
-      if (streamStarted) {
-        // A delayed HTTP snapshot can predate messages or queue changes already
-        // delivered by the socket. Retain that newer tail in either merge or
-        // replacement mode.
-        const pageThrough = page.latest_seq ?? page.events.at(-1)?.seq ?? cachedLast
-        reconciledThrough = pageThrough
-        const newerLive = liveDuringReconcile!.filter(event => event.seq > pageThrough)
-        if (newerLive.length) page = {
-          ...page,
-          events: mergeEventsBySequence(page.events, newerLive),
-          queued_turns: newerLive.reduce(updateQueuedTurns, page.queued_turns ?? []),
-          latest_seq: Math.max(pageThrough, ...newerLive.map(event => event.seq))
-        }
-      }
-      this.cache.putSession(scope.namespace, page.session)
-      this.rememberSessionDetail(scope, page.session)
-      if (mode === 'replace') this.cache.replaceEvents(scope.namespace, sessionId, page.events)
-      else this.cache.putEvents(scope.namespace, sessionId, page.events, cachedLast)
-      this.cache.putQueuedTurns(scope.namespace, sessionId, page.queued_turns ?? [])
-      const hasMoreEvents = mode === 'replace'
-        ? Boolean(page.has_more)
-        : cachedLast === 0 ? Boolean(page.has_more || auditPage?.has_more) : Boolean(before?.hasMoreEvents || page.has_more || auditPage?.has_more)
-      const verifiedLatestSeq = mode === 'replace' ? page.latest_seq : auditPage?.latest_seq
-      const knownTotal = mode === 'replace' ? page.total : auditPage?.total
-      const nextTimelineBefore = mode === 'replace'
-        ? timelinePageNextBefore(page)
-        : auditPage && semanticAttemptSucceeded(auditPage)
-          ? timelinePageNextBefore(auditPage)
-          : undefined
-      this.cache.putTimelineState(
-        scope.namespace,
-        sessionId,
-        hasMoreEvents,
-        verifiedLatestSeq,
-        knownTotal,
-        nextTimelineBefore,
-        pageWasSemanticAttempt ? semanticAttemptSucceeded(page) : undefined
-      )
-      const semanticPaging = pageWasSemanticAttempt
-        ? semanticAttemptSucceeded(page)
-        : before?.semanticPaging ?? null
-      const snapshot: SessionSnapshot = mode === 'replace' ? { ...(this.cache.snapshot(scope.namespace, sessionId) ?? {
-        session: page.session,
-        events: page.events,
-        queuedTurns: page.queued_turns ?? [],
-        files: before?.files ?? [],
-        hasMoreEvents,
-        eventsTotal: knownTotal ?? before?.eventsTotal ?? null,
-        nextTimelineBefore: nextTimelineBefore !== undefined
-          ? nextTimelineBefore
-          : before?.nextTimelineBefore ?? null,
-        semanticPaging,
-        filesTotal: before?.filesTotal ?? 0,
-        cachedAt: Date.now()
-      }), historyVerified: true } : {
-        session: page.session,
-        events: page.events,
-        queuedTurns: page.queued_turns ?? [],
-        files: [],
-        hasMoreEvents,
-        historyVerified: true,
-        eventsTotal: before?.eventsTotal ?? auditPage?.total ?? null,
-        nextTimelineBefore: nextTimelineBefore !== undefined
-          ? nextTimelineBefore
-          : before?.nextTimelineBefore ?? null,
-        semanticPaging,
-        filesTotal: before?.filesTotal ?? 0,
-        cachedAt: Date.now(),
-        viewState: before?.viewState
-      }
-      const changed = page.events.length > 0
-        || before?.hasMoreEvents !== snapshot.hasMoreEvents
-        || before?.eventsTotal !== snapshot.eventsTotal
-        || before?.nextTimelineBefore !== snapshot.nextTimelineBefore
-        || before?.semanticPaging !== snapshot.semanticPaging
-        || !jsonEqual(before?.queuedTurns ?? [], snapshot.queuedTurns)
-        || !jsonEqual(before?.session, snapshot.session)
-      if (changed) this.emit('server:timeline', {
-        sessionId, snapshot, source: 'server', mode, profileId: scope.profileId, profileGeneration: scope.generation
       })
-      const streamAfter = page.latest_seq ?? page.events.at(-1)?.seq ?? cachedLast
-      if (!streamStarted) this.activateTimelineStream(scope, sessionId, streamAfter, lease)
-      this.scheduleSubagentSnapshotRefresh(scope, sessionId, lease)
-      queueMicrotask(() => void this.refreshTimelineFiles(scope, sessionId))
     } catch (error) {
+      if (!this.isCurrentTimeline(scope, sessionId, lease)) return
       reportStorageError(error)
-      appLog('timeline', 'tail refresh failed; keeping cached transcript', { sessionId, error: errorText(error) })
-      if (!streamStarted && this.isCurrentTimeline(scope, sessionId, lease)) this.activateTimelineStream(scope, sessionId, cachedLast, lease)
+      appLog('timeline', 'latest page refresh failed; keeping cached transcript', { sessionId, error: errorText(error) })
+      // Keep cached content and let the existing connection refresh recover.
+      // Falling back to a socket at the old cursor reintroduces an unbounded
+      // replay precisely when the connection is already struggling.
+      this.emitSync(scope, sessionId, 'reconnecting', errorText(error))
     } finally {
-      liveDuringReconcile = null
       this.finishTimelineInitialization(sessionId, lease)
       this.timelineReconcileInFlight.delete(reconcileKey)
     }
   }
 
-  private async fetchTimeline(scope: ConnectionScope, sessionId: string, lease: number): Promise<SessionSnapshot> {
+  private async fetchTimeline(scope: ConnectionScope, sessionId: string, lease: number, beforeStream?: (snapshot: SessionSnapshot) => void): Promise<SessionSnapshot> {
     await this.ensureValidatedScope(scope)
     const page = await this.semanticTimelinePage(scope, sessionId, {
       limit: INITIAL_SEMANTIC_ITEM_LIMIT, tail: true, visible: true
     })
     if (!this.isCurrentTimeline(scope, sessionId, lease)) throw new Error('Timeline selection superseded')
+    // Flush accepted writes from the retired lease before replacing its window.
+    this.flushEventCache()
     this.cache.putSession(scope.namespace, page.session)
     this.rememberSessionDetail(scope, page.session)
     this.cache.replaceEvents(scope.namespace, sessionId, page.events)
@@ -5817,10 +5653,7 @@ export class AppService {
     )
     const cached = this.cache.snapshot(scope.namespace, sessionId)
     if (!this.isCurrentTimeline(scope, sessionId, lease)) throw new Error('Timeline selection superseded')
-    this.activateTimelineStream(scope, sessionId, page.latest_seq ?? page.events.at(-1)?.seq ?? 0, lease)
-    this.scheduleSubagentSnapshotRefresh(scope, sessionId, lease)
-    queueMicrotask(() => void this.refreshTimelineFiles(scope, sessionId, true))
-    return cached ? {
+    const snapshot: SessionSnapshot = cached ? {
       ...cached,
       session: page.session,
       queuedTurns: page.queued_turns ?? [],
@@ -5843,6 +5676,12 @@ export class AppService {
       filesTotal: 0,
       cachedAt: Date.now()
     }
+    // Publish the snapshot before any catch-up or live event from its boundary.
+    beforeStream?.(snapshot)
+    this.activateTimelineStream(scope, sessionId, page.latest_seq ?? page.events.at(-1)?.seq ?? 0, lease)
+    this.scheduleSubagentSnapshotRefresh(scope, sessionId, lease)
+    queueMicrotask(() => void this.refreshTimelineFiles(scope, sessionId, true))
+    return snapshot
   }
 
   private async fetchSubagentSnapshot(
