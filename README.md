@@ -7,10 +7,10 @@
       alt="AgentsDock website"
     />
   </a>
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.9">
+  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/latest">
     <img
-      src="https://img.shields.io/badge/desktop-v1.0.9-EA7233"
-      alt="Desktop 1.0.9 stable"
+      src="https://img.shields.io/github/v/release/ZhengyiLuo/AgentsDock?label=desktop&amp;color=EA7233"
+      alt="Latest stable desktop release"
     />
   </a>
   <a href="https://discord.gg/ZGDrhEWqPt">
@@ -48,18 +48,10 @@
   without living in a terminal. Easily review files and rich media.
   <br />
   <br />
-  <strong>Desktop stable 1.0.9:</strong>
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/download/v1.0.9/AgentsDock-1.0.9-mac-universal.dmg">macOS</a>
+  <strong>Desktop:</strong>
+  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/latest">Download for macOS, Windows or Linux — latest stable</a>
   ·
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/download/v1.0.9/AgentsDock-1.0.9-linux-x86_64.AppImage">Linux x86_64</a>
-  ·
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/download/v1.0.9/AgentsDock-1.0.9-linux-arm64.AppImage">Linux ARM64</a>
-  ·
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/download/v1.0.9/AgentsDock-1.0.9-win-x64.exe">Windows (unsigned installer)</a>
-  ·
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases">Release page</a>
-  ·
-  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.9">1.0.9 release notes</a>
+  <a href="https://github.com/ZhengyiLuo/AgentsDock/releases">All releases and release notes</a>
   <br />
   <strong>Mobile:</strong>
   <a href="https://apps.apple.com/us/app/agentsdock/id6769275751">iPhone &amp; iPad</a>
@@ -102,46 +94,59 @@ providers and features depend on the client and server version.
 
 ## Get started
 
-1. **Install the app.** Get a desktop build from
-   [public GitHub Releases](https://github.com/ZhengyiLuo/AgentsDock/releases)
-   ([latest stable release](https://github.com/ZhengyiLuo/AgentsDock/releases/latest)),
-   or find the current iPhone/iPad distribution link on
-   [the website](https://agentsdock.net/#downloads).
-2. **Set up AgentsServer.** Direct macOS and Linux builds provide
-   **Set up AgentsServer**. For a fresh manual installation on Linux or Apple
-   silicon macOS, install Node.js **22.14 or later** with npm and
-   [`uv`](https://docs.astral.sh/uv/getting-started/installation/), then run:
+You need a server and an app. They can run on the **same computer**; a separate
+server is only needed if you want to run your agents elsewhere. npm installs the
+server and its command-line tool. Download the desktop/mobile app separately.
+
+1. **Prepare the server machine.** Use **Apple silicon macOS** with a desktop
+   login, or **Linux** with a working user systemd session. Install
+   [Node.js **22.14 or later**, including npm](https://nodejs.org/en/download),
+   and [`uv`](https://docs.astral.sh/uv/getting-started/installation/) for the
+   server's Python environment. Install **tmux** for persistent terminals and
+   in-app Server updates; basic chats can run without it. On macOS with
+   Homebrew, `brew install node uv tmux` installs these prerequisites.
+   Windows can run the desktop app and connect to a supported server;
+   the npm Server installer does not run natively on Windows.
+2. **Install the server.** Run these commands in a terminal **on the server
+   machine**, as your normal user, without `sudo`:
 
    ```sh
    npm install -g agentsdock
    agentsdock list
+   agentsdock token default
    ```
 
-   On a fresh machine, the global install automatically creates and starts the
-   latest stable server, normally on port **7850**; no separate setup command is
-   required. Run as the user who will own the server, without `sudo`.
-   Existing installations and history are left unchanged; update running
-   servers through the app. `agentsdock list` shows existing instances and
-   connection addresses; `agentsdock token default` reads the default token.
-   See [server setup and prerequisites](server/README.md#get-started).
-3. **Connect and start a chat.** Add the server connection in AgentsDock,
-   using the URL from `agentsdock list` and the access token from
-   `agentsdock token default`. Install the agent
-   CLI you want on the server, then sign in or configure a supported API
-   connection in **Settings → My Agents** on desktop. Choose an agent and a
-   working directory on the server, and send a task.
+   On a fresh machine, the global install creates and starts the stable
+   **default** server, normally on port **7850**. No repo clone, npm account,
+   or separate setup/start command is needed. Wait for installation to finish;
+   it downloads Python dependencies too. Confirm `default` is `running` in
+   `agentsdock list`, then keep its URL and token for the next step. The token
+   grants access to your server; keep it private.
+3. **Install and connect the app.** Download the
+   [latest stable desktop app](https://github.com/ZhengyiLuo/AgentsDock/releases/latest)
+   or [mobile app](https://agentsdock.net/#downloads). Add a server using the
+   URL from `agentsdock list` and the token from `agentsdock token default`.
+   On the same computer, use its **This machine only** URL. From a phone or
+   another computer, use the listed **LAN** URL on the same network, or the
+   **Tailscale** URL with both devices connected to your private tailnet.
+   `127.0.0.1` always means the device you are using; it will not reach a
+   different computer. Test the connection and save it.
+4. **Start your first chat.** Install and sign in to at least one supported
+   agent CLI **on the server machine**: Claude Code, Codex, Cursor or OpenCode.
+   In the desktop app, check **Settings → My Agents**, then create a chat,
+   choose the agent and a working directory on the server, and send a message.
+   Installing AgentsDock does not install or sign in to these providers for you.
 
-**Already using AgentsDock?** Update the desktop app from Settings. After
-relaunch, 1.0.9 coordinates each supported server's matching signed update;
-busy servers wait until idle, and offline servers resume after reconnecting.
-The signed 1.0.9 server bridge remains available for supported older
-installations. See the [release notes](https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.9)
-for upgrade validation limits.
+**Already have a server?** The npm install leaves existing installations and
+history unchanged; it does not update or restart them. Use **Settings → Updates**
+in the desktop app for supported managed updates. To add another independent
+server, use `agentsdock new`, not another default setup. See
+[multiple servers](server/README.md#multiple-servers-on-one-machine).
 
-For remote access, use a private network such as Tailscale rather than exposing
-the server directly to the internet. The server needs `tmux` for persistent
-terminals; see its documentation for the full prerequisites. Connection help
-is in the [setup guide](https://agentsdock.net/setup.html).
+If installation fails, or you need a custom port, see
+[server setup and troubleshooting](server/README.md#get-started).
+Keep remote access on your LAN or a private network such as Tailscale; do not
+forward the server port to the public internet.
 
 ## Develop from source
 
