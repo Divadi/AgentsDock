@@ -330,6 +330,7 @@ interface TimelineSubscription {
   stop: (() => void) | null
   connected: boolean
   initializing: boolean
+  catchingUp?: boolean
 }
 
 interface StagedClipboardFile {
@@ -3457,6 +3458,22 @@ export class AppService {
     queueMicrotask(() => void this.reconcileTimelineAndStream(scope, sessionId, after, lease))
   }
 
+  resumeLiveUpdates(): void {
+    if (!this.running || !this.clientAvailable) return
+    const scope = this.captureScope()
+    this.flushEventCache()
+    // Sleeping can leave an apparently open transport behind. Renew only the
+    // bounded set of open timelines; never resend prompts or restart providers.
+    for (const sessionId of this.timelineSubscriptions.keys()) {
+      const lease = this.renewTimelineSubscription(sessionId)
+      if (lease === null) continue
+      this.emitSync(scope, sessionId, 'syncing')
+      const after = this.cache.latestEventSequence(scope.namespace, sessionId)
+      void this.reconcileTimelineAndStream(scope, sessionId, after, lease)
+    }
+    if (!this.isValidatedScope(scope)) void this.runBackgroundRefresh(false, scope)
+  }
+
   private beginTimelineSubscription(scope: ConnectionScope, sessionId: string): number {
     this.assertCurrentScope(scope)
     this.stopTimelineSubscription(sessionId)
@@ -3496,13 +3513,17 @@ export class AppService {
       this.emitAgentEvent(scope, event)
       this.enqueueEventCache(scope, event)
       if (JOB_REFRESH_EVENT_TYPES.has(event.type) && !isImportedProviderControlMetadata(event)) void this.refreshJobs(scope)
-    }, (connected, error) => {
+    }, (connected, error, phase) => {
       if (!this.isCurrentTimeline(scope, sessionId, lease)) return
       const current = this.timelineSubscriptions.get(sessionId)
       if (!current) return
       current.connected = connected
+      current.catchingUp = phase === 'catching-up'
+      if (!connected && error) appLog('sync', 'timeline transport interrupted', {
+        sessionId, profileId: scope.profileId, generation: scope.generation, error
+      })
       if (!connected && !this.isValidatedScope(scope)) this.suspendTimelineSubscriptions(true)
-      this.emitSync(scope, sessionId, connected ? 'live' : 'reconnecting', error)
+      this.emitSync(scope, sessionId, connected ? 'live' : phase === 'catching-up' ? 'syncing' : 'reconnecting', error)
       if (connected) void this.refreshPinsFromNotice(scope, sessionId)
     }, event => {
       if (!this.isCurrentTimeline(scope, sessionId, lease)) return
@@ -5352,7 +5373,7 @@ export class AppService {
     // even while background session/job metadata waits for an input pause.
     if (!namespaceWasAdopted) {
       for (const [sessionId, subscription] of [...this.timelineSubscriptions]) {
-        if (subscription.connected || subscription.initializing) continue
+        if (subscription.connected || subscription.initializing || subscription.catchingUp) continue
         const lease = this.renewTimelineSubscription(sessionId)
         if (lease == null) continue
         const cachedLast = this.cache.latestEventSequence(activeScope.namespace, sessionId)

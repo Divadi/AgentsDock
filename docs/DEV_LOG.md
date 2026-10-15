@@ -1,5 +1,27 @@
 # Public development log
 
+## 2026-10-14 — Recover stalled desktop timeline streams
+
+- Desktop advances its reconnect cursor only after the event consumer accepts
+  a row. Consumer failures close the stream and retry from the previous cursor,
+  with backoff; they cannot silently skip the failed row.
+- An additive, negotiated server capability confirms completed WebSocket
+  catch-up and sends lightweight idle heartbeats. Desktop reconnects after
+  45 seconds without progress and renews open timelines after system wake.
+  A progressing catch-up is not replaced by the periodic metadata refresh.
+  Legacy clients/servers keep their existing protocol. Recovery never resends
+  prompts, refreshes provider credentials or changes thinking content.
+- Real loopback transport stress covered six clients, 6,000 historical rows,
+  18 forced reconnects, filtered sequence gaps and 40 live appends. Every client
+  received the complete expected sequence without duplicates; connection
+  reservations were released. These synthetic-history tests do not call models.
+- Desktop suite: 5,162 passed, five skipped; eight packaging/license checks,
+  TypeScript and production compilation passed. Server catch-up/reasoning
+  regressions passed. Native offscreen acceptance uses a real authenticated
+  test service and provider, with a fault proxy keeping protocol ping/pong
+  alive while dropping application frames. Post-change native acceptance and
+  cross-machine validation are still in progress. No public release or merge.
+
 ## 2026-10-13 — Show CLI connection details together
 
 - Successful first-time global npm setup shows the default server URL and

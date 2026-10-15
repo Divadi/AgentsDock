@@ -3901,6 +3901,58 @@ describe('background connection event publication', () => {
 })
 
 describe('split-chat timeline subscriptions', () => {
+  it('does not replace a progressing catch-up on the ordinary background refresh', async () => {
+    const client = fakeClient({
+      sessionPage: async sessionId => emptyTimelinePage(sessionId),
+      stream: (_session, _after, _event, state) => {
+        state(false, undefined, 'catching-up')
+        return vi.fn()
+      }
+    })
+    const { service } = createProfileService({ 'http://a.test:7850': [client] })
+    Object.assign(service, { validatedGeneration: 1 })
+    await service.subscribeTimeline('chat', 0)
+    await settleBackgroundWork()
+    const internals = service as unknown as { scope: unknown; refreshAll(a: boolean, b: boolean, scope: unknown): Promise<void> }
+    await internals.refreshAll(false, false, internals.scope)
+    await settleBackgroundWork()
+    expect(client.stream).toHaveBeenCalledOnce()
+  })
+
+  it('renews open timelines on wake, flushes accepted events and fences the old transport', async () => {
+    const streams: Array<{ after: number; event: (event: Event) => void; stop: ReturnType<typeof vi.fn> }> = []
+    const session: Session = { id: 'chat', title: 'Chat', backend: 'codex', cwd: '/tmp', created_at: 'now', updated_at: 'now' }
+    const client = fakeClient({
+      sessionPage: async sessionId => ({ ...emptyTimelinePage(sessionId), session, latest_seq: 4 }),
+      stream: (_session, after, event) => {
+        const stream = { after, event, stop: vi.fn() }
+        streams.push(stream)
+        return stream.stop
+      }
+    })
+    const { service, cache } = createProfileService({ 'http://a.test:7850': [client] })
+    Object.assign(service, { validatedGeneration: 1, running: true })
+    const scope = (service as unknown as { scope: { namespace: string } }).scope
+    const send = vi.fn()
+    service.addWindow({ isDestroyed: () => false, on: vi.fn(), webContents: { send } } as never)
+    await service.subscribeTimeline('chat', 0)
+    await settleBackgroundWork()
+    streams[0].event({ id: 'e4', seq: 4, session_id: 'chat', type: 'assistant_text', ts: 'now', text: 'Accepted before sleep' })
+    service.resumeLiveUpdates()
+    await settleBackgroundWork()
+    expect(streams[0].stop).toHaveBeenCalledOnce()
+    expect(streams[1].after).toBe(4)
+    send.mockClear()
+    streams[0].event({ id: 'stale', seq: 99, session_id: 'chat', type: 'assistant_text', ts: 'now' })
+    expect(send).not.toHaveBeenCalledWith('server:event', expect.objectContaining({ event: expect.objectContaining({ id: 'stale' }) }))
+    expect(cache.events(scope.namespace, 'chat').some(e => e.id === 'e4')).toBe(true)
+    service.stop()
+    const count = streams.length
+    service.resumeLiveUpdates()
+    await settleBackgroundWork()
+    expect(streams).toHaveLength(count)
+  })
+
   it('forwards transient summaries only for the current lease and profile without writing them to SQLite', async () => {
     const streams: Array<{
       summary: NonNullable<Parameters<AgentServerClient['stream']>[6]>

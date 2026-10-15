@@ -1750,6 +1750,7 @@ export interface HealthCapabilities {
   pinned_items?: PinnedItemsCapability
   port_forwarding_v1?: PortForwardingCapability
   websocket_auth_v1?: ServerCapability
+  event_stream_liveness_v1?: ServerCapability & { version?: number }
   [key: string]: SideQuestionsCapability | ServerCapability | ServerRestartCapability | TeamHubV1Capability | TeamHubHostControlCapability | LocalSessionImportCapability | SessionForkCompletedPrefixCapability | AgentEmergencyAlertsCapability | TeamMailHintsCapability | TeamActivityHintsCapability | AgentTeamMailCapability | AgentTeamMessagesCapability | TeamBulletinAliasCapability | TeamAllServersAliasCapability | PinnedItemsCapability | JsonValue | undefined
 }
 
