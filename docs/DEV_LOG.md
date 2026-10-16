@@ -1,5 +1,89 @@
 # Public development log
 
+## 2026-10-15 - Stress-test mobile sync and connection fixes
+
+- Added repeatable CI coverage for latest-first sync, recovery, stable native
+  Markdown nodes, server-name migration and the first-page navigation change.
+- Store stress passed 40 cycles across eight chats with 36,000 events and
+  1,200 duplicate deliveries. Checks cover bounded snapshots, one active
+  stream, repeated retry taps, transient failures, backgrounding, late HTTP
+  responses and retired-stream callbacks. Rendering stress retained all 160
+  paragraph host instances through 300 text/appearance updates using the real
+  Markdown renderer with mocked native hosts. Profile migration preserved 64
+  identities, custom names and credential versions across 100 round trips.
+- A clean candidate using the committed lockfile passed all 28 focused
+  TypeScript test entrypoints, type checking, 307 UI checks and an iOS production
+  JavaScript export. One generated-native-metadata check was skipped because
+  the source-only candidate has no generated native project. Updated stale UI
+  source assertions and removed an integration fixture race by waiting for
+  reconnect's optional runtime request before measuring identity rejection;
+  that integration check also passed 20 consecutive runs.
+- Six production mobile API clients made 60 latest-page reads and underwent
+  18 forced WebSocket disconnects against the isolated production service.
+  Every client received all 105 expected events in order, without duplicates.
+  The fixture used synthetic Claude and Codex history, not model requests.
+- Actual iPhone simulator input repeated 20 long-chat openings, three
+  background/foreground cycles and five right-edge server-menu openings. All
+  returned the latest content and remained operable. Adding an unnamed server
+  displayed its host and port. The original profile was retained throughout.
+- Native checks reused the installed development app and its local SDK-aligned
+  dependencies. Those dependency adjustments are excluded from this repair PR;
+  no native release archive, physical-device or real-provider parity acceptance
+  is claimed. The affected real conversation still needs user confirmation.
+
+## 2026-10-14 - Open mobile long chats latest-first
+
+- Opening a chat, returning to the foreground, or recovering a disconnected
+  timeline now fetches the latest bounded page before subscribing. Cached
+  content remains visible until that page arrives; healthy live windows keep
+  their bounded delta path. Older history remains available through paging,
+  and servers without semantic paging retain the legacy tail fallback.
+- Replacement reads retire the previous stream. Concurrent send results are
+  retained, but the replacement stream starts at the HTTP snapshot boundary
+  so intervening events cannot be skipped. Failed or obsolete reads cannot
+  clear visible content or restart an old chat's stream.
+- Markdown now memoizes its parsed AST and gives paragraphs and the root
+  stable structural keys. Text updates no longer remount every native text
+  view; links, code, tables, math and range-selection rendering are retained.
+- Regression tests reproduced old-cursor reads and native text remounts before
+  the fix. Latest-first, fallback, retry, background, concurrent-event and
+  retired-response tests pass, along with store/client/history regressions,
+  63 rendering/contract checks, TypeScript and an iOS production JS export.
+- Exercised the installed iPhone simulator against an isolated instance of
+  the production service with 2,000 synthetic turns / 8,000 initial events per
+  Claude and Codex chat: latest opening, repeated reopening, live appends,
+  draft retention, upward pagination, return to latest and foreground recovery.
+  Light/dark rendering was inspected. A Claude live-update recording sampled
+  at 30 fps had no blank transcript frames; this is not a guarantee against
+  every form of flicker. The history automation was adjusted after automatic
+  pagination moved its target, and the resulting older page was checked in-app.
+- Availability: local mobile branch and simulator only; no server deployment,
+  publication or native archive. Real provider output parity, the user's
+  affected conversation, physical devices and network switching remain
+  unverified. Server/provider history and model context are unchanged.
+
+## 2026-10-14 - Use readable mobile server names
+
+- Unnamed mobile connections now use the URL host and port instead of the
+  internal server identity. Loading saved profiles repairs names equal to that
+  identity while retaining other names, profile IDs, credential versions,
+  timestamps and identity-scoped workspaces.
+- The server selector measures its available row width explicitly so the
+  intrinsic native menu label does not shrink the button to its text.
+- Removed the first-page Team Network shortcut as requested, retaining its
+  existing workspace and other entry points.
+- Verified the installed iPhone simulator development app against the existing
+  connected server: the saved name migrated, the selector filled its row, and
+  right-edge taps, menu reopening and server management displayed the same
+  address in light and dark modes. No chat messages were sent. New-profile,
+  legacy migration, credential/draft preservation and pairing paths also passed
+  focused tests; those tests use isolated fixtures, not a new live pairing.
+- Profile/storage/store regressions, 14 UI source-contract checks, TypeScript
+  and an iOS production JavaScript export passed. Source: local changes on
+  `988edb6e`; no new native archive, physical-device or Android acceptance.
+  Availability: local simulator only; no server update or publication required.
+  Long-conversation sync recovery is separate and is not changed by this fix.
+
 ## 2026-10-14 — Explain failed desktop file links
 
 - File links and binary attachment links now surface native open/download

@@ -95,6 +95,7 @@ export function ServerProfileSelector({
   onManageServers,
 }: ServerProfileSelectorProps) {
   const colors = usePalette()
+  const [selectorWidth, setSelectorWidth] = useState(0)
   const active = profiles.find(profile => profile.id === activeProfileId) ?? profiles[0] ?? null
   const switching = profiles.find(profile => profile.id === switchingProfileId) ?? null
   const host = active ? profileHostSubtitle(active) : null
@@ -123,7 +124,7 @@ export function ServerProfileSelector({
     accessibilityRole="button"
     accessibilityLabel={selectorLabel}
     accessibilityState={{ disabled: unavailable, expanded: false }}
-    style={[styles.selector, { backgroundColor: colors.raised, borderColor: colors.border, opacity: disabled ? 0.4 : 1 }]}
+    style={[styles.selector, selectorWidth > 0 && { width: selectorWidth }, { backgroundColor: colors.raised, borderColor: colors.border, opacity: disabled ? 0.4 : 1 }]}
   >
     <ServerConnectionDot state={switching ? 'connecting' : active?.connectionState ?? 'cached'} label={switching ? `Connecting to ${switching.name}` : active ? profileConnectionLabel(active) : 'No server selected'} />
     <View style={styles.selectorCopy}>
@@ -134,8 +135,13 @@ export function ServerProfileSelector({
     {switching ? <ActivityIndicator size="small" color={colors.blue} /> : <ChevronDown size={15} color={colors.muted} />}
   </View>
 
-  if (unavailable) return trigger
-  return <MenuView
+  // The native menu measures its label intrinsically; pass the row's width
+  // through explicitly so short names do not shrink its label and hit target.
+  return <View
+    testID="server-profile-selector-container"
+    style={styles.selectorContainer}
+    onLayout={event => setSelectorWidth(event.nativeEvent.layout.width)}
+  >{unavailable ? trigger : <MenuView
     title="Servers"
     actions={actions}
     onPressAction={event => {
@@ -150,7 +156,7 @@ export function ServerProfileSelector({
       }
     }}
     style={styles.selectorMenu}
-  >{trigger}</MenuView>
+  >{trigger}</MenuView>}</View>
 }
 
 export function ServerProfilesSheet({ visible, onClose, ...props }: ServerProfilesSheetProps) {
@@ -693,6 +699,7 @@ function normalizeComparableURL(value?: string): string {
 }
 
 const styles = StyleSheet.create({
+  selectorContainer: { alignSelf: 'stretch', minWidth: 0 },
   selectorMenu: { minWidth: 0 },
   selector: { minHeight: 48, minWidth: 0, borderRadius: 7, borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 9 },
   selectorCopy: { flex: 1, minWidth: 0, gap: 1 },

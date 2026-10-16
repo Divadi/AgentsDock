@@ -384,7 +384,7 @@ function AppShellContent() {
   if (!initialized) return <View style={[styles.fill, { backgroundColor: colors.background }]}><Loading label="Starting AgentsDock" /></View>
 
   const connectionKey = `${activeProfileId ?? 'none'}:${profileGeneration}`
-  const sidebar = <Sidebar key={`sidebar:${connectionKey}`} profiles={serverProfileItems} activeProfileId={activeProfileId} switchingProfileId={switchingProfileId} onSwitchServer={switchServer} onAddServer={() => openServers('add')} onManageServers={() => openServers('manage')} onSettings={openSettings} onTeamNetwork={openTeamNetwork} onNewChat={() => void quickNewChat()} onOpenChat={() => { trackEvent('chat_opened'); openMobileChat() }} />
+  const sidebar = <Sidebar key={`sidebar:${connectionKey}`} profiles={serverProfileItems} activeProfileId={activeProfileId} switchingProfileId={switchingProfileId} onSwitchServer={switchServer} onAddServer={() => openServers('add')} onManageServers={() => openServers('manage')} onSettings={openSettings} onNewChat={() => void quickNewChat()} onOpenChat={() => { trackEvent('chat_opened'); openMobileChat() }} />
   const chat = selected
     ? <ChatScreen key={`${connectionKey}:${selected.id}`} sessionId={selected.id} compact={compact} inlineInspectorAvailable={chatLayout.inlineInspectorAvailable} onBack={closeMobileChat} onOptions={openOptions} onSearch={openSearch} onToggleInspector={() => setInspectorVisible(value => !value)} onReview={openReview} onSetupServer={() => openServers('add')} onOpenMcp={() => openClaudeMcp(selected.id)} />
     : <NoChat connecting={connecting} onSettings={() => openServers('manage')} />
