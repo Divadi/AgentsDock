@@ -1,5 +1,29 @@
 # Public development log
 
+## 2026-10-15 - Remove mobile QR connection setup
+
+- Removed the mobile camera scanner, QR-image import, connection-link handler
+  and setup prompts. Removed the camera dependency and plugin, camera permission
+  and pairing URL scheme. Manual server URL/token entry, authenticated connection
+  tests, identity checks, secure storage, photo/video attachments and the legacy
+  terminal URL scheme remain. Desktop and server pairing code is unchanged.
+- Restrict terminal deep-link matching to the outer URL so a discarded connection
+  payload containing a terminal URL cannot open the terminal accidentally.
+- A clean candidate using the committed dependencies passed TypeScript, seven
+  focused library/store test entrypoints, 310 UI checks and an iOS JavaScript
+  export. One generated-native-metadata check was skipped in the source-only
+  candidate. CI now checks manual connection and the absence of QR entry points.
+- Actual iPhone simulator interaction verified manual add/test/save/switch
+  against an isolated production server, three repeated management openings,
+  light/dark presentation and a cold launch with saved-token authentication.
+  Installed-bundle checks verified no camera permission or pairing scheme while
+  retaining photo-library permission. Old connection links do not present setup
+  or open a terminal through an embedded URL. No user chat messages were sent.
+- Native acceptance used an ad-hoc-signed Debug simulator build with Keychain
+  entitlements and the existing local SDK-aligned dependencies. Those unrelated
+  dependency adjustments remain outside this change. No physical-device or
+  Android acceptance, TestFlight upload, release or server deployment is claimed.
+
 ## 2026-10-15 - Stress-test mobile sync and connection fixes
 
 - Added repeatable CI coverage for latest-first sync, recovery, stable native
