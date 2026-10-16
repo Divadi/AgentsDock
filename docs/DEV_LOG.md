@@ -275,6 +275,43 @@
 - No published release or running user service was replaced by this merge
   validation. Signed end-to-end release acceptance remains separate.
 
+## 2026-10-14 — Exercise receiving-client timeline synchronization
+
+- Added component coverage for sync backfill plus overlapping authoritative
+  corrections, a newer sync window arriving during scheduled empty-range
+  recovery, and a genuinely empty authoritative history. Sync must preserve
+  loaded messages and a stale recovery must not rebuild the newer window.
+- Validation: 240 targeted synchronization, history, projection, service and
+  viewport checks passed; 483 unrelated checks were excluded by the test-name
+  filter. TypeScript passed.
+- A native offscreen Electron fixture exercised 31 viewport observations:
+  empty-cache arrival, incremental catch-up, prepend while reading, expanding
+  and shrinking corrected history, disjoint replacement, hidden-tab sync and
+  return, and a narrow window. It used real timeline/store reducers and wheel
+  events with synthetic snapshots, not a remote server or a second physical
+  machine. The unmodified baseline also passed all 31 observations; these
+  checks do not reproduce the reported persistent blank viewport or establish
+  that the candidate recovery fixes its cause. Remote-machine acceptance is
+  still pending. This follow-up changes only tests and documentation.
+
+## 2026-10-13 — Recover a persistently empty virtual timeline range
+
+- When a populated timeline emits an empty virtual range after previously
+  displaying messages, allow layout to settle and rebuild its measurements
+  only if the viewport remains visible and empty. Retain the semantic reading
+  anchor rather than reusing a potentially stale pixel offset. Initial,
+  transient and hidden empty ranges do not trigger this recovery.
+- Validation: 34 focused component/position checks, TypeScript and production
+  compilation passed. An isolated native offscreen Electron fixture exercised
+  wheel scrolling during response growth, completion/collapse and cached-event
+  replay. It used the production timeline and virtualizer, with stubbed IPC;
+  this was not a new live-provider request.
+- This is defensive recovery for a suspected stale virtual range. The reported
+  intermittent blank viewport was not reproduced, so exact-cause confirmation
+  and acceptance in the affected live conversation remain pending. Visible-app
+  automation was unavailable. Available as a local test package only; no server
+  change or release is included.
+
 ## 2026-10-13 — Stress-test recovery and component updates with large histories
 
 - Added an opt-in process test with 1,000 saved chats, approximately 1.21 GB of
