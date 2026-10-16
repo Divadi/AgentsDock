@@ -2458,6 +2458,7 @@ export interface UpdateSessionInput {
   archived?: boolean
 }
 export interface SendTurnInput {
+  clientRequestId?: string
   sessionId: string
   prompt: string
   fileIds: string[]

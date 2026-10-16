@@ -1,5 +1,22 @@
 # Public development log
 
+## 2026-10-16 — Prepare local history responsiveness candidate
+
+- Prepare a paired local desktop/server candidate based on `v1.0.11-beta.1`.
+  Background history maintenance no longer holds chat admission while reading
+  source files; durable send identities allow safe explicit retry after a lost
+  response. Preserve streaming history parsing and native ownership proofs.
+- Index provisional turns by run when grouping scheduled-job events, avoiding
+  repeated full-landmark scans during cold timeline opens.
+- Validation: 316 focused backend tests and 618 desktop service/transport tests
+  passed, with TypeScript checking and production compilation. Isolated native
+  offscreen Electron exercised real Codex replies, a contextual follow-up,
+  navigation and reload; the packaged Linux app completed another real reply.
+- Availability: local unpublished `1.0.11-beta.2` candidate. Both app and server
+  are required. Production activation and public release are not included.
+  Cold indexing still scales with transcript size; no Claude live-provider
+  parity or custom-endpoint credential success is claimed.
+
 ## 2026-10-13 — Prepare the 1.0.11 beta integration
 
 - Start `release/1.0.11-beta.1` from the frozen 1.0.10 release line and merge

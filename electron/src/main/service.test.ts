@@ -95,6 +95,31 @@ import { mailHintPending, TEAM_MAIL_HINTS_PATH, TEAM_MAIL_HINTS_PROTOCOL, type M
 
 const cleanup: Array<() => void> = []
 
+describe('durable send request identity', () => {
+  it('reuses identity after a lost response and a service restart, then rotates after acceptance', async () => {
+    const receipts = new Map<string, unknown>()
+    const sendTurn = vi.fn().mockRejectedValueOnce(new Error('response lost'))
+      .mockResolvedValue({ session: { id: 'chat-receipt' }, queued: false })
+    const scope = { profileId: 'receipt-profile', generation: 1, namespace: 'receipt-server', client: { sendTurn } }
+    const createService = (): AppService => Object.assign(Object.create(AppService.prototype) as AppService, {
+      scope, activeProfileId: scope.profileId, profileGeneration: scope.generation,
+      ensureValidatedScope: vi.fn().mockResolvedValue(undefined), assertCurrentScope: vi.fn(), upsertSession: vi.fn(),
+      cache: {
+        preference: (namespace: string, key: string, fallback: unknown) => receipts.get(`${namespace}:${key}`) ?? fallback,
+        putPreference: (namespace: string, key: string, value: unknown) => receipts.set(`${namespace}:${key}`, value)
+      }
+    })
+    const input = { sessionId: 'chat-receipt', prompt: 'hello', fileIds: [] }
+    await expect(createService().sendTurn(input)).rejects.toThrow('response lost')
+    await createService().sendTurn(input)
+    await createService().sendTurn(input)
+    const identities = sendTurn.mock.calls.map(call => call.at(-1))
+    expect(identities[0]).toMatch(/^[a-f0-9-]{36}$/)
+    expect(identities[1]).toBe(identities[0])
+    expect(identities[2]).not.toBe(identities[0])
+  })
+})
+
 describe('main-owned passive Team Mail hints', () => {
   const arrival = (seq: number) => ({ through_sequence: seq, arrival_id: seq ? `tmsg_${seq.toString(16).padStart(32, '0')}` : null })
   const capability = { enabled: true, version: 1, websocket_path: TEAM_MAIL_HINTS_PATH,
@@ -8320,6 +8345,7 @@ describe('managed local discovery profile adoption', () => {
 })
 
 describe('server profile lifecycle', () => {
+
   it('rebinds freshly dropped image and video paths to another chat while rejecting stale replay', async () => {
     const uploadOpened = vi.fn(async (sessionId: string, source: import('./server-client').OpenedUploadSource) => ({
       id: `${sessionId}-${source.filename}`,

@@ -30,6 +30,20 @@ class FakeWebSocket:
 
 
 class EventWebSocketCatchupTests(unittest.IsolatedAsyncioTestCase):
+    async def test_opted_in_projection_revision_covers_reconnect_gap(self) -> None:
+        sid = "projection-reconnect"
+        socket = FakeWebSocket()
+        with tempfile.TemporaryDirectory() as root, \
+                patch.object(agent_server, "AGENT_TOKEN", ""), \
+                patch.dict(agent_server.STORE.sessions, {sid: {"id": sid}}, clear=True), \
+                patch.object(agent_server, "events_path", return_value=Path(root) / "events.jsonl"), \
+                patch.object(agent_server, "schedule_provider_history_sync"), \
+                patch.dict(agent_server.HISTORY_PROJECTION_REVISIONS, {sid: 7}, clear=True):
+            (Path(root) / "events.jsonl").write_text("")
+            await agent_server.session_events(sid, socket, visible=True, history_projection=True)
+        self.assertEqual(socket.events, [{"type": "history_projection_changed", "session_id": sid,
+            "revision": f"{agent_server.SERVER_INSTANCE_ID}:7"}])
+
     def setUp(self) -> None:
         super().setUp()
         # Earlier cases in a shard leave cyclic mock/fixture graphs behind.
