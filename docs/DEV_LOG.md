@@ -17,6 +17,40 @@
   Cold indexing still scales with transcript size; no Claude live-provider
   parity or custom-endpoint credential success is claimed.
 
+## 2026-10-13 — Accept imports and publish 1.0.11-beta.1
+
+- Publish immutable source `e93391294af2cb0c35f5f04fe8e94cce77810458`, native
+  build 1252. No accepted package was rebuilt, repacked or replaced.
+- Exercise the signed/notarized macOS app and matching packaged server through
+  the real client/server boundary with isolated data. Import a 300 MiB Claude
+  image record and a 64 MiB Codex tool record; preserve native titles, surrounding
+  text and Unicode. Confirm subagent/archive filtering, cancellation, repeat
+  discovery, unchanged provider files and no duplicate incremental imports.
+- Import and continue real Claude and Codex sessions with their original native
+  IDs and remembered context. Four imported chats survive an isolated relaunch.
+  Excessive retained text fails with the observed amount, limit, record ordinal
+  and byte offset without creating a partial chat. All 103 focused regressions
+  pass. These checks do not establish new image rendering or live Cursor parity.
+- Hosted source checks and macOS/Linux native CLI lifecycle checks pass.
+  [Paired npm publication](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38370285507)
+  verifies both exact public archives through their separate Trusted Publishers.
+  A fresh registry installation with lifecycle scripts disabled verifies both
+  package versions and command help. Both `beta` tags are `1.0.11-beta.1`;
+  both `latest` tags remain `1.0.10`.
+- [Desktop publication](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38431444310)
+  passes all four native platform verifiers and publishes the
+  [canonical beta](https://github.com/ZhengyiLuo/AgentsDock/releases/tag/v1.0.11-beta.1)
+  and [compatibility mirror](https://github.com/ZhengyiLuo/AgentsDock-Releases/releases/tag/v1.0.11-beta.1)
+  with the same 16 sealed assets. The signed
+  [legacy server bridge](https://github.com/ZhengyiLuo/AgentsServer/releases/tag/v1.0.11-beta.1)
+  is also public. The asset-manifest digest remains
+  `dbed888a33160639ba00992bbb5ec1d1f9ba0650c7329c27c7701f55df9579cd`.
+- Retain the disclosed limits: unsigned Windows installer; no new live Cursor
+  resume or native Windows/Linux app interaction acceptance; no full populated
+  history, active/queued upgrade, logout/reboot or Windows updater acceptance.
+  The isolated relaunch check is not clean-quit lifecycle acceptance. Temporary
+  test credentials/state were removed; existing apps and servers were untouched.
+
 ## 2026-10-13 — Prepare the 1.0.11 beta integration
 
 - Start `release/1.0.11-beta.1` from the frozen 1.0.10 release line and merge

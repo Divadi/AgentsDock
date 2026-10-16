@@ -6,25 +6,40 @@ committed source snapshot and one public version; the CLI dependency must be
 `"@agentsdock/server": "VERSION"`, never a range or floating tag. The desktop
 continues to pin the signed runtime descriptor, not a floating npm channel.
 
-## 1.0.11-beta.1 preparation
+## 1.0.11-beta.1 public completion
 
-The new development candidate is `1.0.11-beta.1` on `release/1.0.11-beta.1`,
-integrating main through `2b666a9f` into the frozen 1.0.10 release line. The
-stable candidate below remains a separate immutable publication. Do not reuse
-its archives, signatures, native build allocation or acceptance receipts.
+On 2026-10-13 UTC, [paired publication 38370285507](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38370285507)
+published and verified both exact packages from source
+`e93391294af2cb0c35f5f04fe8e94cce77810458`, with separate package-specific OIDC
+trust. Both `beta` tags resolve to `1.0.11-beta.1`; both stable `latest` tags
+remain `1.0.10`. An isolated scripts-disabled registry installation confirms
+the exact versions, matched runtime dependency and CLI help without operating
+existing services.
 
-This beta includes the streaming transcript reader in the runtime inventory.
-Its complete installer has a separate exact-version pin in
-`product_server_acceptance.py`; the historical pins remain unchanged. Source
-validation is not native acceptance. Before staging or publishing, commit the
-reviewed source, recheck the native build reservation and both registry tags,
-then prepare a newly signed matched runtime/CLI/desktop set. Preserve npm
-`latest` and use only the beta channel for this candidate. Do not race the
-unfinished 1.0.10 paired publication or silently substitute a beta `latest`
-baseline for a stable one.
+The signed legacy server bridge, canonical desktop and compatibility mirror
+are public. [Desktop publication 38431444310](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38431444310)
+reverified all four platforms and published the unchanged build 1252. Native
+macOS/Linux CLI lifecycle checks and import-focused signed macOS app acceptance
+passed, including actual Claude/Codex continuation. Full populated-history and
+busy-work upgrades, reboot, Windows updater and clean-quit acceptance remain
+unverified; the release notes retain these limits. See the
+[public development log](DEV_LOG.md#2026-10-13--accept-imports-and-publish-1011-beta1).
 
-New-beta real-app, exact-package lifecycle and update acceptance remain pending.
-No public 1.0.11 release is recorded by this preparation section.
+The release integrates main through `2b666a9f` into the frozen 1.0.10 line.
+Its streaming transcript reader is included in the runtime inventory and its
+installer has an exact-version acceptance pin. Historical installer pins and
+accepted archives remain unchanged. A later documentation commit is not a new
+artifact source; never rebuild this published version.
+
+## 1.0.10 public completion
+
+The earlier stable publication completed on 2026-10-13 UTC. Attempt 2 of
+[paired publication 38346314422](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38346314422)
+verified the existing runtime and published the short CLI through its own
+Trusted Publisher. [Desktop publication 38362425715](https://github.com/ZhengyiLuo/AgentsDock/actions/runs/38362425715)
+published the unchanged build 1251 to both download repositories after native
+verification; the signed legacy server bridge is public as well. The previous
+pending-publication notes below are historical, not the current release state.
 
 ## Stable 1.0.10 preparation
 
